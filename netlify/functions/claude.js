@@ -2,29 +2,29 @@
  * SKINR — Claude API Proxy
  * netlify/functions/claude.js
  */
- 
+
 exports.handler = async (event) => {
- 
+
   const headers = {
     "Access-Control-Allow-Origin":  "*",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Content-Type": "application/json",
   };
- 
+
   // Handle CORS preflight — browser sends this before every POST
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
   }
- 
+
   // Only accept POST
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: "Method Not Allowed" };
   }
- 
+
   try {
     const body = JSON.parse(event.body);
- 
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -39,9 +39,9 @@ exports.handler = async (event) => {
         messages:   body.messages,
       }),
     });
- 
+
     const data = await response.json();
- 
+
     if (!response.ok) {
       console.error("Anthropic API error:", JSON.stringify(data));
       return {
@@ -50,13 +50,13 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: data }),
       };
     }
- 
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify(data),
     };
- 
+
   } catch (err) {
     console.error("Function error:", err.message);
     return {
