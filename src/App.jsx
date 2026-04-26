@@ -65,13 +65,22 @@ const SK = {
 
 // ── API — calls Netlify Function proxy (key never in browser) ───────────────
 const callAI = async (messages, system="") => {
-  const res = await fetch("/api/claude", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, system }),
-  });
-  const data = await res.json();
-  return data.content?.map(c => c.text||"").join("") || "";
+  try {
+    const res = await fetch("/.netlify/functions/claude", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, system }),
+    });
+    if(!res.ok){
+      console.error("API error:", res.status);
+      return "";
+    }
+    const data = await res.json();
+    return data.content?.map(c => c.text||"").join("") || "";
+  } catch(err){
+    console.error("callAI error:", err.message);
+    return "";
+  }
 };
 
 const parseJSON = (raw) => {
@@ -1229,6 +1238,24 @@ export default function SkinrApp() {
     {id:"budget",      q:t.shaveQ7, opts:t.shaveOpts7},
   ];
 
+  // ── CORE NAVIGATION & LANGUAGE (defined before useEffects that call them) ──
+  const go = (v) => { setAnim(true); setTimeout(()=>{setView(v);setAnim(false);},220); };
+
+  const loadTranslation = async (langCode) => {
+    if(langCode === "en"){ setT(BASE_T); return; }
+    setTLoading(true);
+    const translated = await translateAndCache(langCode);
+    if(translated) setT(translated);
+    else setT(BASE_T);
+    setTLoading(false);
+  };
+
+  const switchLang = async (l) => {
+    setLang(l); LS.set(SK.lang, l); setLangOpen(false);
+    await loadTranslation(l);
+    document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
+  };
+
   // Load from localStorage on mount + auto-detect language
   useEffect(()=>{
     const savedLang = LS.get(SK.lang);
@@ -1257,21 +1284,6 @@ export default function SkinrApp() {
   },[view,lang]);
   useEffect(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},[messages]);
 
-  const loadTranslation = async (langCode) => {
-    if(langCode === "en"){ setT(BASE_T); return; }
-    setTLoading(true);
-    const translated = await translateAndCache(langCode);
-    if(translated) setT(translated);
-    else setT(BASE_T); // Fallback to English if translation fails
-    setTLoading(false);
-  };
-
-  const switchLang = async (l) => {
-    setLang(l); LS.set(SK.lang, l); setLangOpen(false);
-    await loadTranslation(l);
-    // Update dir for RTL languages
-    document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
-  };
   const saveChat = useCallback((m)=>{ LS.set(SK.chat, m.slice(-30)); },[]);
   const toggleSci = (id) => setExpanded(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
   const has = !!profile;
