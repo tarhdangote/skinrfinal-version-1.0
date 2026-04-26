@@ -1059,12 +1059,13 @@ export default function SkinrApp() {
   const [shareText, setShareText]           = useState("");
   const [sharePosted, setSharePosted]       = useState(false);
   const [postLikes, setPostLikes]           = useState({});
-  const [unlockInput, setUnlockInput]=useState("");
-  const [unlockErr, setUnlockErr]   = useState(false);
-  const [bioReport, setBioReport]   = useState(null);
-  const [bioLoad, setBioLoad]       = useState(false);
-  const [cardReport, setCardReport] = useState(null);
-  const [cardLoad, setCardLoad]     = useState(false);
+  const [unlocked, setUnlocked]             = useState(false);
+  const [unlockInput, setUnlockInput]       = useState("");
+  const [unlockErr, setUnlockErr]           = useState(false);
+  const [bioReport, setBioReport]           = useState(null);
+  const [bioLoad, setBioLoad]               = useState(false);
+  const [cardReport, setCardReport]         = useState(null);
+  const [cardLoad, setCardLoad]             = useState(false);
   // ready
   const [ready, setReady]           = useState(false);
   const chatRef = useRef(null);
