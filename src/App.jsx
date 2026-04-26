@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -87,8 +86,22 @@ const callAI = async (messages, system="") => {
 };
 
 const parseJSON = (raw) => {
-  try { return JSON.parse(raw.replace(/```json|```/g,"").trim()); }
-  catch(_){ return null; }
+  try {
+    // Strip markdown code blocks — Haiku sometimes wraps JSON despite instructions
+    const cleaned = raw
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+    return JSON.parse(cleaned);
+  } catch(_){
+    // Try to find JSON object in the response
+    try {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if(match) return JSON.parse(match[0]);
+    } catch(_){}
+    return null;
+  }
 };
 
 // ── TRANSLATIONS ─────────────────────────────────────────────────────────────
