@@ -72,13 +72,15 @@ const callAI = async (messages, system="") => {
       body: JSON.stringify({ messages, system }),
     });
     if(!res.ok){
-      console.error("API error:", res.status);
+      console.error("callAI HTTP error:", res.status, res.statusText);
       return "";
     }
     const data = await res.json();
-    return data.content?.map(c => c.text||"").join("") || "";
+    const text = data.content?.map(c => c.text||"").join("") || "";
+    if(!text) console.error("callAI: empty response from API", JSON.stringify(data).slice(0,200));
+    return text;
   } catch(err){
-    console.error("callAI error:", err.message);
+    console.error("callAI exception:", err.message);
     return "";
   }
 };
@@ -1317,8 +1319,12 @@ export default function SkinrApp() {
     try {
       const prompt = buildSkinPrompt(ans, lang);
       const raw = await callAI([{role:"user",content:prompt}]);
+      console.log("Skin raw response length:", raw.length, "preview:", raw.slice(0,100));
       const parsed = parseJSON(raw);
-      if(!parsed) throw new Error("Parse failed");
+      if(!parsed){
+        console.error("Skin JSON parse failed. Raw:", raw.slice(0,300));
+        throw new Error("Parse failed");
+      }
       const full = {...parsed, answers:ans, createdAt:Date.now(), lang};
       setProfile(full);
       LS.set(SK.profile, full);
@@ -1351,12 +1357,19 @@ export default function SkinrApp() {
     try {
       const prompt = buildShavePrompt(ans, profile, lang);
       const raw = await callAI([{role:"user",content:prompt}]);
+      console.log("Shave raw response length:", raw.length, "preview:", raw.slice(0,100));
       const parsed = parseJSON(raw);
-      if(!parsed) throw new Error("Parse failed");
+      if(!parsed){
+        console.error("Shave JSON parse failed. Raw:", raw.slice(0,300));
+        throw new Error("Parse failed");
+      }
       setShaveResult(parsed);
       const saved = {...parsed, answers:ans};
       setSavedShave(saved); LS.set(SK.shave, saved);
-    } catch(e) { /* show empty state */ }
+    } catch(e) {
+      console.error("runShaveAnalysis error:", e.message);
+      setShaveLoad(false);
+    }
   };
 
   // ── COACH ──
