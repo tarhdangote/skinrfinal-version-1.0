@@ -380,201 +380,34 @@ const buildSkinPrompt = (answers, lang) => {
   const ln = (LANGUAGES.find(l=>l.code===lang)?.label || "English");
   const tier = answers.budget || "mid";
   const brands = CONFIG.skinBrandsByTier[tier]?.join(", ") || "The Ordinary, CeraVe";
-  return `You are a board-certified dermatologist providing a clinical men's skincare protocol. Respond ONLY in ${ln}. Return ONLY valid JSON — no markdown.
+  return `You are a dermatologist. Respond ONLY in ${ln}. Return ONLY valid compact JSON — no markdown, no extra whitespace.
 
-PATIENT PROFILE:
-- Skin feel after washing (no products): ${answers.feel}
-- Breakout frequency: ${answers.breakouts}
-- Sensitivity / reactivity: ${answers.sensitivity}
-- Age range: ${answers.age}
-- Primary concern: ${answers.concern}
-- Budget tier: ${tier}
-- Recommended brands for this budget: ${brands}
+Patient: feel=${answers.feel}, breakouts=${answers.breakouts}, sensitivity=${answers.sensitivity}, age=${answers.age}, concern=${answers.concern}, budget=${tier}
+Brands: ${brands}
 
-CLINICAL SCIENCE YOU MUST APPLY:
-1. Barrier function — stratum corneum requires ceramide (lipid) + hyaluronic acid (water) to maintain TEWL under 7g/m²/h
-2. pH preservation — skin's natural pH 4.5–5.5 must be maintained. Disruption compromises microbiome and barrier
-3. Active sequencing — water-based actives (AHA, niacinamide, vitamin C) before oil-based (squalane, retinol)
-4. Photosensitivity — retinol, glycolic acid, vitamin C are UV-sensitive. Morning SPF is clinically non-negotiable
-5. Conflicts — vitamin C + niacinamide at high concentration causes flushing. Retinol + AHA same night = over-exfoliation. Benzoyl peroxide deactivates retinol
-6. Age biology — under 25: sebum regulation. 25–35: barrier + refinement. 36–50: collagen stimulation. 50+: barrier repair + pigmentation
+Return this JSON (keep all string values short — max 20 words each):
+{"skinType":"2-3 word type","code":"TYPE-CODE","headline":"one clinical sentence","summary":"two sentences why and what needed","morning":[{"step":1,"product":"exact name","brand":"brand","category":"cleanser|toner|serum|moisturizer|spf|treatment","estimatedPrice":"$X","keyIngredient":"ingredient","instruction":"exact instruction","why":"clinical reason","clinicalMechanism":"mechanism","knownRating":"X/5 Amazon","amazonSearch":"search term"}],"evening":[same structure max 3 products no SPF],"ingredientConflicts":[],"avoid":"ingredient to avoid and why","timeToResults":"week 2 week 4 week 12","proTip":"non-obvious insight","coachIntro":"two sentence welcome","skinBiologyTeaser":"two sentences biology teaser"}
 
-Return this exact JSON:
-{
-  "skinType": "2-3 word clinical type in ${ln}",
-  "code": "SHORT-CODE e.g. OILY-SEN",
-  "headline": "One precise clinical sentence — the most important truth about this man's skin",
-  "summary": "Exactly two sentences. First: why his skin behaves this way biologically. Second: what it needs and why.",
-  "morning": [
-    {
-      "step": 1,
-      "product": "Exact product name",
-      "brand": "Brand name",
-      "category": "cleanser|toner|serum|moisturizer|spf|treatment",
-      "estimatedPrice": "$XX",
-      "keyIngredient": "Primary active — name and concentration e.g. Salicylic Acid 0.5%",
-      "instruction": "Precise — exact amount, technique, duration. e.g. Wet face. Dispense 2 pumps. Massage 30 seconds. Rinse cold.",
-      "why": "Clinical reason this product for this skin type — one sentence",
-      "clinicalMechanism": "The molecular or cellular action of the key ingredient — how it works in the skin",
-      "knownRating": "e.g. 4.7/5 on Amazon (47,000+ reviews) — genuine knowledge only, never fabricate",
-      "amazonSearch": "Optimal Amazon search term"
-    }
-  ],
-  "evening": [same structure — max 3 products — no SPF],
-  "ingredientConflicts": ["Any cross-routine ingredient warnings — empty array if none"],
-  "avoid": "Single most harmful ingredient or product type for this profile — specific and clinical",
-  "timeToResults": "Honest milestones — week 2, week 4, week 8, week 12",
-  "proTip": "One non-obvious clinical insight specific to this exact skin profile — not generic advice",
-  "coachIntro": "Two sentences welcoming this man — reference his skin type, age range, and budget",
-  "skinBiologyTeaser": "Two compelling sentences about the biology of his skin that make him want the full biology report"
-}
-
-RULES:
-- Morning: 3–4 products maximum. MUST end with SPF 30+ — non-negotiable
-- Evening: 2–3 products maximum. No SPF ever
-- All products must be available on Amazon within ${tier} budget using brands: ${brands}
-- instruction must be specific — never write 'apply to face'. Always specify amount, technique, duration
-- clinicalMechanism is required for every product — molecular or physiological action, not marketing
-- knownRating: use genuine knowledge of well-reviewed products only — never invent ratings
-- Ensure zero ingredient conflicts between morning and evening`;
+Rules: morning 3-4 products ending with SPF, evening 2-3 products no SPF, all on Amazon within ${tier} budget using brands: ${brands}.`;
 };
 
 const buildShavePrompt = (answers, skinProfile, lang) => {
   const ln = (LANGUAGES.find(l=>l.code===lang)?.label || "English");
   const tier = answers.budget || "mid";
-  const skinBrands = CONFIG.skinBrandsByTier[tier]?.join(", ") || "CeraVe, Neutrogena";
   const shaveBrands = CONFIG.shaveBrandsByTier[tier]?.join(", ") || "Cremo, Nivea Men";
   const skinType = skinProfile?.skinType || "unknown";
   const hasBumps = answers.activeBumps && answers.activeBumps !== "none";
-  const bumpSeverity = answers.activeBumps || "none";
 
-  return `You are a board-certified dermatologist specialising in shaving dermatology and men's grooming medicine. Respond ONLY in ${ln}. Return ONLY valid JSON — no markdown.
+  return `You are a dermatologist specialising in shaving. Respond ONLY in ${ln}. Return ONLY valid compact JSON — no markdown, no extra whitespace.
 
-PATIENT SHAVING PROFILE:
-- Current method: ${answers.method}
-- Beard characteristics: ${answers.beard}
-- Primary problem: ${answers.problem}
-- Active razor bumps right now: ${bumpSeverity}
-- Current blade/razor: ${answers.currentBlade || "unknown"}
-- Shaving frequency: ${answers.frequency}
-- Budget tier: ${tier}
-- Skin type (from skin analysis): ${skinType}
-- Skin sensitivity: ${skinProfile?.answers?.sensitivity || "unknown"}
+Patient: method=${answers.method}, beard=${answers.beard}, problem=${answers.problem}, bumps=${answers.activeBumps||"none"}, blade=${answers.currentBlade||"unknown"}, frequency=${answers.frequency}, budget=${tier}, skinType=${skinType}
 
-CLINICAL CONTEXT YOU MUST APPLY:
-1. Pseudofolliculitis barbae (PFB) affects up to 83% of Black men with curly hair and is classified as a medical dermatological condition requiring specific intervention
-2. Multi-blade cartridge razors use a lift-and-cut mechanism that severs hair below the skin surface — this is the primary mechanical cause of ingrown hairs in curved/coarse hair types
-3. Single-blade safety razors cut at the skin surface without the lift-and-cut mechanism — the American Academy of Dermatology recommends single-blade razors for PFB patients
-4. Shaving without adequate lubrication increases transepidermal water loss by up to 40% and disrupts the stratum corneum
-5. Benzoyl peroxide 2.5-5% and salicylic acid 2% are clinically validated for bump prevention when used as pre-shave treatments
-6. Glycolic acid accelerates the cell turnover that releases trapped ingrown hairs
-7. Tretinoin (prescription) and azelaic acid (OTC) are first-line dermatological treatments for established PFB
-8. Foil electric shavers maintain greater skin-to-blade distance than rotary shavers — recommended for sensitive/reactive skin
-9. Blade gap: mild (0.5mm or less), medium (0.5-0.8mm), aggressive (0.8mm+) — match to skin sensitivity
+Brands for ${tier} budget: ${shaveBrands}
 
-Available shaving product brands for ${tier} budget: ${shaveBrands}
-Available skincare brands for post-shave treatment: ${skinBrands}
+Return this JSON (keep all string values short — max 20 words each):
+{"clinicalFinding":"root cause in one sentence","severityAssessment":"self-manage or see doctor","bladeRecommendation":{"recommendedType":"razor type","specificModel":"exact model","whyThisRazor":"reason in 15 words","bladeGap":"mild/medium/aggressive","recommendedBlades":[{"name":"blade name","estimatedPrice":"$X per 100","why":"reason","rating":"X/5 Amazon","amazonSearch":"search term"}],"transitionNote":"transition advice","techniqueAdjustment":"technique tip"},"preShave":[{"step":1,"title":"title","instruction":"instruction","duration":"time","why":"reason"}],"shaveProtocol":[{"step":1,"title":"title","instruction":"instruction","why":"reason"}],"postShave":[{"step":1,"title":"title","instruction":"instruction","why":"reason"}],"preventionProducts":[{"name":"product","brand":"brand","category":"category","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how to use","clinicalMechanism":"mechanism","knownRating":"X/5","amazonSearch":"search","priority":"essential"}]${hasBumps?`,"treatmentProducts":[{"name":"product","brand":"brand","category":"bump-treatment","estimatedPrice":"$X","keyIngredient":"ingredient 2%","use":"how to use","clinicalMechanism":"mechanism","knownRating":"X/5","amazonSearch":"search","expectedTimeline":"timeline"}],"treatmentProtocol":"treatment paragraph"`:''},"criticalRule":"most important change","weekOneProtocol":"week one steps","expectedImprovement":"timeline milestones","whenToSeeDoctor":"warning signs","skinBiologyTeaser":"biology teaser two sentences"}
 
-Return this exact JSON structure:
-
-{
-  "clinicalFinding": "One precise sentence identifying the ROOT CAUSE of this person's problem based on their method, beard type, and skin type",
-  "severityAssessment": "Honest clinical assessment — can self-manage or needs dermatologist",
-  
-  "bladeRecommendation": {
-    "recommendedType": "exact razor type e.g. Single-blade Safety Razor",
-    "specificModel": "exact model name e.g. Merkur 34C Heavy Duty Safety Razor",
-    "whyThisRazor": "precise clinical reason this razor for this person's specific profile — mention blade gap, mechanism",
-    "bladeGap": "mild/medium/aggressive and why",
-    "recommendedBlades": [
-      {
-        "name": "exact blade name e.g. Astra Superior Platinum",
-        "estimatedPrice": "$XX for 100",
-        "why": "clinical reason — sharpness, coating, steel grade appropriate for this skin",
-        "rating": "known average rating e.g. 4.7/5 on Amazon (47,000+ reviews)",
-        "amazonSearch": "search term"
-      }
-    ],
-    "transitionNote": "If switching from current method — how to transition safely and how long adjustment takes",
-    "techniqueAdjustment": "Specific technique changes for this razor type — angle, pressure, strokes"
-  },
-
-  "preShave": [
-    {
-      "step": 1,
-      "title": "step title",
-      "instruction": "precise clinical instruction",
-      "duration": "e.g. 60 seconds",
-      "why": "the physiological reason this step is non-negotiable for this person"
-    }
-  ],
-
-  "shaveProtocol": [
-    {
-      "step": 1,
-      "title": "step title",
-      "instruction": "precise clinical instruction",
-      "why": "the dermatological reason this technique prevents damage"
-    }
-  ],
-
-  "postShave": [
-    {
-      "step": 1,
-      "title": "step title",
-      "instruction": "precise clinical instruction",
-      "why": "the physiological effect of this step on skin recovery"
-    }
-  ],
-
-  "preventionProducts": [
-    {
-      "name": "exact product name",
-      "brand": "brand name",
-      "category": "pre-shave-treatment|shave-cream|shave-soap|shave-oil|post-shave-balm|aftershave-treatment",
-      "estimatedPrice": "$XX",
-      "keyIngredient": "primary active and why it works clinically",
-      "use": "exact application instruction — when, how much, technique",
-      "clinicalMechanism": "the biological mechanism by which this prevents the specific problem",
-      "knownRating": "e.g. 4.6/5 (Amazon, 12,000+ reviews) — use your knowledge of well-reviewed products",
-      "amazonSearch": "best search term",
-      "priority": "essential|recommended|optional"
-    }
-  ],
-
-  ${hasBumps ? `"treatmentProducts": [
-    {
-      "name": "exact product name",
-      "brand": "brand name",
-      "category": "bump-treatment|exfoliant|antibacterial",
-      "estimatedPrice": "$XX",
-      "keyIngredient": "active ingredient and concentration e.g. Salicylic Acid 2%",
-      "use": "exact application protocol — frequency, timing relative to shaving, how long to use",
-      "clinicalMechanism": "precise mechanism of action for treating existing ingrown hairs/bumps",
-      "knownRating": "known rating from major platforms",
-      "amazonSearch": "best search term",
-      "expectedTimeline": "honest timeline for visible improvement"
-    }
-  ],
-  "treatmentProtocol": "A complete paragraph describing the daily treatment routine for existing razor bumps — morning and evening — including how it integrates with the shaving schedule",` : ''}
-
-  "criticalRule": "The single most important change — one sentence, specific to this person",
-  "weekOneProtocol": "Day-by-day guidance for the first 7 days — what to do, what to avoid, what to expect",
-  "expectedImprovement": "Honest realistic timeline with specific milestones — week 1, week 4, week 8",
-  "whenToSeeDoctor": "Specific clinical signs indicating this person needs professional dermatological intervention — be precise",
-  
-  "skinBiologyTeaser": "Two sentences explaining the fascinating biology of why their specific skin type and beard type combination creates their specific problem — written to make them want the full biology report"
-}
-
-RULES:
-- preShave must have 3-5 steps
-- shaveProtocol must have 4-5 steps  
-- postShave must have 3-4 steps
-- preventionProducts must include at minimum: a shaving lubricant and a post-shave treatment — both within ${tier} budget
-- if activeBumps is moderate or severe, recommend single-blade safety razor regardless of current method
-- knownRating must use your genuine knowledge of well-reviewed products — do not fabricate ratings
-- all products must be available on Amazon with the search term provided
-- be medically precise throughout — this is clinical guidance that men will rely on`;
+Rules: preShave 3 steps, shaveProtocol 3 steps, postShave 3 steps, preventionProducts 2-3 items, all on Amazon within ${tier} budget.`;
 };
 
 const buildCheckinPrompt = (mood, profile, history, lang) => {
