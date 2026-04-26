@@ -1,3 +1,4 @@
+
 /**
  * SKINR — Claude API Proxy
  * netlify/functions/claude.js
@@ -27,7 +28,7 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({
         status: "SKINR function live",
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         apiKeyPresent: keyPresent,
         apiKeyPreview: keyStart,
       }),
@@ -50,7 +51,7 @@ exports.handler = async (event) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 2000,
         system: body.system || "",
         messages: body.messages,
