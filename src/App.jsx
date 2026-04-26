@@ -1700,111 +1700,42 @@ Return:
         </div>}
 
         {/* ── FOUNDER STORY FOOTER ── */}
-        <footer style={{
-          borderTop:"1px solid var(--border)",
-          marginTop:52,
-          paddingTop:40,
-          paddingBottom:32,
-          position:"relative",
-          overflow:"hidden",
-        }}>
-          {/* Top gold accent */}
-          <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",
-            background:"linear-gradient(90deg,transparent,var(--gold),transparent)"}}/>
+        <footer style={{borderTop:"1px solid var(--border)",marginTop:52,paddingTop:40,paddingBottom:32,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:"linear-gradient(90deg,transparent,var(--gold),transparent)"}}/>
 
-          {/* SKINR mark */}
+          {/* Section label */}
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
-            <div style={{width:1,height:32,background:"var(--gold)"}}/>
+            <div style={{width:1,height:32,background:"var(--gold)",flexShrink:0}}/>
             <div>
-              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,
-                color:"var(--gold)",textTransform:"uppercase",marginBottom:3}}>
-                The Story Behind SKINR
-              </div>
-              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,
-                fontStyle:"italic",color:"var(--white)"}}>
-                Why I Built This
-              </div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:3}}>The Story Behind SKINR</div>
+              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>Why I Built This</div>
             </div>
           </div>
 
-          {/* Story text */}
-          <div style={{fontFamily:"var(--fc)",fontSize:16,lineHeight:2,
-            color:"var(--soft)",fontStyle:"italic",marginBottom:28,
-            maxWidth:680,
-            borderLeft:"1px solid var(--border)",paddingLeft:20}}>
-            <p style={{marginBottom:18}}>
-              As a man who shaves every day, I had no idea what my blade was actually doing to my skin. 
-              Every morning — the same routine, the same razor, the same result. Razor bumps. 
-              Redness. Irritation that stayed for days. I went to barbers who made it worse. 
-              I changed products constantly — one after another, hoping something would work, 
-              never understanding why nothing did.
-            </p>
-            <p style={{marginBottom:18}}>
-              The answer, it turned out, was not in a better product. It was in understanding 
-              my skin. Once I learned my skin type, why my specific blade was causing bumps, 
-              which ingredients actually work for my biology, and how to build a routine in 
-              the right order — everything changed. Fewer bumps. Less redness. Better skin. 
-              And for the first time, genuine confidence about how I looked.
-            </p>
-            <p>
-              That is why SKINR exists. A single platform where every man — regardless of age, 
-              skin type, or budget — can understand his skin biology, make informed decisions 
-              about what goes on his face, and build a routine that actually works. 
-              Not someone else's routine. His.
-            </p>
+          {/* Story paragraphs */}
+          <div style={{fontFamily:"var(--fc)",fontSize:16,lineHeight:2,color:"var(--soft)",fontStyle:"italic",marginBottom:28,maxWidth:680,borderLeft:"1px solid var(--border)",paddingLeft:20}}>
+            <p style={{marginBottom:18}}>As a man who shaves every day, I had no idea what my blade was actually doing to my skin. Every morning — the same routine, the same razor, the same result. Razor bumps. Redness. Irritation that stayed for days. I went to barbers who made it worse. I changed products constantly — one after another, hoping something would work, never understanding why nothing did.</p>
+            <p style={{marginBottom:18}}>The answer, it turned out, was not in a better product. It was in understanding my skin. Once I learned my skin type, why my specific blade was causing bumps, which ingredients actually work for my biology, and how to build a routine in the right order — everything changed. Fewer bumps. Less redness. Better skin. And for the first time, genuine confidence about how I looked.</p>
+            <p>That is why SKINR exists. A single platform where every man — regardless of age, skin type, or budget — can understand his skin biology, make informed decisions about what goes on his face, and build a routine that actually works. Not someone else's routine. His.</p>
           </div>
 
-          {/* Mission statement */}
-          <div style={{
-            border:"1px solid var(--goldb)",
-            borderLeft:"3px solid var(--gold)",
-            padding:"18px 20px",
-            marginBottom:32,
-            background:"var(--gold3)",
-          }}>
-            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,
-              color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>
-              Our Mission
-            </div>
-            <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,
-              fontStyle:"italic",color:"var(--white)",lineHeight:1.5}}>
-              To be the one-stop platform where every man discovers his skin biology, 
-              makes the right decisions, and takes care of his skin — at every age.
-            </div>
+          {/* Mission */}
+          <div style={{border:"1px solid var(--goldb)",borderLeft:"3px solid var(--gold)",padding:"18px 20px",marginBottom:32,background:"var(--gold3)"}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>Our Mission</div>
+            <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",lineHeight:1.5}}>To be the one-stop platform where every man discovers his skin biology, makes the right decisions, and takes care of his skin — at every age.</div>
           </div>
 
-          {/* Footer links row */}
-          <div style={{
-            display:"flex",justifyContent:"space-between",alignItems:"center",
-            flexWrap:"wrap",gap:14,
-            borderTop:"1px solid var(--border)",
-            paddingTop:20,
-          }}>
-            {/* Left — brand */}
+          {/* Footer bar */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14,borderTop:"1px solid var(--border)",paddingTop:20}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{width:14,height:14,border:"1px solid var(--gold)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:6,color:"var(--gold)"}}>◆</div>
-              <span style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:900,
-                letterSpacing:3,color:"var(--white)",textTransform:"uppercase"}}>
-                SKINR
-              </span>
-              <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",
-                fontStyle:"italic"}}>
-                — getskinr.com
-              </span>
+              <div style={{width:14,height:14,border:"1px solid var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"var(--gold)"}}>◆</div>
+              <span style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:900,letterSpacing:3,color:"var(--white)",textTransform:"uppercase"}}>SKINR</span>
+              <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic"}}>— getskinr.com</span>
             </div>
-
-            {/* Right — legal */}
-            <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
-              fontStyle:"italic",textAlign:"right",lineHeight:1.7}}>
+            <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"right",lineHeight:1.7}}>
               <div>Free. Clinical. Built for Men.</div>
-              <div style={{marginTop:3}}>
-                Amazon affiliate links support this free service at no extra cost to you.
-              </div>
-              <div style={{marginTop:3}}>
-                © {new Date().getFullYear()} SKINR. All rights reserved.
-              </div>
+              <div style={{marginTop:3}}>Amazon affiliate links support this free service at no extra cost to you.</div>
+              <div style={{marginTop:3}}>© {new Date().getFullYear()} SKINR. All rights reserved.</div>
             </div>
           </div>
         </footer>
@@ -2667,3 +2598,8 @@ Return:
               <div className="modal-success-s">{t.emailSuccess}</div>
             </div>
           )}
+        </div>
+      </div>
+    </div>}
+  </>);
+}
