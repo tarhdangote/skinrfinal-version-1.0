@@ -294,7 +294,7 @@ const BASE_T = {
 // reliably within Netlify function timeout. Quiz protocols are already
 // generated in the user's language by Claude so quiz options can stay in English.
 
-const TRANSLATION_CACHE_VERSION = "v4";
+const TRANSLATION_CACHE_VERSION = "v5"; // includes quiz questions and options
 const getCacheKey = (langCode) => `skinr2:t_${langCode}_${TRANSLATION_CACHE_VERSION}`;
 
 // Only the 3 languages — EN (base), FR, ES
@@ -313,35 +313,45 @@ const translateAndCache = async (langCode) => {
   // Translate ONLY the ~20 strings users see before starting the quiz
   // Keep quiz options in English — the AI generates results in user's language anyway
   const minimal = {
+    // Hero and cards
     badge:BASE_T.badge,
-    heroTitle:BASE_T.heroTitle,
-    heroTitle2:BASE_T.heroTitle2,
-    heroBody:BASE_T.heroBody,
-    pathTitle:BASE_T.pathTitle,
-    pathSub:BASE_T.pathSub,
-    skinCardTitle:BASE_T.skinCardTitle,
-    skinCardDesc:BASE_T.skinCardDesc,
-    skinCardBtn:BASE_T.skinCardBtn,
-    shaveCardTitle:BASE_T.shaveCardTitle,
-    shaveCardDesc:BASE_T.shaveCardDesc,
-    shaveCardBtn:BASE_T.shaveCardBtn,
-    back:BASE_T.back,
-    next:BASE_T.next,
-    analyze:BASE_T.analyze,
-    analyzeShave:BASE_T.analyzeShave,
-    emailTitle:BASE_T.emailTitle,
-    emailDesc:BASE_T.emailDesc,
-    emailBtn:BASE_T.emailBtn,
-    emailSkip:BASE_T.emailSkip,
-    welcomeBack:BASE_T.welcomeBack,
-    continueJourney:BASE_T.continueJourney,
-    storyTitle:BASE_T.storyTitle,
-    storyP1:BASE_T.storyP1,
-    storyP2:BASE_T.storyP2,
-    storyP3:BASE_T.storyP3,
-    missionLabel:BASE_T.missionLabel,
-    missionText:BASE_T.missionText,
+    heroTitle:BASE_T.heroTitle, heroTitle2:BASE_T.heroTitle2, heroBody:BASE_T.heroBody,
+    pathTitle:BASE_T.pathTitle, pathSub:BASE_T.pathSub,
+    skinCardTitle:BASE_T.skinCardTitle, skinCardDesc:BASE_T.skinCardDesc, skinCardBtn:BASE_T.skinCardBtn,
+    shaveCardTitle:BASE_T.shaveCardTitle, shaveCardDesc:BASE_T.shaveCardDesc, shaveCardBtn:BASE_T.shaveCardBtn,
+    // Navigation and buttons
+    back:BASE_T.back, next:BASE_T.next, analyze:BASE_T.analyze, analyzeShave:BASE_T.analyzeShave,
     nav:BASE_T.nav,
+    // Email and welcome
+    emailTitle:BASE_T.emailTitle, emailDesc:BASE_T.emailDesc,
+    emailBtn:BASE_T.emailBtn, emailSkip:BASE_T.emailSkip,
+    welcomeBack:BASE_T.welcomeBack, continueJourney:BASE_T.continueJourney,
+    // Founder story
+    storyTitle:BASE_T.storyTitle, storyP1:BASE_T.storyP1,
+    storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
+    missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
+    // Skin quiz questions
+    q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts,
+    q_sensitivity:BASE_T.q_sensitivity, q_age:BASE_T.q_age,
+    q_concern:BASE_T.q_concern, q_budget:BASE_T.q_budget,
+    quizHints:BASE_T.quizHints,
+    opts_feel:BASE_T.opts_feel, opts_breakouts:BASE_T.opts_breakouts,
+    opts_sensitivity:BASE_T.opts_sensitivity, opts_age:BASE_T.opts_age,
+    opts_concern:BASE_T.opts_concern, opts_budget:BASE_T.opts_budget,
+    // Shave quiz questions (labels only — v values never translated)
+    shaveQ1:BASE_T.shaveQ1, shaveQ2:BASE_T.shaveQ2, shaveQ3:BASE_T.shaveQ3,
+    shaveQ4:BASE_T.shaveQ4, shaveQ5:BASE_T.shaveQ5,
+    shaveQ6:BASE_T.shaveQ6, shaveQ7:BASE_T.shaveQ7,
+    s1:BASE_T.shaveOpts1.map(o=>o.label),
+    s2:BASE_T.shaveOpts2.map(o=>o.label),
+    s3:BASE_T.shaveOpts3.map(o=>o.label),
+    s4:BASE_T.shaveOpts4.map(o=>o.label),
+    s5:BASE_T.shaveOpts5.map(o=>o.label),
+    s6:BASE_T.shaveOpts6.map(o=>o.label),
+    s7:BASE_T.shaveOpts7.map(o=>o.label),
+    // Moods
+    ml:BASE_T.moods.map(o=>o.label),
+    md:BASE_T.moods.map(o=>o.desc),
   };
 
   try {
@@ -349,7 +359,7 @@ const translateAndCache = async (langCode) => {
 
 ${JSON.stringify(minimal)}`;
 
-    const raw = await callAI([{role:"user", content:prompt}], "", 3000);
+    const raw = await callAI([{role:"user", content:prompt}], "", 4000);
     console.log("Translation for " + langCode + ": " + raw.length + " chars");
 
     const parsed = parseJSON(raw);
@@ -361,6 +371,26 @@ ${JSON.stringify(minimal)}`;
     // Merge translated strings over BASE_T — everything else stays English
     const result = {...BASE_T, ...parsed};
     if(parsed.nav) result.nav = {...BASE_T.nav, ...parsed.nav};
+
+    // Reconstruct shaveOpts — v values preserved from BASE_T, labels translated
+    ['1','2','3','4','5','6','7'].forEach(n => {
+      const labels = parsed[`s${n}`];
+      if(labels?.length) {
+        result[`shaveOpts${n}`] = BASE_T[`shaveOpts${n}`].map((o,i) => ({
+          ...o, label: labels[i] || o.label
+        }));
+      }
+    });
+
+    // Reconstruct moods
+    if(parsed.ml?.length && parsed.md?.length) {
+      result.moods = BASE_T.moods.map((m,i) => ({
+        ...m,
+        label: parsed.ml[i] || m.label,
+        desc:  parsed.md[i] || m.desc,
+      }));
+    }
+
     result.appName = "SKINR";
 
     LS.set(getCacheKey(langCode), result);
@@ -1775,6 +1805,21 @@ Return:
       {/* ── RESULTS ── */}
       {view==="results"&&profile&&<div className="wrap fade-in">
         <div className="res-wrap">
+          {/* Language mismatch — offer to regenerate in current language */}
+          {profile.lang && profile.lang !== lang && (
+            <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+              padding:"12px 16px",marginBottom:12,display:"flex",
+              alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+              <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--gold)",fontStyle:"italic"}}>
+                This analysis was generated in English. Regenerate it in {LANGUAGES.find(l=>l.code===lang)?.native}?
+              </div>
+              <button className="btn btn-p" style={{padding:"8px 16px",fontSize:11,flexShrink:0}}
+                onClick={startSkinQuiz}>
+                Retake in {LANGUAGES.find(l=>l.code===lang)?.native}
+              </button>
+            </div>
+          )}
+
           <div className="prof-banner">
             <div className="p-code">{t.analysisComplete} — {profile.code}</div>
             <div className="p-type">{profile.skinType}</div>
