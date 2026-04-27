@@ -3,9 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#060606" />
+    <meta name="theme-color" content="#050505" />
     <title>SKINR — AI Skincare & Shaving Protocol for Men</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      /* Prevent white flash before React mounts */
+      *{box-sizing:border-box;margin:0;padding:0;}
+      html,body,#root{
+        background:#050505;
+        min-height:100vh;
+        color:#F2EEE6;
+        font-family:'Josefin Sans',sans-serif;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
