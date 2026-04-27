@@ -64,12 +64,12 @@ const SK = {
 };
 
 // ── API — calls Netlify Function proxy (key never in browser) ───────────────
-const callAI = async (messages, system="") => {
+const callAI = async (messages, system="", maxTokens=1500) => {
   try {
     const res = await fetch("/.netlify/functions/claude", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, system }),
+      body: JSON.stringify({ messages, system, maxTokens }),
     });
     if(!res.ok){
       console.error("callAI HTTP error:", res.status, res.statusText);
@@ -77,7 +77,7 @@ const callAI = async (messages, system="") => {
     }
     const data = await res.json();
     const text = data.content?.map(c => c.text||"").join("") || "";
-    if(!text) console.error("callAI: empty response from API", JSON.stringify(data).slice(0,200));
+    if(!text) console.error("callAI: empty response", JSON.stringify(data).slice(0,200));
     return text;
   } catch(err){
     console.error("callAI exception:", err.message);
@@ -283,91 +283,91 @@ const buildTranslationPrompt = (langCode) => {
   const langInfo = LANGUAGES.find(l => l.code === langCode);
   const langName = langInfo?.native || langCode;
 
-  // Flatten to simple key:value pairs for translation
-  const flat = {};
-  const flattenForTranslation = (obj, prefix='') => {
-    for(const [k,v] of Object.entries(obj)){
-      const key = prefix ? `${prefix}.${k}` : k;
-      if(k === 'appName') continue; // Never translate brand name
-      if(typeof v === 'string') flat[key] = v;
-      else if(Array.isArray(v) && typeof v[0] === 'string') flat[key] = v;
-      else if(Array.isArray(v) && typeof v[0] === 'object') {
-        // moods, shaveOpts arrays
-        v.forEach((item,i) => {
-          if(item.label) flat[`${key}[${i}].label`] = item.label;
-          if(item.desc) flat[`${key}[${i}].desc`] = item.desc;
-        });
-      } else if(typeof v === 'object' && !Array.isArray(v)) {
-        flattenForTranslation(v, key);
-      }
-    }
+  // Only translate essential visible UI strings — not quiz options (too large)
+  // Quiz options are already in English and Claude generates protocols in the user's language anyway
+  const essential = {
+    badge: BASE_T.badge,
+    heroTitle: BASE_T.heroTitle,
+    heroTitle2: BASE_T.heroTitle2,
+    heroBody: BASE_T.heroBody,
+    pathTitle: BASE_T.pathTitle,
+    pathSub: BASE_T.pathSub,
+    skinCardTitle: BASE_T.skinCardTitle,
+    skinCardDesc: BASE_T.skinCardDesc,
+    skinCardBtn: BASE_T.skinCardBtn,
+    shaveCardTitle: BASE_T.shaveCardTitle,
+    shaveCardDesc: BASE_T.shaveCardDesc,
+    shaveCardBtn: BASE_T.shaveCardBtn,
+    back: BASE_T.back, next: BASE_T.next, analyze: BASE_T.analyze,
+    analyzing: BASE_T.analyzing,
+    morning: BASE_T.morning, evening: BASE_T.evening,
+    whyThisWorks: BASE_T.whyThisWorks, hideScience: BASE_T.hideScience,
+    findProduct: BASE_T.findProduct,
+    emailTitle: BASE_T.emailTitle, emailDesc: BASE_T.emailDesc,
+    emailBtn: BASE_T.emailBtn, emailSkip: BASE_T.emailSkip,
+    emailSuccess: BASE_T.emailSuccess,
+    coachTitle: BASE_T.coachTitle, coachSub: BASE_T.coachSub,
+    coachOnline: BASE_T.coachOnline,
+    youLabel: BASE_T.youLabel, coachLabel: BASE_T.coachLabel,
+    inputPlaceholder: BASE_T.inputPlaceholder,
+    checkinTitle: BASE_T.checkinTitle, checkinSub: BASE_T.checkinSub,
+    todayStatus: BASE_T.todayStatus, submitCheckin: BASE_T.submitCheckin,
+    submitting: BASE_T.submitting, progressHistory: BASE_T.progressHistory,
+    noHistory: BASE_T.noHistory,
+    shaveTitle: BASE_T.shaveTitle, shaveSub: BASE_T.shaveSub,
+    analyzeShave: BASE_T.analyzeShave,
+    bladeSection: BASE_T.bladeSection,
+    preShave: BASE_T.preShave, duringShave: BASE_T.duringShave, postShave: BASE_T.postShave,
+    preventionProducts: BASE_T.preventionProducts, treatmentProducts: BASE_T.treatmentProducts,
+    optionalTitle: BASE_T.optionalTitle, optionalSub: BASE_T.optionalSub,
+    biologyTitle: BASE_T.biologyTitle, routineCardTitle: BASE_T.routineCardTitle,
+    unlockBtn: BASE_T.unlockBtn, comboBtn: BASE_T.comboBtn,
+    enterCode: BASE_T.enterCode, unlockCodeBtn: BASE_T.unlockCodeBtn,
+    welcomeBack: BASE_T.welcomeBack, continueJourney: BASE_T.continueJourney,
+    viewProtocol: BASE_T.viewProtocol, consultCoach: BASE_T.consultCoach,
+    newAnalysis: BASE_T.newAnalysis, newShave: BASE_T.newShave,
+    disclaimer: BASE_T.disclaimer,
+    nav: BASE_T.nav,
+    communityTitle: BASE_T.communityTitle, communitySub: BASE_T.communitySub,
+    communityPost: BASE_T.communityPost, communityFeed: BASE_T.communityFeed,
+    communityShareTitle: BASE_T.communityShareTitle,
+    communityShareBtn: BASE_T.communityShareBtn, communityCancel: BASE_T.communityCancel,
+    guidesTitle: BASE_T.guidesTitle, guidesSub: BASE_T.guidesSub,
+    guideBuyBtn: BASE_T.guideBuyBtn, guideComingSoon: BASE_T.guideComingSoon,
+    translating: BASE_T.translating,
   };
-  flattenForTranslation(BASE_T);
 
-  return `You are a professional translator specialising in men's health, grooming, and dermatology content.
-Translate ALL values in the following JSON from English to ${langName} (language code: ${langCode}).
+  return `Translate ALL values in this JSON from English to ${langName} (${langCode}).
+RULES: Never translate "SKINR". Keep symbols ◆▲■▼→← as-is. ${langCode==="pt"?"Use Brazilian Portuguese.":""} ${langCode==="ar"?"Use Modern Standard Arabic.":""} Return ONLY valid JSON, no markdown, no backticks, no explanation.
 
-CRITICAL RULES:
-- "SKINR" must NEVER be translated — keep exactly as "SKINR"
-- Keep all punctuation, arrows (→ ←), symbols (◆ ▲ ■ ▼), and emoji exactly as-is
-- Keep all technical/medical terms accurate and natural in ${langName}
-- If ${langCode} is "ar", use formal Modern Standard Arabic appropriate for health content
-- If ${langCode} is "pt", use Brazilian Portuguese (not European Portuguese)
-- Preserve the clinical, authoritative tone — this is medical guidance, not marketing copy
-- Array values must stay as arrays in the same order
-- Return ONLY valid JSON — no markdown, no explanation
-
-JSON to translate:
-${JSON.stringify(flat, null, 2)}`;
+${JSON.stringify(essential)}`;
 };
 
 const translateAndCache = async (langCode) => {
-  // Check cache first
   const cached = LS.get(getCacheKey(langCode));
   if(cached) return cached;
 
   try {
-    const raw = await callAI([{role:"user", content:buildTranslationPrompt(langCode)}]);
+    // Request 4000 tokens — translation needs more space than protocols
+    const raw = await callAI([{role:"user", content:buildTranslationPrompt(langCode)}], "", 4000);
+    console.log("Translation raw length:", raw.length, "for", langCode);
     const parsed = parseJSON(raw);
-    if(!parsed) return null;
-
-    // Reconstruct the full T object from flat translated keys
-    const reconstructed = JSON.parse(JSON.stringify(BASE_T)); // deep clone
-
-    const setNested = (obj, path, value) => {
-      const parts = path.split('.');
-      let cur = obj;
-      for(let i=0; i<parts.length-1; i++){
-        const p = parts[i];
-        if(!(p in cur)) cur[p] = {};
-        cur = cur[p];
-      }
-      cur[parts[parts.length-1]] = value;
-    };
-
-    for(const [key, val] of Object.entries(parsed)){
-      // Handle array item notation: moods[0].label
-      const arrMatch = key.match(/^(.+)\[(\d+)\]\.(.+)$/);
-      if(arrMatch){
-        const [,arrKey,idx,prop] = arrMatch;
-        const parts = arrKey.split('.');
-        let cur = reconstructed;
-        for(const p of parts){ if(cur[p] !== undefined) cur = cur[p]; }
-        if(Array.isArray(cur) && cur[parseInt(idx)]){
-          cur[parseInt(idx)][prop] = val;
-        }
-      } else {
-        setNested(reconstructed, key, val);
-      }
+    if(!parsed){
+      console.error("Translation parse failed for", langCode, "raw:", raw.slice(0,200));
+      return null;
     }
 
-    // Always keep brand name untranslated
-    reconstructed.appName = "SKINR";
+    // Merge translated strings over BASE_T — keeps untranslated keys as English fallback
+    const result = {...BASE_T, ...parsed};
+    // Restore nested nav if translated
+    if(parsed.nav) result.nav = {...BASE_T.nav, ...parsed.nav};
+    // Always keep appName as SKINR
+    result.appName = "SKINR";
 
-    LS.set(getCacheKey(langCode), reconstructed);
-    return reconstructed;
+    LS.set(getCacheKey(langCode), result);
+    return result;
   } catch(e) {
-    console.error("Translation failed:", e);
+    console.error("translateAndCache error:", e.message);
     return null;
   }
 };
@@ -453,12 +453,12 @@ const CSS = `
 
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#060606; --s:#0A0A0A; --card:#0E0E0E; --card2:#131313;
-  --border:#1C1C1C; --border2:#2A2A2A;
-  --gold:#C5A028; --gold2:#E8CC70; --gold3:rgba(197,160,40,0.07);
-  --goldb:rgba(197,160,40,0.2); --goldbr:rgba(197,160,40,0.4);
-  --white:#F0EBE1; --cream:#D4CFC5; --soft:#9A9088; --muted:#4A4640;
-  --red:#A83030; --green:#3A7A50; --amber:#C88020; --purple:#7C5CBF;
+  --bg:#050505; --s:#0C0C0C; --card:#101010; --card2:#161616;
+  --border:#1E1E1E; --border2:#2C2C2C;
+  --gold:#B8972A; --gold2:#D4AF50; --gold3:rgba(184,151,42,0.08);
+  --goldb:rgba(184,151,42,0.22); --goldbr:rgba(184,151,42,0.45);
+  --white:#F2EEE6; --cream:#D8D2C8; --soft:#A09890; --muted:#4E4844;
+  --red:#9E2B2B; --green:#2E6B46; --amber:#B87820; --purple:#7254B8;
   --fh:'Playfair Display',serif; --fc:'Cormorant Garamond',serif;
   --fb:'Josefin Sans',sans-serif; --fm:'DM Mono',monospace;
 }
@@ -466,12 +466,12 @@ html,body{height:100%;background:var(--bg);}
 .app{min-height:100vh;background:var(--bg);color:var(--white);font-family:var(--fb);
   display:flex;flex-direction:column;align-items:center;padding:0 0 120px;
   position:relative;overflow-x:hidden;}
-.app::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.022;
+.app::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.018;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:200px 200px;}
 .bg-vig{position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 120% 80% at 50% 0%,rgba(197,160,40,0.025),transparent 60%),
-  radial-gradient(ellipse 100% 100% at 50% 100%,rgba(0,0,0,0.6),transparent 70%);}
+  background:radial-gradient(ellipse 130% 70% at 50% 0%,rgba(184,151,42,0.03),transparent 55%),
+  radial-gradient(ellipse 100% 100% at 50% 100%,rgba(0,0,0,0.5),transparent 70%);}
 
 /* NAV */
 .nav{width:100%;max-width:920px;padding:0 20px;display:flex;align-items:stretch;
@@ -1105,6 +1105,8 @@ export default function SkinrApp() {
   const switchLang = async (l) => {
     setLang(l); LS.set(SK.lang, l); setLangOpen(false);
     document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
+    // Always clear cache on manual switch to get fresh translation
+    if(l !== "en") LS.del(getCacheKey(l));
     await loadTranslation(l);
   };
 
