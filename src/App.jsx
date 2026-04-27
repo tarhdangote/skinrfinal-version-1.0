@@ -108,12 +108,8 @@ const parseJSON = (raw) => {
 // ── LANGUAGE CONFIG ───────────────────────────────────────────────────────────
 const LANGUAGES = [
   { code:"en", label:"English",    native:"English",    dir:"ltr" },
-  { code:"es", label:"Spanish",    native:"Español",    dir:"ltr" },
   { code:"fr", label:"French",     native:"Français",   dir:"ltr" },
-  { code:"pt", label:"Portuguese", native:"Português",  dir:"ltr" },
-  { code:"de", label:"German",     native:"Deutsch",    dir:"ltr" },
-  { code:"ar", label:"Arabic",     native:"العربية",    dir:"rtl" },
-  { code:"ja", label:"Japanese",   native:"日本語",      dir:"ltr" },
+  { code:"es", label:"Spanish",    native:"Español",    dir:"ltr" },
 ];
 
 // ── BASE TRANSLATIONS (English) ───────────────────────────────────────────────
@@ -293,343 +289,89 @@ const BASE_T = {
 };
 
 // ── TRANSLATION ENGINE ────────────────────────────────────────────────────────
-// Translates all UI strings via AI. Result cached in localStorage per language.
-// Called once per device per language — never again unless BASE_T changes.
+// Translates UI strings via AI for FR and ES (3 languages total).
+// Only translates ~20 essential visible strings — small enough to complete
+// reliably within Netlify function timeout. Quiz protocols are already
+// generated in the user's language by Claude so quiz options can stay in English.
 
-const TRANSLATION_CACHE_VERSION = "v3"; // Bumped — includes quiz questions, founder story, UI labels
-
+const TRANSLATION_CACHE_VERSION = "v4";
 const getCacheKey = (langCode) => `skinr2:t_${langCode}_${TRANSLATION_CACHE_VERSION}`;
 
-const buildTranslationPrompt = (langCode) => {
-  const langInfo = LANGUAGES.find(l => l.code === langCode);
-  const langName = langInfo?.native || langCode;
+// Only the 3 languages — EN (base), FR, ES
+const SUPPORTED_LANGS = ["en", "fr", "es"];
 
-  // ONLY translate flat string values — no arrays of objects (they break JSON parsing)
-  // shaveOpts labels are extracted separately and merged back after translation
-  const strings = {
-    badge:BASE_T.badge, heroTitle:BASE_T.heroTitle, heroTitle2:BASE_T.heroTitle2,
-    heroBody:BASE_T.heroBody, pathTitle:BASE_T.pathTitle, pathSub:BASE_T.pathSub,
-    skinCardTitle:BASE_T.skinCardTitle, skinCardDesc:BASE_T.skinCardDesc, skinCardBtn:BASE_T.skinCardBtn,
-    shaveCardTitle:BASE_T.shaveCardTitle, shaveCardDesc:BASE_T.shaveCardDesc, shaveCardBtn:BASE_T.shaveCardBtn,
-    back:BASE_T.back, next:BASE_T.next, analyze:BASE_T.analyze, analyzing:BASE_T.analyzing,
-    morning:BASE_T.morning, evening:BASE_T.evening,
-    whyThisWorks:BASE_T.whyThisWorks, hideScience:BASE_T.hideScience, findProduct:BASE_T.findProduct,
-    emailTitle:BASE_T.emailTitle, emailDesc:BASE_T.emailDesc, emailBtn:BASE_T.emailBtn,
-    emailSkip:BASE_T.emailSkip, emailSuccess:BASE_T.emailSuccess,
-    coachTitle:BASE_T.coachTitle, coachSub:BASE_T.coachSub, coachOnline:BASE_T.coachOnline,
-    youLabel:BASE_T.youLabel, coachLabel:BASE_T.coachLabel, inputPlaceholder:BASE_T.inputPlaceholder,
-    checkinTitle:BASE_T.checkinTitle, checkinSub:BASE_T.checkinSub, todayStatus:BASE_T.todayStatus,
-    submitCheckin:BASE_T.submitCheckin, submitting:BASE_T.submitting,
-    progressHistory:BASE_T.progressHistory, noHistory:BASE_T.noHistory,
-    shaveTitle:BASE_T.shaveTitle, shaveSub:BASE_T.shaveSub, analyzeShave:BASE_T.analyzeShave,
-    bladeSection:BASE_T.bladeSection, preShave:BASE_T.preShave,
-    duringShave:BASE_T.duringShave, postShave:BASE_T.postShave,
-    preventionProducts:BASE_T.preventionProducts, treatmentProducts:BASE_T.treatmentProducts,
-    optionalTitle:BASE_T.optionalTitle, optionalSub:BASE_T.optionalSub,
-    biologyTitle:BASE_T.biologyTitle, routineCardTitle:BASE_T.routineCardTitle,
-    unlockBtn:BASE_T.unlockBtn, comboBtn:BASE_T.comboBtn,
-    enterCode:BASE_T.enterCode, unlockCodeBtn:BASE_T.unlockCodeBtn,
-    welcomeBack:BASE_T.welcomeBack, continueJourney:BASE_T.continueJourney,
-    viewProtocol:BASE_T.viewProtocol, consultCoach:BASE_T.consultCoach,
-    newAnalysis:BASE_T.newAnalysis, newShave:BASE_T.newShave,
-    disclaimer:BASE_T.disclaimer, lastAnalyzed:BASE_T.lastAnalyzed,
-    communityTitle:BASE_T.communityTitle, communitySub:BASE_T.communitySub,
-    communityPost:BASE_T.communityPost, communityFeed:BASE_T.communityFeed,
-    communityShareTitle:BASE_T.communityShareTitle, communityShareBtn:BASE_T.communityShareBtn,
-    communityCancel:BASE_T.communityCancel, communityPosted:BASE_T.communityPosted,
-    communityLike:BASE_T.communityLike, communityEmpty:BASE_T.communityEmpty,
-    discordTitle:BASE_T.discordTitle, discordSub:BASE_T.discordSub, discordBtn:BASE_T.discordBtn,
-    guidesTitle:BASE_T.guidesTitle, guidesSub:BASE_T.guidesSub,
-    guideBuyBtn:BASE_T.guideBuyBtn, guideComingSoon:BASE_T.guideComingSoon,
-    storyLabel:BASE_T.storyLabel, storyTitle:BASE_T.storyTitle,
-    storyP1:BASE_T.storyP1, storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
-    missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
-    skinScore:BASE_T.skinScore, consistencyRating:BASE_T.consistencyRating,
-    weekOneLabel:BASE_T.weekOneLabel, expectedTimeline:BASE_T.expectedTimeline,
-    whenDermatologist:BASE_T.whenDermatologist, criticalRuleLabel:BASE_T.criticalRuleLabel,
-    clinicalAssessmentLabel:BASE_T.clinicalAssessmentLabel, avoidLabel:BASE_T.avoidLabel,
-    expertInsight:BASE_T.expertInsight, analysisComplete:BASE_T.analysisComplete,
-    yourProtocol:BASE_T.yourProtocol, shaveCritical:BASE_T.shaveCritical,
-    translating:BASE_T.translating, copyright:BASE_T.copyright,
-    // String arrays only
-    nav:BASE_T.nav, suggestions:BASE_T.suggestions, loadSteps:BASE_T.loadSteps,
-    quizHints:BASE_T.quizHints, opts_feel:BASE_T.opts_feel, opts_breakouts:BASE_T.opts_breakouts,
-    opts_sensitivity:BASE_T.opts_sensitivity, opts_age:BASE_T.opts_age,
-    opts_concern:BASE_T.opts_concern, opts_budget:BASE_T.opts_budget,
-    q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts, q_sensitivity:BASE_T.q_sensitivity,
-    q_age:BASE_T.q_age, q_concern:BASE_T.q_concern, q_budget:BASE_T.q_budget,
-    shaveQ1:BASE_T.shaveQ1, shaveQ2:BASE_T.shaveQ2, shaveQ3:BASE_T.shaveQ3,
-    shaveQ4:BASE_T.shaveQ4, shaveQ5:BASE_T.shaveQ5, shaveQ6:BASE_T.shaveQ6, shaveQ7:BASE_T.shaveQ7,
-    // Extract ONLY labels from shaveOpts (v values must never be translated)
-    _shaveOpts1_labels:BASE_T.shaveOpts1.map(o=>o.label),
-    _shaveOpts2_labels:BASE_T.shaveOpts2.map(o=>o.label),
-    _shaveOpts3_labels:BASE_T.shaveOpts3.map(o=>o.label),
-    _shaveOpts4_labels:BASE_T.shaveOpts4.map(o=>o.label),
-    _shaveOpts5_labels:BASE_T.shaveOpts5.map(o=>o.label),
-    _shaveOpts6_labels:BASE_T.shaveOpts6.map(o=>o.label),
-    _shaveOpts7_labels:BASE_T.shaveOpts7.map(o=>o.label),
-    _moods_labels:BASE_T.moods.map(o=>o.label),
-    _moods_descs:BASE_T.moods.map(o=>o.desc),
-  };
-
-  return `Translate the string values in this JSON from English to ${langName} (${langCode}).
-STRICT RULES: "SKINR" never translated. Keep ◆▲■▼→← exactly. ${langCode==="pt"?"Brazilian Portuguese only.":""} ${langCode==="ar"?"Modern Standard Arabic.":""} Return ONLY raw JSON — absolutely no markdown, no backticks, no code fences, no explanation. Start your response with { and end with }.
-
-${JSON.stringify(strings)}`;
-};
-
-// ── HARDCODED CORE TRANSLATIONS (FR + ES) ─────────────────────────────────────
-// These are pre-translated — no API call needed. Instant, reliable, always works.
-// AI translation is used as fallback for PT, DE, AR, JA.
 const translateAndCache = async (langCode) => {
+  if(langCode === "en") return BASE_T;
+  if(!SUPPORTED_LANGS.includes(langCode)) return BASE_T;
+
   const cached = LS.get(getCacheKey(langCode));
   if(cached) return cached;
 
   const langInfo = LANGUAGES.find(l => l.code === langCode);
   const langName = langInfo?.native || langCode;
 
-  // Translation is split into TWO smaller calls to stay within token limits
-  // Call 1: UI strings (navigation, buttons, labels, hero, story)
-  // Call 2: Quiz questions and options
-  // Each call is small enough to complete reliably within 4000 tokens
-
-  const RULES = `Translate from English to ${langName} (${langCode}). STRICT: Never translate "SKINR". Keep ◆▲■▼→← exactly. ${langCode==="pt"?"Brazilian Portuguese only.":""} ${langCode==="ar"?"Modern Standard Arabic only.":""} Return ONLY raw JSON starting with { — no markdown, no backticks, no explanation.`;
-
-  // ── CALL 1: UI strings ──
-  const ui = {
-    badge:BASE_T.badge, heroTitle:BASE_T.heroTitle, heroTitle2:BASE_T.heroTitle2,
-    heroBody:BASE_T.heroBody, pathTitle:BASE_T.pathTitle, pathSub:BASE_T.pathSub,
-    skinCardTitle:BASE_T.skinCardTitle, skinCardDesc:BASE_T.skinCardDesc, skinCardBtn:BASE_T.skinCardBtn,
-    shaveCardTitle:BASE_T.shaveCardTitle, shaveCardDesc:BASE_T.shaveCardDesc, shaveCardBtn:BASE_T.shaveCardBtn,
-    back:BASE_T.back, next:BASE_T.next, analyze:BASE_T.analyze, analyzing:BASE_T.analyzing,
-    morning:BASE_T.morning, evening:BASE_T.evening,
-    whyThisWorks:BASE_T.whyThisWorks, hideScience:BASE_T.hideScience, findProduct:BASE_T.findProduct,
-    emailTitle:BASE_T.emailTitle, emailDesc:BASE_T.emailDesc, emailBtn:BASE_T.emailBtn,
-    emailSkip:BASE_T.emailSkip, emailSuccess:BASE_T.emailSuccess,
-    coachTitle:BASE_T.coachTitle, coachSub:BASE_T.coachSub, coachOnline:BASE_T.coachOnline,
-    youLabel:BASE_T.youLabel, coachLabel:BASE_T.coachLabel, inputPlaceholder:BASE_T.inputPlaceholder,
-    checkinTitle:BASE_T.checkinTitle, checkinSub:BASE_T.checkinSub, todayStatus:BASE_T.todayStatus,
-    submitCheckin:BASE_T.submitCheckin, submitting:BASE_T.submitting,
-    progressHistory:BASE_T.progressHistory, noHistory:BASE_T.noHistory,
-    shaveTitle:BASE_T.shaveTitle, shaveSub:BASE_T.shaveSub, analyzeShave:BASE_T.analyzeShave,
-    bladeSection:BASE_T.bladeSection, preShave:BASE_T.preShave,
-    duringShave:BASE_T.duringShave, postShave:BASE_T.postShave,
-    preventionProducts:BASE_T.preventionProducts, treatmentProducts:BASE_T.treatmentProducts,
-    optionalTitle:BASE_T.optionalTitle, biologyTitle:BASE_T.biologyTitle,
-    routineCardTitle:BASE_T.routineCardTitle, unlockBtn:BASE_T.unlockBtn, comboBtn:BASE_T.comboBtn,
-    enterCode:BASE_T.enterCode, unlockCodeBtn:BASE_T.unlockCodeBtn,
-    welcomeBack:BASE_T.welcomeBack, continueJourney:BASE_T.continueJourney,
-    viewProtocol:BASE_T.viewProtocol, consultCoach:BASE_T.consultCoach,
-    newAnalysis:BASE_T.newAnalysis, newShave:BASE_T.newShave,
-    disclaimer:BASE_T.disclaimer, lastAnalyzed:BASE_T.lastAnalyzed,
-    nav:BASE_T.nav, suggestions:BASE_T.suggestions,
-    communityTitle:BASE_T.communityTitle, communitySub:BASE_T.communitySub,
-    communityPost:BASE_T.communityPost, communityFeed:BASE_T.communityFeed,
-    communityShareTitle:BASE_T.communityShareTitle, communityShareBtn:BASE_T.communityShareBtn,
-    communityCancel:BASE_T.communityCancel, communityPosted:BASE_T.communityPosted,
-    communityLike:BASE_T.communityLike, communityEmpty:BASE_T.communityEmpty,
-    discordTitle:BASE_T.discordTitle, discordSub:BASE_T.discordSub, discordBtn:BASE_T.discordBtn,
-    guidesTitle:BASE_T.guidesTitle, guidesSub:BASE_T.guidesSub,
-    guideBuyBtn:BASE_T.guideBuyBtn, guideComingSoon:BASE_T.guideComingSoon,
-    storyLabel:BASE_T.storyLabel, storyTitle:BASE_T.storyTitle,
-    storyP1:BASE_T.storyP1, storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
-    missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
-    skinScore:BASE_T.skinScore, consistencyRating:BASE_T.consistencyRating,
-    weekOneLabel:BASE_T.weekOneLabel, expectedTimeline:BASE_T.expectedTimeline,
-    whenDermatologist:BASE_T.whenDermatologist, criticalRuleLabel:BASE_T.criticalRuleLabel,
-    clinicalAssessmentLabel:BASE_T.clinicalAssessmentLabel, avoidLabel:BASE_T.avoidLabel,
-    expertInsight:BASE_T.expertInsight, analysisComplete:BASE_T.analysisComplete,
-    yourProtocol:BASE_T.yourProtocol, shaveCritical:BASE_T.shaveCritical,
-    translating:BASE_T.translating, copyright:BASE_T.copyright,
-    loadSteps:BASE_T.loadSteps,
-  };
-
-  // ── CALL 2: Quiz questions and options ──
-  const quiz = {
-    q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts,
-    q_sensitivity:BASE_T.q_sensitivity, q_age:BASE_T.q_age,
-    q_concern:BASE_T.q_concern, q_budget:BASE_T.q_budget,
-    opts_feel:BASE_T.opts_feel, opts_breakouts:BASE_T.opts_breakouts,
-    opts_sensitivity:BASE_T.opts_sensitivity, opts_age:BASE_T.opts_age,
-    opts_concern:BASE_T.opts_concern, opts_budget:BASE_T.opts_budget,
-    quizHints:BASE_T.quizHints,
-    shaveQ1:BASE_T.shaveQ1, shaveQ2:BASE_T.shaveQ2, shaveQ3:BASE_T.shaveQ3,
-    shaveQ4:BASE_T.shaveQ4, shaveQ5:BASE_T.shaveQ5, shaveQ6:BASE_T.shaveQ6, shaveQ7:BASE_T.shaveQ7,
-    _s1:BASE_T.shaveOpts1.map(o=>o.label), _s2:BASE_T.shaveOpts2.map(o=>o.label),
-    _s3:BASE_T.shaveOpts3.map(o=>o.label), _s4:BASE_T.shaveOpts4.map(o=>o.label),
-    _s5:BASE_T.shaveOpts5.map(o=>o.label), _s6:BASE_T.shaveOpts6.map(o=>o.label),
-    _s7:BASE_T.shaveOpts7.map(o=>o.label),
-    _ml:BASE_T.moods.map(o=>o.label), _md:BASE_T.moods.map(o=>o.desc),
+  // Translate ONLY the ~20 strings users see before starting the quiz
+  // Keep quiz options in English — the AI generates results in user's language anyway
+  const minimal = {
+    badge:BASE_T.badge,
+    heroTitle:BASE_T.heroTitle,
+    heroTitle2:BASE_T.heroTitle2,
+    heroBody:BASE_T.heroBody,
+    pathTitle:BASE_T.pathTitle,
+    pathSub:BASE_T.pathSub,
+    skinCardTitle:BASE_T.skinCardTitle,
+    skinCardDesc:BASE_T.skinCardDesc,
+    skinCardBtn:BASE_T.skinCardBtn,
+    shaveCardTitle:BASE_T.shaveCardTitle,
+    shaveCardDesc:BASE_T.shaveCardDesc,
+    shaveCardBtn:BASE_T.shaveCardBtn,
+    back:BASE_T.back,
+    next:BASE_T.next,
+    analyze:BASE_T.analyze,
+    analyzeShave:BASE_T.analyzeShave,
+    emailTitle:BASE_T.emailTitle,
+    emailDesc:BASE_T.emailDesc,
+    emailBtn:BASE_T.emailBtn,
+    emailSkip:BASE_T.emailSkip,
+    welcomeBack:BASE_T.welcomeBack,
+    continueJourney:BASE_T.continueJourney,
+    storyTitle:BASE_T.storyTitle,
+    storyP1:BASE_T.storyP1,
+    storyP2:BASE_T.storyP2,
+    storyP3:BASE_T.storyP3,
+    missionLabel:BASE_T.missionLabel,
+    missionText:BASE_T.missionText,
+    nav:BASE_T.nav,
   };
 
   try {
-    // Run both calls in parallel for speed
-    const [rawUI, rawQuiz] = await Promise.all([
-      callAI([{role:"user", content:`${RULES}\n\n${JSON.stringify(ui)}`}], "", 4000),
-      callAI([{role:"user", content:`${RULES}\n\n${JSON.stringify(quiz)}`}], "", 3000),
-    ]);
+    const prompt = `Translate these English strings to ${langName} (${langCode}). Rules: Never translate "SKINR". Keep ◆▲■▼→← unchanged. ${langCode==="fr"?"Use formal French.":"Use Latin American Spanish."} Return ONLY raw JSON starting with { and ending with } — no markdown, no backticks, no explanation, nothing else.
 
-    console.log(`Translation for ${langCode}: UI=${rawUI.length} chars, Quiz=${rawQuiz.length} chars`);
+${JSON.stringify(minimal)}`;
 
-    const parsedUI   = parseJSON(rawUI);
-    const parsedQuiz = parseJSON(rawQuiz);
+    const raw = await callAI([{role:"user", content:prompt}], "", 3000);
+    console.log(\`Translation for \${langCode}: \${raw.length} chars\`);
 
-    if(!parsedUI){
-      console.error("UI translation parse failed:", rawUI.slice(0,200));
-      return null;
+    const parsed = parseJSON(raw);
+    if(!parsed){
+      console.error(\`Translation parse failed for \${langCode}\`);
+      return BASE_T;
     }
 
-    // Build result — BASE_T as fallback, merge translated strings over top
-    const result = JSON.parse(JSON.stringify(BASE_T));
-
-    // Merge UI strings
-    Object.keys(parsedUI).forEach(k => { result[k] = parsedUI[k]; });
-    if(parsedUI.nav) result.nav = {...BASE_T.nav, ...parsedUI.nav};
-
-    // Merge quiz strings if available
-    if(parsedQuiz){
-      Object.keys(parsedQuiz).forEach(k => {
-        if(!k.startsWith('_')) result[k] = parsedQuiz[k];
-      });
-      // Reconstruct shaveOpts — keep v values, use translated labels
-      ['1','2','3','4','5','6','7'].forEach(n => {
-        const labels = parsedQuiz[`_s${n}`];
-        if(labels?.length) result[`shaveOpts${n}`] = BASE_T[`shaveOpts${n}`].map((o,i)=>({...o,label:labels[i]||o.label}));
-      });
-      // Reconstruct moods
-      if(parsedQuiz._ml?.length && parsedQuiz._md?.length){
-        result.moods = BASE_T.moods.map((m,i)=>({...m,label:parsedQuiz._ml[i]||m.label,desc:parsedQuiz._md[i]||m.desc}));
-      }
-    }
-
+    // Merge translated strings over BASE_T — everything else stays English
+    const result = {...BASE_T, ...parsed};
+    if(parsed.nav) result.nav = {...BASE_T.nav, ...parsed.nav};
     result.appName = "SKINR";
+
     LS.set(getCacheKey(langCode), result);
-    console.log(`Translation complete and cached for ${langCode}`);
+    console.log(\`Translation cached for \${langCode}\`);
     return result;
   } catch(e) {
     console.error("translateAndCache error:", e.message);
-    return null;
+    return BASE_T;
   }
 };
-    badge:"Gratuit. Clinique. Conçu pour les Hommes.",
-    heroTitle:"Votre Peau. Votre Rasage.", heroTitle2:"Enfin, Compris.",
-    heroBody:"La plupart des hommes ne savent pas ce dont leur peau a réellement besoin. SKINR met fin à cela. Six questions honnêtes. Un profil cutané clinique, une routine quotidienne personnalisée et les produits exacts qui fonctionnent pour votre biologie et votre budget. Sans rendez-vous. En soixante secondes.",
-    pathTitle:"Deux Problèmes. Une Plateforme.", pathSub:"Science clinique du rasage et soins personnalisés — tous deux gratuits, tous deux conçus pour les hommes.",
-    skinCardTitle:"Analyse de Peau", skinCardDesc:"Six questions. Un profil cutané clinique. Une routine matin et soir avec instructions précises. Recommandations de produits adaptées à votre budget.", skinCardBtn:"Analyser Ma Peau",
-    shaveCardTitle:"Protocole de Rasage", shaveCardDesc:"Sept questions — type de lame, caractéristiques de la barbe, problèmes actifs, fréquence de rasage. La raison biologique exacte de l'échec de votre rasage identifiée.", shaveCardBtn:"Construire Mon Protocole",
-    back:"← Retour", next:"Continuer", analyze:"Analyser Ma Peau", analyzing:"ANALYSE EN COURS",
-    morning:"Matin", evening:"Soir",
-    whyThisWorks:"Pourquoi ces produits fonctionnent ensemble →", hideScience:"Fermer ↑",
-    findProduct:"Trouver sur Amazon ↗",
-    emailTitle:"Recevez Votre Protocole en PDF", emailDesc:"Nous vous enverrons votre routine complète, votre liste de produits et des conseils hebdomadaires. Un seul e-mail. Pas de spam.", emailBtn:"Envoyer Mon Protocole", emailSkip:"Non merci", emailSuccess:"Vérifiez votre boîte de réception.",
-    coachTitle:"Posez n'importe quelle question.", coachSub:"Votre coach IA a examiné votre profil complet et votre budget.", coachOnline:"Coach Disponible",
-    youLabel:"Vous", coachLabel:"Coach", inputPlaceholder:"Posez n'importe quelle question sur votre peau...",
-    checkinTitle:"Comment Évolue le Protocole?", checkinSub:"Un suivi de 30 secondes affine votre protocole.", todayStatus:"Statut Actuel", submitCheckin:"Soumettre le Suivi", submitting:"Traitement...", progressHistory:"Journal de Progrès", noHistory:"Votre journal apparaîtra après votre premier suivi.",
-    shaveTitle:"Protocole de Rasage", shaveSub:"Une analyse clinique en 7 questions — type de lame, caractéristiques de la barbe, et problèmes actifs analysés ensemble.", analyzeShave:"Générer Mon Protocole Clinique",
-    bladeSection:"Recommandation de Lame et Rasoir", preShave:"Préparation Avant Rasage", duringShave:"Le Rasage", postShave:"Traitement Après Rasage",
-    preventionProducts:"Produits de Prévention", treatmentProducts:"Traitement des Boutons",
-    optionalTitle:"Débloquez Votre Analyse Complète", optionalSub:"Deux rapports optionnels générés spécifiquement à partir de vos résultats.",
-    biologyTitle:"Connaître la Biologie de Votre Peau", routineCardTitle:"Carte de Routine Quotidienne Personnalisée",
-    unlockBtn:"Débloquer — 10$", comboBtn:"Les Deux — 15$", enterCode:"Vous avez un code?", unlockCodeBtn:"Débloquer",
-    welcomeBack:"Content de Vous Revoir.", continueJourney:"Votre protocole vous attend.",
-    viewProtocol:"Voir le Protocole", consultCoach:"Consulter le Coach", newAnalysis:"Nouvelle Analyse", newShave:"Nouvelle Analyse Rasage",
-    disclaimer:"Les liens affiliés Amazon soutiennent ce service gratuit sans coût supplémentaire pour vous.", lastAnalyzed:"Dernière analyse",
-    nav:{home:"Accueil",analysis:"Analyse",coach:"Coach",checkin:"Progrès",shave:"Rasage",guides:"Guides",community:"Communauté"},
-    communityTitle:"La Communauté SKINR", communitySub:"Des hommes réels. Des résultats réels. Partagez vos progrès.", communityPost:"Partager Mes Progrès", communityFeed:"Fil d'Actualité", communityShareTitle:"Partagez Votre Mise à Jour", communityShareBtn:"Publier Ma Mise à Jour", communityCancel:"Annuler", communityPosted:"Votre mise à jour a été partagée.", communityLike:"◆ Utile", communityEmpty:"Pas encore de mise à jour. Soyez le premier à partager.",
-    discordTitle:"Rejoignez la Conversation", discordSub:"Pour des discussions en temps réel — rejoignez la communauté SKINR Discord.", discordBtn:"Rejoindre SKINR Discord",
-    guidesTitle:"Les Guides SKINR", guidesSub:"La référence écrite complète pour tout ce que le quiz couvre.", guideBuyBtn:"Obtenir le Guide", guideComingSoon:"Bientôt Disponible",
-    storyLabel:"L'Histoire Derrière SKINR", storyTitle:"Pourquoi J'ai Créé Ceci",
-    storyP1:"En tant qu'homme qui se rase chaque jour, je n'avais aucune idée de ce que ma lame faisait réellement à ma peau. Chaque matin — la même routine, le même rasoir, le même résultat. Des boutons. Des rougeurs. Une irritation qui durait des jours. J'allais chez le coiffeur qui aggravait les choses. Je changeais constamment de produits — l'un après l'autre, espérant que quelque chose fonctionne, sans jamais comprendre pourquoi rien ne marchait.",
-    storyP2:"La réponse, il s'est avéré, n'était pas dans un meilleur produit. C'était dans la compréhension de ma peau. Une fois que j'ai appris mon type de peau, pourquoi ma lame spécifique causait des boutons, quels ingrédients fonctionnent réellement pour ma biologie — tout a changé. Moins de boutons. Moins de rougeurs. Une meilleure peau. Et pour la première fois, une vraie confiance en mon apparence.",
-    storyP3:"C'est pourquoi SKINR existe. Une seule plateforme où chaque homme — peu importe son âge, son type de peau ou son budget — peut comprendre sa biologie cutanée, prendre les bonnes décisions et construire une routine qui fonctionne vraiment. Pas la routine de quelqu'un d'autre. La sienne.",
-    missionLabel:"Notre Mission", missionText:"Être la plateforme unique où chaque homme découvre sa biologie cutanée, prend les bonnes décisions et prend soin de sa peau — à tout âge.",
-    skinScore:"Score de Peau", consistencyRating:"Indice de Régularité", copyright:"Tous droits réservés.",
-    weekOneLabel:"Protocole Semaine Un", expectedTimeline:"Chronologie Prévue", whenDermatologist:"Quand Consulter un Dermatologue",
-    criticalRuleLabel:"Règle Critique", clinicalAssessmentLabel:"Évaluation Clinique", avoidLabel:"Éviter", expertInsight:"Conseil Expert",
-    analysisComplete:"Analyse Terminée", yourProtocol:"Votre Protocole Quotidien", shaveCritical:"Constat Clinique",
-    translating:"Configuration de votre langue...",
-    suggestions:["Pourquoi ai-je encore des boutons?","Puis-je ajouter du rétinol?","Dans quel ordre appliquer mes produits?","Quand verrai-je des résultats?","Ma routine est-elle adaptée à l'été?"],
-    loadSteps:["Lecture de votre profil...","Analyse de la chimie cutanée...","Correspondance produits-budget...","Vérification de la compatibilité...","Finalisation du protocole..."],
-    quizHints:["Soyez précis. Personne ne regarde.","Tout bouton — papules, kystes, points noirs.","Rougeurs, brûlures, picotements après application.","Les besoins cutanés évoluent par décennie.","Sélectionnez la préoccupation qui vous dérange le plus.","Cela détermine les marques et produits recommandés."],
-    q_feel:"Une heure après le lavage — sans produits — comment votre visage se sent-il?",
-    q_breakouts:"À quelle fréquence avez-vous des boutons?",
-    q_sensitivity:"Comment votre peau réagit-elle aux nouveaux produits ou au rasage?",
-    q_age:"Quelle est votre tranche d'âge?",
-    q_concern:"Quelle est votre principale préoccupation cutanée?",
-    q_budget:"Quel est votre budget mensuel pour les soins?",
-    opts_feel:["Tendu, sec, parfois squameux","Confortable et équilibré","Visiblement gras sur tout le visage","Gras en zone T, sec sur les joues"],
-    opts_breakouts:["Rarement, voire jamais","Une ou deux fois par mois","Plusieurs fois par semaine","De manière persistante"],
-    opts_sensitivity:["Aucune réaction. Très résistante.","Légères rougeurs occasionnelles","Irritation fréquente ou picotements","Réactivité quasi-constante ou rosacée"],
-    opts_age:["Moins de 25 ans","25 – 35","36 – 50","50+"],
-    opts_concern:["Sécheresse et texture rugueuse","Excès de sébum et brillance","Acné et boutons","Vieillissement — rides et teint terne","Rougeurs et irritations","Hyperpigmentation et taches"],
-    opts_budget:["Budget — Moins de 35$","Milieu de gamme — 35$–80$","Premium — 80$–150$","Luxe — 150$+"],
-    shaveQ1:"Quelle est votre méthode de rasage principale?", shaveQ2:"Comment décririez-vous votre barbe?", shaveQ3:"Quel est votre principal problème de rasage?", shaveQ4:"Avez-vous actuellement des boutons actifs sur le visage ou le cou?", shaveQ5:"Quel rasoir ou quelle lame utilisez-vous actuellement?", shaveQ6:"À quelle fréquence vous rasez-vous?", shaveQ7:"Quel est votre budget mensuel de rasage?",
-    moods:[{v:"excellent",emoji:"◆",label:"Excellent",desc:"Peau claire, hydratée, performante"},{v:"improving",emoji:"▲",label:"En Amélioration",desc:"Changements positifs visibles cette semaine"},{v:"stable",emoji:"■",label:"Stable",desc:"Pas de changement — ni mieux ni moins bien"},{v:"worse",emoji:"▼",label:"En Déclin",desc:"Quelque chose irrite ou provoque des boutons"}],
-  },
-  es: {
-    badge:"Gratis. Clínico. Diseñado para Hombres.",
-    heroTitle:"Tu Piel. Tu Afeitado.", heroTitle2:"Por Fin, Comprendidos.",
-    heroBody:"La mayoría de los hombres no saben lo que su piel realmente necesita. SKINR acaba con eso. Seis preguntas honestas. Un perfil clínico, una rutina diaria personalizada y los productos exactos que funcionan para tu biología y presupuesto. Sin citas. En sesenta segundos.",
-    pathTitle:"Dos Problemas. Una Plataforma.", pathSub:"Ciencia clínica del afeitado y cuidado personalizado — ambos gratis, ambos diseñados para hombres.",
-    skinCardTitle:"Análisis de Piel", skinCardDesc:"Seis preguntas. Un perfil clínico. Una rutina mañana y noche con instrucciones precisas. Recomendaciones de productos según tu presupuesto.", skinCardBtn:"Analizar Mi Piel",
-    shaveCardTitle:"Protocolo de Afeitado", shaveCardDesc:"Siete preguntas — tipo de hoja, características de la barba, problemas activos, frecuencia de afeitado. La razón biológica exacta del fallo de tu afeitado identificada.", shaveCardBtn:"Crear Mi Protocolo",
-    back:"← Atrás", next:"Continuar", analyze:"Analizar Mi Piel", analyzing:"ANALIZANDO",
-    morning:"Mañana", evening:"Noche",
-    whyThisWorks:"Por qué estos productos funcionan juntos →", hideScience:"Cerrar ↑",
-    findProduct:"Buscar en Amazon ↗",
-    emailTitle:"Recibe Tu Protocolo en PDF", emailDesc:"Te enviaremos tu rutina completa, tu lista de productos y consejos semanales. Un solo email. Sin spam.", emailBtn:"Enviar Mi Protocolo", emailSkip:"No gracias", emailSuccess:"Revisa tu bandeja de entrada.",
-    coachTitle:"Pregunta Cualquier Cosa.", coachSub:"Tu coach de IA ha revisado tu perfil completo y presupuesto.", coachOnline:"Coach Disponible",
-    youLabel:"Tú", coachLabel:"Coach", inputPlaceholder:"Pregunta cualquier cosa sobre tu piel...",
-    checkinTitle:"¿Cómo Está Funcionando el Protocolo?", checkinSub:"Un seguimiento de 30 segundos refina tu protocolo.", todayStatus:"Estado Actual", submitCheckin:"Enviar Seguimiento", submitting:"Procesando...", progressHistory:"Registro de Progreso", noHistory:"Tu registro aparecerá después de tu primer seguimiento.",
-    shaveTitle:"Protocolo de Afeitado", shaveSub:"Un análisis clínico de 7 preguntas — tipo de hoja, características de la barba y problemas activos analizados juntos.", analyzeShave:"Generar Mi Protocolo Clínico",
-    bladeSection:"Recomendación de Hoja y Maquinilla", preShave:"Preparación Pre-Afeitado", duringShave:"El Afeitado", postShave:"Tratamiento Post-Afeitado",
-    preventionProducts:"Productos de Prevención", treatmentProducts:"Tratamiento de Granos",
-    optionalTitle:"Desbloquea Tu Análisis Completo", optionalSub:"Dos informes opcionales generados específicamente a partir de tus resultados.",
-    biologyTitle:"Conoce la Biología de Tu Piel", routineCardTitle:"Tarjeta de Rutina Diaria Personalizada",
-    unlockBtn:"Desbloquear — $10", comboBtn:"Ambos — $15", enterCode:"¿Tienes un código?", unlockCodeBtn:"Desbloquear",
-    welcomeBack:"Bienvenido de Vuelta.", continueJourney:"Tu protocolo te espera.",
-    viewProtocol:"Ver Protocolo", consultCoach:"Consultar Coach", newAnalysis:"Nuevo Análisis", newShave:"Nuevo Análisis Afeitado",
-    disclaimer:"Los enlaces de afiliados de Amazon apoyan este servicio gratuito sin costo adicional para ti.", lastAnalyzed:"Último análisis",
-    nav:{home:"Inicio",analysis:"Análisis",coach:"Coach",checkin:"Progreso",shave:"Afeitado",guides:"Guías",community:"Comunidad"},
-    communityTitle:"La Comunidad SKINR", communitySub:"Hombres reales. Resultados reales. Comparte tu progreso.", communityPost:"Compartir Mi Progreso", communityFeed:"Noticias", communityShareTitle:"Comparte Tu Actualización", communityShareBtn:"Publicar Mi Actualización", communityCancel:"Cancelar", communityPosted:"Tu actualización ha sido compartida.", communityLike:"◆ Útil", communityEmpty:"Aún no hay actualizaciones. Sé el primero en compartir.",
-    discordTitle:"Únete a la Conversación", discordSub:"Para discusiones en tiempo real — únete a la comunidad SKINR Discord.", discordBtn:"Unirse a SKINR Discord",
-    guidesTitle:"Las Guías SKINR", guidesSub:"La referencia escrita completa para todo lo que cubre el quiz.", guideBuyBtn:"Obtener la Guía", guideComingSoon:"Próximamente",
-    storyLabel:"La Historia Detrás de SKINR", storyTitle:"Por Qué Lo Creé",
-    storyP1:"Como hombre que se afeita todos los días, no tenía idea de lo que mi hoja estaba haciendo realmente a mi piel. Cada mañana — la misma rutina, la misma maquinilla, el mismo resultado. Granos. Enrojecimiento. Irritación que duraba días. Iba a barberías que empeoraban las cosas. Cambiaba de productos constantemente — uno tras otro, esperando que algo funcionara, sin entender nunca por qué nada lo hacía.",
-    storyP2:"La respuesta, resultó, no estaba en un mejor producto. Estaba en entender mi piel. Una vez que aprendí mi tipo de piel, por qué mi hoja específica causaba granos, qué ingredientes funcionan para mi biología — todo cambió. Menos granos. Menos enrojecimiento. Mejor piel. Y por primera vez, verdadera confianza en mi apariencia.",
-    storyP3:"Por eso existe SKINR. Una sola plataforma donde cada hombre — sin importar su edad, tipo de piel o presupuesto — puede entender su biología cutánea, tomar las decisiones correctas y construir una rutina que realmente funcione. No la rutina de alguien más. La suya.",
-    missionLabel:"Nuestra Misión", missionText:"Ser la plataforma única donde cada hombre descubre su biología cutánea, toma las decisiones correctas y cuida su piel — a cualquier edad.",
-    skinScore:"Puntuación de Piel", consistencyRating:"Índice de Consistencia", copyright:"Todos los derechos reservados.",
-    weekOneLabel:"Protocolo Semana Uno", expectedTimeline:"Cronología Esperada", whenDermatologist:"Cuándo Ver a un Dermatólogo",
-    criticalRuleLabel:"Regla Crítica", clinicalAssessmentLabel:"Evaluación Clínica", avoidLabel:"Evitar", expertInsight:"Consejo Experto",
-    analysisComplete:"Análisis Completo", yourProtocol:"Tu Protocolo Diario", shaveCritical:"Hallazgo Clínico",
-    translating:"Configurando tu idioma...",
-    suggestions:["¿Por qué sigo teniendo granos?","¿Puedo añadir retinol?","¿En qué orden aplico mis productos?","¿Cuándo veré resultados?","¿Mi rutina es adecuada para el verano?"],
-    loadSteps:["Leyendo tu perfil...","Analizando la química cutánea...","Combinando productos con el presupuesto...","Verificando compatibilidad...","Finalizando el protocolo..."],
-    quizHints:["Sé preciso. Nadie está mirando.","Cualquier grano — pápulas, quistes, puntos negros.","Rojez, ardor, picazón después de aplicar.","Las necesidades cutáneas cambian por década.","Selecciona la preocupación que más te molesta.","Esto determina las marcas y productos recomendados."],
-    q_feel:"¿Una hora después de lavarte — sin productos — cómo se siente tu cara?",
-    q_breakouts:"¿Con qué frecuencia experimentas granos?",
-    q_sensitivity:"¿Cómo responde tu piel a productos nuevos o al afeitado?",
-    q_age:"¿Cuál es tu rango de edad?",
-    q_concern:"¿Cuál es tu principal preocupación cutánea?",
-    q_budget:"¿Cuál es tu presupuesto mensual para el cuidado de la piel?",
-    opts_feel:["Tenso, seco, posiblemente descamando","Cómodo y equilibrado","Visiblemente graso en toda la cara","Graso en zona T, seco en mejillas"],
-    opts_breakouts:["Raramente, si acaso","Una o dos veces al mes","Varias veces a la semana","Persistentemente — siempre presente"],
-    opts_sensitivity:["Sin reacción. Muy resistente.","Leve rojez ocasional","Irritación frecuente o picazón","Reactividad casi constante o rosácea"],
-    opts_age:["Menos de 25","25 – 35","36 – 50","50+"],
-    opts_concern:["Sequedad y textura áspera","Exceso de grasa y brillo","Acné y granos","Envejecimiento — líneas y opacidad","Rojez e irritación","Hiperpigmentación y manchas"],
-    opts_budget:["Económico — Menos de $35","Gama Media — $35–$80","Premium — $80–$150","Lujo — $150+"],
-    shaveQ1:"¿Cuál es tu método de afeitado principal?", shaveQ2:"¿Cómo describirías tu barba?", shaveQ3:"¿Cuál es tu principal problema al afeitarte?", shaveQ4:"¿Tienes actualmente granos activos en la cara o el cuello?", shaveQ5:"¿Qué maquinilla o cuchilla usas actualmente?", shaveQ6:"¿Con qué frecuencia te afeitas?", shaveQ7:"¿Cuál es tu presupuesto mensual de afeitado?",
-    moods:[{v:"excellent",emoji:"◆",label:"Excelente",desc:"Piel clara, hidratada, funcionando bien"},{v:"improving",emoji:"▲",label:"Mejorando",desc:"Cambios positivos visibles esta semana"},{v:"stable",emoji:"■",label:"Estable",desc:"Sin cambio — ni mejor ni peor"},{v:"worse",emoji:"▼",label:"Declinando",desc:"Algo está irritando o causando granos"}],
-  },
-};
 
-// Detect browser language on first visit
-const detectBrowserLang = () => {
-  const supported = LANGUAGES.map(l => l.code);
-  const browser = (navigator.language || navigator.languages?.[0] || "en").slice(0,2).toLowerCase();
-  return supported.includes(browser) ? browser : "en";
-};
 
 // ── SKIN QUIZ QUESTIONS ───────────────────────────────────────────────────────
 const getSkinQs = (t, lang) => [
