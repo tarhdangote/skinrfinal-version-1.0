@@ -436,7 +436,7 @@ Return ONE sentence of precise, actionable clinical advice specific to this stat
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const getAffLink = (search) =>
-  `${CONFIG.business.amazonBase}/s?k=${encodeURIComponent(search)}&tag=${CONFIG.business.affiliateTag}`;
+  `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${CONFIG.business.affiliateTag}&linkCode=ur2`;
 
 const calcScore = (profile, checkins=[]) => {
   if(!profile) return 0;
@@ -1094,16 +1094,18 @@ export default function SkinrApp() {
   const loadTranslation = async (langCode) => {
     if(langCode === "en"){ setT(BASE_T); return; }
     setTLoading(true);
-    const translated = await translateAndCache(langCode);
-    if(translated) setT(translated);
-    else setT(BASE_T);
+    try {
+      const translated = await translateAndCache(langCode);
+      if(translated) setT(translated);
+      else setT(BASE_T);
+    } catch(e){ setT(BASE_T); }
     setTLoading(false);
   };
 
   const switchLang = async (l) => {
     setLang(l); LS.set(SK.lang, l); setLangOpen(false);
-    await loadTranslation(l);
     document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
+    await loadTranslation(l);
   };
 
   // Load from localStorage on mount + auto-detect language
@@ -1118,12 +1120,16 @@ export default function SkinrApp() {
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
-    if(initialLang === "en"){
-      setLang("en"); setT(BASE_T); setReady(true);
-    } else {
-      setLang(initialLang);
-      loadTranslation(initialLang).then(()=>setReady(true));
+    // Always show English immediately — never block rendering on translation
+    setT(BASE_T);
+    setLang(initialLang);
+    setReady(true);
+    // Translate in background if needed
+    if(initialLang !== "en"){
+      document.documentElement.dir = LANGUAGES.find(x=>x.code===initialLang)?.dir || "ltr";
+      loadTranslation(initialLang);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   useEffect(()=>{ injectSEO(lang); },[lang]);
@@ -1214,6 +1220,8 @@ export default function SkinrApp() {
       setShaveResult(parsed);
       const saved = {...parsed, answers:ans};
       setSavedShave(saved); LS.set(SK.shave, saved);
+      // Show email capture if not already captured
+      if(!LS.get(SK.email)) setShowEmail(true);
     } catch(e) {
       console.error("runShaveAnalysis error:", e.message);
       setShaveLoad(false);
@@ -1322,9 +1330,25 @@ Return:
   };
 
   // ── EMAIL CAPTURE ──
-  const submitEmail = () => {
+  const submitEmail = async () => {
     if(!emailVal.trim()) return;
-    LS.set(SK.email, emailVal.trim()); setEmailSaved(emailVal.trim()); setEmailDone(true);
+    LS.set(SK.email, emailVal.trim());
+    setEmailSaved(emailVal.trim());
+    setEmailDone(true);
+    // Send to Formspree — sign up free at formspree.io and replace YOUR_FORM_ID
+    try {
+      await fetch("https://formspree.io/f/261158684435060", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          email: emailVal.trim(),
+          skinType: profile?.skinType || "Not analysed",
+          shaveProblem: savedShave?.answers?.problem || "Not analysed",
+          source: "SKINR Protocol Capture",
+          _subject: "New SKINR Protocol Request",
+        }),
+      });
+    } catch(e) { /* Formspree will retry — do not show error to user */ }
     setTimeout(()=>{ setShowEmail(false); setEmailDone(false); }, 2500);
   };
 
