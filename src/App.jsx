@@ -304,82 +304,82 @@ const buildTranslationPrompt = (langCode) => {
   const langInfo = LANGUAGES.find(l => l.code === langCode);
   const langName = langInfo?.native || langCode;
 
-  // Only translate essential visible UI strings
-  const essential = {
-    badge: BASE_T.badge,
-    heroTitle: BASE_T.heroTitle, heroTitle2: BASE_T.heroTitle2, heroBody: BASE_T.heroBody,
-    pathTitle: BASE_T.pathTitle, pathSub: BASE_T.pathSub,
-    skinCardTitle: BASE_T.skinCardTitle, skinCardDesc: BASE_T.skinCardDesc, skinCardBtn: BASE_T.skinCardBtn,
-    shaveCardTitle: BASE_T.shaveCardTitle, shaveCardDesc: BASE_T.shaveCardDesc, shaveCardBtn: BASE_T.shaveCardBtn,
-    back: BASE_T.back, next: BASE_T.next, analyze: BASE_T.analyze, analyzing: BASE_T.analyzing,
-    morning: BASE_T.morning, evening: BASE_T.evening,
-    whyThisWorks: BASE_T.whyThisWorks, hideScience: BASE_T.hideScience, findProduct: BASE_T.findProduct,
-    emailTitle: BASE_T.emailTitle, emailDesc: BASE_T.emailDesc, emailBtn: BASE_T.emailBtn,
-    emailSkip: BASE_T.emailSkip, emailSuccess: BASE_T.emailSuccess,
-    coachTitle: BASE_T.coachTitle, coachSub: BASE_T.coachSub, coachOnline: BASE_T.coachOnline,
-    youLabel: BASE_T.youLabel, coachLabel: BASE_T.coachLabel, inputPlaceholder: BASE_T.inputPlaceholder,
-    suggestions: BASE_T.suggestions,
-    checkinTitle: BASE_T.checkinTitle, checkinSub: BASE_T.checkinSub,
-    todayStatus: BASE_T.todayStatus, submitCheckin: BASE_T.submitCheckin,
-    submitting: BASE_T.submitting, progressHistory: BASE_T.progressHistory, noHistory: BASE_T.noHistory,
-    shaveTitle: BASE_T.shaveTitle, shaveSub: BASE_T.shaveSub, analyzeShave: BASE_T.analyzeShave,
-    bladeSection: BASE_T.bladeSection,
-    preShave: BASE_T.preShave, duringShave: BASE_T.duringShave, postShave: BASE_T.postShave,
-    preventionProducts: BASE_T.preventionProducts, treatmentProducts: BASE_T.treatmentProducts,
-    optionalTitle: BASE_T.optionalTitle, optionalSub: BASE_T.optionalSub,
-    biologyTitle: BASE_T.biologyTitle, routineCardTitle: BASE_T.routineCardTitle,
-    unlockBtn: BASE_T.unlockBtn, comboBtn: BASE_T.comboBtn,
-    enterCode: BASE_T.enterCode, unlockCodeBtn: BASE_T.unlockCodeBtn,
-    welcomeBack: BASE_T.welcomeBack, continueJourney: BASE_T.continueJourney,
-    viewProtocol: BASE_T.viewProtocol, consultCoach: BASE_T.consultCoach,
-    newAnalysis: BASE_T.newAnalysis, newShave: BASE_T.newShave,
-    disclaimer: BASE_T.disclaimer, lastAnalyzed: BASE_T.lastAnalyzed,
-    nav: BASE_T.nav,
-    communityTitle: BASE_T.communityTitle, communitySub: BASE_T.communitySub,
-    communityPost: BASE_T.communityPost, communityFeed: BASE_T.communityFeed,
-    communityShareTitle: BASE_T.communityShareTitle, communityShareBtn: BASE_T.communityShareBtn,
-    communityCancel: BASE_T.communityCancel, communityPosted: BASE_T.communityPosted,
-    communityLike: BASE_T.communityLike, communityEmpty: BASE_T.communityEmpty,
-    discordTitle: BASE_T.discordTitle, discordSub: BASE_T.discordSub, discordBtn: BASE_T.discordBtn,
-    guidesTitle: BASE_T.guidesTitle, guidesSub: BASE_T.guidesSub,
-    guideBuyBtn: BASE_T.guideBuyBtn, guideComingSoon: BASE_T.guideComingSoon,
-    translating: BASE_T.translating,
-    // Founder story
-    storyLabel: BASE_T.storyLabel, storyTitle: BASE_T.storyTitle,
-    storyP1: BASE_T.storyP1, storyP2: BASE_T.storyP2, storyP3: BASE_T.storyP3,
-    missionLabel: BASE_T.missionLabel, missionText: BASE_T.missionText,
-    copyright: BASE_T.copyright, skinScore: BASE_T.skinScore, consistencyRating: BASE_T.consistencyRating,
-    // UI labels
-    weekOneLabel: BASE_T.weekOneLabel, expectedTimeline: BASE_T.expectedTimeline,
-    whenDermatologist: BASE_T.whenDermatologist, criticalRuleLabel: BASE_T.criticalRuleLabel,
-    clinicalAssessmentLabel: BASE_T.clinicalAssessmentLabel, techniqueLabel: BASE_T.techniqueLabel,
-    transitionLabel: BASE_T.transitionLabel, recommendedBladesLabel: BASE_T.recommendedBladesLabel,
-    avoidLabel: BASE_T.avoidLabel, expertInsight: BASE_T.expertInsight,
-    analysisComplete: BASE_T.analysisComplete, yourProtocol: BASE_T.yourProtocol,
-    shaveCritical: BASE_T.shaveCritical, medDisclaimer: BASE_T.medDisclaimer,
-    loadSteps: BASE_T.loadSteps,
-    // Skin quiz
-    q_feel: BASE_T.q_feel, q_breakouts: BASE_T.q_breakouts,
-    q_sensitivity: BASE_T.q_sensitivity, q_age: BASE_T.q_age,
-    q_concern: BASE_T.q_concern, q_budget: BASE_T.q_budget,
-    opts_feel: BASE_T.opts_feel, opts_breakouts: BASE_T.opts_breakouts,
-    opts_sensitivity: BASE_T.opts_sensitivity, opts_age: BASE_T.opts_age,
-    opts_concern: BASE_T.opts_concern, opts_budget: BASE_T.opts_budget,
-    quizHints: BASE_T.quizHints,
-    // Shave quiz
-    shaveQ1: BASE_T.shaveQ1, shaveQ2: BASE_T.shaveQ2, shaveQ3: BASE_T.shaveQ3,
-    shaveQ4: BASE_T.shaveQ4, shaveQ5: BASE_T.shaveQ5, shaveQ6: BASE_T.shaveQ6, shaveQ7: BASE_T.shaveQ7,
-    shaveOpts1: BASE_T.shaveOpts1, shaveOpts2: BASE_T.shaveOpts2, shaveOpts3: BASE_T.shaveOpts3,
-    shaveOpts4: BASE_T.shaveOpts4, shaveOpts5: BASE_T.shaveOpts5,
-    shaveOpts6: BASE_T.shaveOpts6, shaveOpts7: BASE_T.shaveOpts7,
-    // Moods
-    moods: BASE_T.moods,
+const buildTranslationPrompt = (langCode) => {
+  const langInfo = LANGUAGES.find(l => l.code === langCode);
+  const langName = langInfo?.native || langCode;
+
+  // ONLY translate flat string values — no arrays of objects (they break JSON parsing)
+  // shaveOpts labels are extracted separately and merged back after translation
+  const strings = {
+    badge:BASE_T.badge, heroTitle:BASE_T.heroTitle, heroTitle2:BASE_T.heroTitle2,
+    heroBody:BASE_T.heroBody, pathTitle:BASE_T.pathTitle, pathSub:BASE_T.pathSub,
+    skinCardTitle:BASE_T.skinCardTitle, skinCardDesc:BASE_T.skinCardDesc, skinCardBtn:BASE_T.skinCardBtn,
+    shaveCardTitle:BASE_T.shaveCardTitle, shaveCardDesc:BASE_T.shaveCardDesc, shaveCardBtn:BASE_T.shaveCardBtn,
+    back:BASE_T.back, next:BASE_T.next, analyze:BASE_T.analyze, analyzing:BASE_T.analyzing,
+    morning:BASE_T.morning, evening:BASE_T.evening,
+    whyThisWorks:BASE_T.whyThisWorks, hideScience:BASE_T.hideScience, findProduct:BASE_T.findProduct,
+    emailTitle:BASE_T.emailTitle, emailDesc:BASE_T.emailDesc, emailBtn:BASE_T.emailBtn,
+    emailSkip:BASE_T.emailSkip, emailSuccess:BASE_T.emailSuccess,
+    coachTitle:BASE_T.coachTitle, coachSub:BASE_T.coachSub, coachOnline:BASE_T.coachOnline,
+    youLabel:BASE_T.youLabel, coachLabel:BASE_T.coachLabel, inputPlaceholder:BASE_T.inputPlaceholder,
+    checkinTitle:BASE_T.checkinTitle, checkinSub:BASE_T.checkinSub, todayStatus:BASE_T.todayStatus,
+    submitCheckin:BASE_T.submitCheckin, submitting:BASE_T.submitting,
+    progressHistory:BASE_T.progressHistory, noHistory:BASE_T.noHistory,
+    shaveTitle:BASE_T.shaveTitle, shaveSub:BASE_T.shaveSub, analyzeShave:BASE_T.analyzeShave,
+    bladeSection:BASE_T.bladeSection, preShave:BASE_T.preShave,
+    duringShave:BASE_T.duringShave, postShave:BASE_T.postShave,
+    preventionProducts:BASE_T.preventionProducts, treatmentProducts:BASE_T.treatmentProducts,
+    optionalTitle:BASE_T.optionalTitle, optionalSub:BASE_T.optionalSub,
+    biologyTitle:BASE_T.biologyTitle, routineCardTitle:BASE_T.routineCardTitle,
+    unlockBtn:BASE_T.unlockBtn, comboBtn:BASE_T.comboBtn,
+    enterCode:BASE_T.enterCode, unlockCodeBtn:BASE_T.unlockCodeBtn,
+    welcomeBack:BASE_T.welcomeBack, continueJourney:BASE_T.continueJourney,
+    viewProtocol:BASE_T.viewProtocol, consultCoach:BASE_T.consultCoach,
+    newAnalysis:BASE_T.newAnalysis, newShave:BASE_T.newShave,
+    disclaimer:BASE_T.disclaimer, lastAnalyzed:BASE_T.lastAnalyzed,
+    communityTitle:BASE_T.communityTitle, communitySub:BASE_T.communitySub,
+    communityPost:BASE_T.communityPost, communityFeed:BASE_T.communityFeed,
+    communityShareTitle:BASE_T.communityShareTitle, communityShareBtn:BASE_T.communityShareBtn,
+    communityCancel:BASE_T.communityCancel, communityPosted:BASE_T.communityPosted,
+    communityLike:BASE_T.communityLike, communityEmpty:BASE_T.communityEmpty,
+    discordTitle:BASE_T.discordTitle, discordSub:BASE_T.discordSub, discordBtn:BASE_T.discordBtn,
+    guidesTitle:BASE_T.guidesTitle, guidesSub:BASE_T.guidesSub,
+    guideBuyBtn:BASE_T.guideBuyBtn, guideComingSoon:BASE_T.guideComingSoon,
+    storyLabel:BASE_T.storyLabel, storyTitle:BASE_T.storyTitle,
+    storyP1:BASE_T.storyP1, storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
+    missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
+    skinScore:BASE_T.skinScore, consistencyRating:BASE_T.consistencyRating,
+    weekOneLabel:BASE_T.weekOneLabel, expectedTimeline:BASE_T.expectedTimeline,
+    whenDermatologist:BASE_T.whenDermatologist, criticalRuleLabel:BASE_T.criticalRuleLabel,
+    clinicalAssessmentLabel:BASE_T.clinicalAssessmentLabel, avoidLabel:BASE_T.avoidLabel,
+    expertInsight:BASE_T.expertInsight, analysisComplete:BASE_T.analysisComplete,
+    yourProtocol:BASE_T.yourProtocol, shaveCritical:BASE_T.shaveCritical,
+    translating:BASE_T.translating, copyright:BASE_T.copyright,
+    // String arrays only
+    nav:BASE_T.nav, suggestions:BASE_T.suggestions, loadSteps:BASE_T.loadSteps,
+    quizHints:BASE_T.quizHints, opts_feel:BASE_T.opts_feel, opts_breakouts:BASE_T.opts_breakouts,
+    opts_sensitivity:BASE_T.opts_sensitivity, opts_age:BASE_T.opts_age,
+    opts_concern:BASE_T.opts_concern, opts_budget:BASE_T.opts_budget,
+    q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts, q_sensitivity:BASE_T.q_sensitivity,
+    q_age:BASE_T.q_age, q_concern:BASE_T.q_concern, q_budget:BASE_T.q_budget,
+    shaveQ1:BASE_T.shaveQ1, shaveQ2:BASE_T.shaveQ2, shaveQ3:BASE_T.shaveQ3,
+    shaveQ4:BASE_T.shaveQ4, shaveQ5:BASE_T.shaveQ5, shaveQ6:BASE_T.shaveQ6, shaveQ7:BASE_T.shaveQ7,
+    // Extract ONLY labels from shaveOpts (v values must never be translated)
+    _shaveOpts1_labels:BASE_T.shaveOpts1.map(o=>o.label),
+    _shaveOpts2_labels:BASE_T.shaveOpts2.map(o=>o.label),
+    _shaveOpts3_labels:BASE_T.shaveOpts3.map(o=>o.label),
+    _shaveOpts4_labels:BASE_T.shaveOpts4.map(o=>o.label),
+    _shaveOpts5_labels:BASE_T.shaveOpts5.map(o=>o.label),
+    _shaveOpts6_labels:BASE_T.shaveOpts6.map(o=>o.label),
+    _shaveOpts7_labels:BASE_T.shaveOpts7.map(o=>o.label),
+    _moods_labels:BASE_T.moods.map(o=>o.label),
+    _moods_descs:BASE_T.moods.map(o=>o.desc),
   };
 
-  return `Translate ALL values in this JSON from English to ${langName} (${langCode}).
-RULES: Never translate "SKINR". Keep symbols ◆▲■▼→← as-is. ${langCode==="pt"?"Use Brazilian Portuguese.":""} ${langCode==="ar"?"Use Modern Standard Arabic.":""} Return ONLY valid JSON, no markdown, no backticks, no explanation.
+  return `Translate the string values in this JSON from English to ${langName} (${langCode}).
+STRICT RULES: "SKINR" never translated. Keep ◆▲■▼→← exactly. ${langCode==="pt"?"Brazilian Portuguese only.":""} ${langCode==="ar"?"Modern Standard Arabic.":""} Return ONLY raw JSON — absolutely no markdown, no backticks, no code fences, no explanation. Start your response with { and end with }.
 
-${JSON.stringify(essential)}`;
+${JSON.stringify(strings)}`;
 };
 
 const translateAndCache = async (langCode) => {
@@ -387,23 +387,54 @@ const translateAndCache = async (langCode) => {
   if(cached) return cached;
 
   try {
-    // Request 4000 tokens — translation needs more space than protocols
     const raw = await callAI([{role:"user", content:buildTranslationPrompt(langCode)}], "", 4000);
     console.log("Translation raw length:", raw.length, "for", langCode);
+    if(!raw || raw.length < 50){
+      console.error("Translation returned empty for", langCode);
+      return null;
+    }
     const parsed = parseJSON(raw);
     if(!parsed){
-      console.error("Translation parse failed for", langCode, "raw:", raw.slice(0,200));
+      console.error("Translation parse failed for", langCode, "raw preview:", raw.slice(0,300));
       return null;
     }
 
-    // Merge translated strings over BASE_T — keeps untranslated keys as English fallback
-    const result = {...BASE_T, ...parsed};
-    // Restore nested nav if translated
+    // Build result — start with BASE_T as fallback for anything not translated
+    const result = JSON.parse(JSON.stringify(BASE_T));
+
+    // Merge all translated flat strings
+    Object.keys(parsed).forEach(k => {
+      if(!k.startsWith('_')) result[k] = parsed[k];
+    });
+
+    // Reconstruct shaveOpts arrays — keep v values from BASE_T, use translated labels
+    ['1','2','3','4','5','6','7'].forEach(n => {
+      const labels = parsed[`_shaveOpts${n}_labels`];
+      if(labels && Array.isArray(labels)){
+        result[`shaveOpts${n}`] = BASE_T[`shaveOpts${n}`].map((opt,i) => ({
+          ...opt,
+          label: labels[i] || opt.label
+        }));
+      }
+    });
+
+    // Reconstruct moods
+    if(parsed._moods_labels && parsed._moods_descs){
+      result.moods = BASE_T.moods.map((m,i) => ({
+        ...m,
+        label: parsed._moods_labels[i] || m.label,
+        desc:  parsed._moods_descs[i]  || m.desc,
+      }));
+    }
+
+    // Restore nav object properly
     if(parsed.nav) result.nav = {...BASE_T.nav, ...parsed.nav};
-    // Always keep appName as SKINR
+
+    // SKINR never translated
     result.appName = "SKINR";
 
     LS.set(getCacheKey(langCode), result);
+    console.log("Translation cached for", langCode);
     return result;
   } catch(e) {
     console.error("translateAndCache error:", e.message);
@@ -447,20 +478,15 @@ Rules: morning 3-4 products ending with SPF, evening 2-3 products no SPF, all on
 const buildShavePrompt = (answers, skinProfile, lang) => {
   const ln = (LANGUAGES.find(l=>l.code===lang)?.label || "English");
   const tier = answers.budget || "mid";
-  const shaveBrands = CONFIG.shaveBrandsByTier[tier]?.join(", ") || "Cremo, Nivea Men";
+  const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0,3).join(", ") || "Cremo, Nivea Men";
   const skinType = skinProfile?.skinType || "unknown";
   const hasBumps = answers.activeBumps && answers.activeBumps !== "none";
 
-  return `You are a dermatologist specialising in shaving. Respond ONLY in ${ln}. Return ONLY valid compact JSON — no markdown, no extra whitespace.
-
-Patient: method=${answers.method}, beard=${answers.beard}, problem=${answers.problem}, bumps=${answers.activeBumps||"none"}, blade=${answers.currentBlade||"unknown"}, frequency=${answers.frequency}, budget=${tier}, skinType=${skinType}
-
-Brands for ${tier} budget: ${shaveBrands}
-
-Return this JSON (keep all string values short — max 20 words each):
-{"clinicalFinding":"root cause in one sentence","severityAssessment":"self-manage or see doctor","bladeRecommendation":{"recommendedType":"razor type","specificModel":"exact model","whyThisRazor":"reason in 15 words","bladeGap":"mild/medium/aggressive","recommendedBlades":[{"name":"blade name","estimatedPrice":"$X per 100","why":"reason","rating":"X/5 Amazon","amazonSearch":"search term"}],"transitionNote":"transition advice","techniqueAdjustment":"technique tip"},"preShave":[{"step":1,"title":"title","instruction":"instruction","duration":"time","why":"reason"}],"shaveProtocol":[{"step":1,"title":"title","instruction":"instruction","why":"reason"}],"postShave":[{"step":1,"title":"title","instruction":"instruction","why":"reason"}],"preventionProducts":[{"name":"product","brand":"brand","category":"category","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how to use","clinicalMechanism":"mechanism","knownRating":"X/5","amazonSearch":"search","priority":"essential"}]${hasBumps?`,"treatmentProducts":[{"name":"product","brand":"brand","category":"bump-treatment","estimatedPrice":"$X","keyIngredient":"ingredient 2%","use":"how to use","clinicalMechanism":"mechanism","knownRating":"X/5","amazonSearch":"search","expectedTimeline":"timeline"}],"treatmentProtocol":"treatment paragraph"`:''},"criticalRule":"most important change","weekOneProtocol":"week one steps","expectedImprovement":"timeline milestones","whenToSeeDoctor":"warning signs","skinBiologyTeaser":"biology teaser two sentences"}
-
-Rules: preShave 3 steps, shaveProtocol 3 steps, postShave 3 steps, preventionProducts 2-3 items, all on Amazon within ${tier} budget.`;
+  return `Shaving dermatologist. ${ln} only. Return raw JSON only — no markdown.
+Profile: method=${answers.method},beard=${answers.beard},problem=${answers.problem},bumps=${answers.activeBumps||"none"},blade=${answers.currentBlade||"?"},freq=${answers.frequency},budget=${tier},skin=${skinType}
+Brands:${brands}
+JSON(max 15 words per string):{"clinicalFinding":"","severityAssessment":"","bladeRecommendation":{"recommendedType":"","specificModel":"","whyThisRazor":"","bladeGap":"","recommendedBlades":[{"name":"","estimatedPrice":"","why":"","rating":"","amazonSearch":""}],"transitionNote":"","techniqueAdjustment":""},"preShave":[{"step":1,"title":"","instruction":"","duration":"","why":""}],"shaveProtocol":[{"step":1,"title":"","instruction":"","why":""}],"postShave":[{"step":1,"title":"","instruction":"","why":""}],"preventionProducts":[{"name":"","brand":"","category":"","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"}]${hasBumps?`,"treatmentProducts":[{"name":"","brand":"","category":"","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","expectedTimeline":""}],"treatmentProtocol":""`:``},"criticalRule":"","weekOneProtocol":"","expectedImprovement":"","whenToSeeDoctor":"","skinBiologyTeaser":""}
+Fill every field. preShave=3steps,shaveProtocol=3steps,postShave=3steps,prevention=2items,within ${tier} budget.`;
 };
 
 const buildCheckinPrompt = (mood, profile, history, lang) => {
@@ -999,7 +1025,60 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
   .nav-c{display:none;}
   .nav-ticker-wrap{display:flex;}
 }
+
+/* ── ACCESSIBILITY OVERRIDES ──────────────────────────────────────────────────
+   Goal: WCAG AA minimum contrast 4.5:1 for normal text, 3:1 for large text.
+   Problem: Cormorant Garamond italic at 13-14px on #050505 fails contrast.
+   Fix: Increase sizes, improve contrast values, reduce italics on body copy.
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Body text — remove italic, increase size and contrast */
+.hero-body{font-size:18px;line-height:2;color:var(--cream);font-style:normal;}
+.p-desc{font-size:16px;line-height:1.85;color:var(--cream);font-style:normal;}
+.step-instruction{font-size:15px;line-height:1.75;color:var(--white);}
+.step-why{font-size:14px;line-height:1.75;color:var(--cream);font-style:normal;}
+.sci-text{font-size:14px;line-height:1.8;color:var(--cream);font-style:normal;}
+.ins-text{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+.phase-step-inst{font-size:14px;line-height:1.7;color:var(--white);}
+.phase-step-why{font-size:13px;line-height:1.65;color:var(--cream);font-style:normal;}
+.post-text{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+.msg.ai .msg-bubble{font-size:15px;line-height:1.75;color:var(--white);}
+.p-sum{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+.hist-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
+.comm-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+.shave-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+.ci-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+
+/* Quiz — larger question text and option labels */
+.q-text{font-size:clamp(20px,3.5vw,30px);}
+.opt-lbl{font-size:16px;color:var(--cream);font-style:normal;}
+.opt.sel .opt-lbl{color:var(--white);}
+.q-hint{font-size:14px;color:var(--cream);font-style:normal;}
+
+/* Mood options */
+.mood-d{font-size:13px;color:var(--cream);font-style:normal;}
+
+/* Cards — increase soft text size */
+.step-brand{font-size:11px;letter-spacing:1px;}
+.path-sub{font-size:16px;color:var(--cream);font-style:normal;}
+.shave-finding-text{font-size:15px;line-height:1.8;color:var(--white);}
+.shave-severity-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
+.crit-text{font-size:15px;line-height:1.75;color:var(--white);font-style:normal;}
+
+/* Minimum touch target 44px for mobile accessibility */
+.opt{min-height:52px;}
+.mood-opt{min-height:72px;}
+.btn{min-height:44px;}
+.ntab{min-height:54px;}
+
+/* Soft text minimum contrast boost */
+:root{--soft:#B8AEA6;}
+
+/* Focus rings — visible on all interactive elements */
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:2px solid var(--gold);outline-offset:3px;border-radius:2px;}
 `;
+
 
 // ── SEO INJECTION ─────────────────────────────────────────────────────────────
 const injectSEO = (lang) => {
