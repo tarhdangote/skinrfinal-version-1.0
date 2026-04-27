@@ -403,6 +403,12 @@ ${JSON.stringify(minimal)}`;
 };
 
 
+// Detect browser language on first visit — returns "en", "fr", or "es" only
+const detectBrowserLang = () => {
+  const browser = (navigator.language || navigator.languages?.[0] || "en").slice(0,2).toLowerCase();
+  return SUPPORTED_LANGS.includes(browser) ? browser : "en";
+};
+
 // ── SKIN QUIZ QUESTIONS ───────────────────────────────────────────────────────
 const getSkinQs = (t, lang) => [
   { id:"feel",      q:t.q_feel,      opts:t.opts_feel.map((o,i)=>({v:["dry","normal","oily","combo"][i],label:o}))      },
