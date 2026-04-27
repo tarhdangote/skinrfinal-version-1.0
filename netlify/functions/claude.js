@@ -11,12 +11,10 @@ exports.handler = async (event) => {
     "Content-Type": "application/json",
   };
 
-  // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
   }
 
-  // GET test endpoint — visit /.netlify/functions/claude in browser to confirm live
   if (event.httpMethod === "GET") {
     const keyPresent = !!process.env.ANTHROPIC_API_KEY;
     const keyStart = process.env.ANTHROPIC_API_KEY
@@ -34,13 +32,14 @@ exports.handler = async (event) => {
     };
   }
 
-  // Only POST beyond this point
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: "Method Not Allowed" };
   }
 
   try {
     const body = JSON.parse(event.body);
+    // Allow caller to request more tokens for translation (capped at 4000)
+    const maxTokens = Math.min(body.maxTokens || 1500, 4000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -51,7 +50,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1500,
+        max_tokens: maxTokens,
         system: body.system || "",
         messages: body.messages,
       }),
