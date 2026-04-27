@@ -269,13 +269,34 @@ const BASE_T = {
   disclaimer:"Amazon affiliate links support this free service at no extra cost to you. All recommendations are based solely on your skin profile and budget.",
   of:"/",
   translating:"Setting up your language...",
+  // Founder story — translatable
+  storyLabel:"The Story Behind SKINR",
+  storyTitle:"Why I Built This",
+  storyP1:"As a man who shaves every day, I had no idea what my blade was actually doing to my skin. Every morning — the same routine, the same razor, the same result. Razor bumps. Redness. Irritation that stayed for days. I went to barbers who made it worse. I changed products constantly — one after another, hoping something would work, never understanding why nothing did.",
+  storyP2:"The answer, it turned out, was not in a better product. It was in understanding my skin. Once I learned my skin type, why my specific blade was causing bumps, which ingredients actually work for my biology, and how to build a routine in the right order — everything changed. Fewer bumps. Less redness. Better skin. And for the first time, genuine confidence about how I looked.",
+  storyP3:"That is why SKINR exists. A single platform where every man — regardless of age, skin type, or budget — can understand his skin biology, make informed decisions about what goes on his face, and build a routine that actually works. Not someone else's routine. His.",
+  missionLabel:"Our Mission",
+  missionText:"To be the one-stop platform where every man discovers his skin biology, makes the right decisions, and takes care of his skin — at every age.",
+  copyright:"All rights reserved.",
+  skinScore:"Skin Score",
+  consistencyRating:"Consistency Rating",
+  weekOneLabel:"Week One Protocol",
+  expectedTimeline:"Expected Timeline",
+  whenDermatologist:"When to See a Dermatologist",
+  criticalRuleLabel:"Critical Rule",
+  clinicalAssessmentLabel:"Clinical Assessment",
+  techniqueLabel:"Technique",
+  transitionLabel:"Transition Note",
+  recommendedBladesLabel:"Recommended Blades",
+  avoidLabel:"Avoid",
+  expertInsight:"Expert Insight",
 };
 
 // ── TRANSLATION ENGINE ────────────────────────────────────────────────────────
 // Translates all UI strings via AI. Result cached in localStorage per language.
 // Called once per device per language — never again unless BASE_T changes.
 
-const TRANSLATION_CACHE_VERSION = "v1"; // Increment to force retranslation when BASE_T changes significantly
+const TRANSLATION_CACHE_VERSION = "v3"; // Bumped — includes quiz questions, founder story, UI labels
 
 const getCacheKey = (langCode) => `skinr2:t_${langCode}_${TRANSLATION_CACHE_VERSION}`;
 
@@ -283,39 +304,25 @@ const buildTranslationPrompt = (langCode) => {
   const langInfo = LANGUAGES.find(l => l.code === langCode);
   const langName = langInfo?.native || langCode;
 
-  // Only translate essential visible UI strings — not quiz options (too large)
-  // Quiz options are already in English and Claude generates protocols in the user's language anyway
+  // Only translate essential visible UI strings
   const essential = {
     badge: BASE_T.badge,
-    heroTitle: BASE_T.heroTitle,
-    heroTitle2: BASE_T.heroTitle2,
-    heroBody: BASE_T.heroBody,
-    pathTitle: BASE_T.pathTitle,
-    pathSub: BASE_T.pathSub,
-    skinCardTitle: BASE_T.skinCardTitle,
-    skinCardDesc: BASE_T.skinCardDesc,
-    skinCardBtn: BASE_T.skinCardBtn,
-    shaveCardTitle: BASE_T.shaveCardTitle,
-    shaveCardDesc: BASE_T.shaveCardDesc,
-    shaveCardBtn: BASE_T.shaveCardBtn,
-    back: BASE_T.back, next: BASE_T.next, analyze: BASE_T.analyze,
-    analyzing: BASE_T.analyzing,
+    heroTitle: BASE_T.heroTitle, heroTitle2: BASE_T.heroTitle2, heroBody: BASE_T.heroBody,
+    pathTitle: BASE_T.pathTitle, pathSub: BASE_T.pathSub,
+    skinCardTitle: BASE_T.skinCardTitle, skinCardDesc: BASE_T.skinCardDesc, skinCardBtn: BASE_T.skinCardBtn,
+    shaveCardTitle: BASE_T.shaveCardTitle, shaveCardDesc: BASE_T.shaveCardDesc, shaveCardBtn: BASE_T.shaveCardBtn,
+    back: BASE_T.back, next: BASE_T.next, analyze: BASE_T.analyze, analyzing: BASE_T.analyzing,
     morning: BASE_T.morning, evening: BASE_T.evening,
-    whyThisWorks: BASE_T.whyThisWorks, hideScience: BASE_T.hideScience,
-    findProduct: BASE_T.findProduct,
-    emailTitle: BASE_T.emailTitle, emailDesc: BASE_T.emailDesc,
-    emailBtn: BASE_T.emailBtn, emailSkip: BASE_T.emailSkip,
-    emailSuccess: BASE_T.emailSuccess,
-    coachTitle: BASE_T.coachTitle, coachSub: BASE_T.coachSub,
-    coachOnline: BASE_T.coachOnline,
-    youLabel: BASE_T.youLabel, coachLabel: BASE_T.coachLabel,
-    inputPlaceholder: BASE_T.inputPlaceholder,
+    whyThisWorks: BASE_T.whyThisWorks, hideScience: BASE_T.hideScience, findProduct: BASE_T.findProduct,
+    emailTitle: BASE_T.emailTitle, emailDesc: BASE_T.emailDesc, emailBtn: BASE_T.emailBtn,
+    emailSkip: BASE_T.emailSkip, emailSuccess: BASE_T.emailSuccess,
+    coachTitle: BASE_T.coachTitle, coachSub: BASE_T.coachSub, coachOnline: BASE_T.coachOnline,
+    youLabel: BASE_T.youLabel, coachLabel: BASE_T.coachLabel, inputPlaceholder: BASE_T.inputPlaceholder,
+    suggestions: BASE_T.suggestions,
     checkinTitle: BASE_T.checkinTitle, checkinSub: BASE_T.checkinSub,
     todayStatus: BASE_T.todayStatus, submitCheckin: BASE_T.submitCheckin,
-    submitting: BASE_T.submitting, progressHistory: BASE_T.progressHistory,
-    noHistory: BASE_T.noHistory,
-    shaveTitle: BASE_T.shaveTitle, shaveSub: BASE_T.shaveSub,
-    analyzeShave: BASE_T.analyzeShave,
+    submitting: BASE_T.submitting, progressHistory: BASE_T.progressHistory, noHistory: BASE_T.noHistory,
+    shaveTitle: BASE_T.shaveTitle, shaveSub: BASE_T.shaveSub, analyzeShave: BASE_T.analyzeShave,
     bladeSection: BASE_T.bladeSection,
     preShave: BASE_T.preShave, duringShave: BASE_T.duringShave, postShave: BASE_T.postShave,
     preventionProducts: BASE_T.preventionProducts, treatmentProducts: BASE_T.treatmentProducts,
@@ -326,15 +333,47 @@ const buildTranslationPrompt = (langCode) => {
     welcomeBack: BASE_T.welcomeBack, continueJourney: BASE_T.continueJourney,
     viewProtocol: BASE_T.viewProtocol, consultCoach: BASE_T.consultCoach,
     newAnalysis: BASE_T.newAnalysis, newShave: BASE_T.newShave,
-    disclaimer: BASE_T.disclaimer,
+    disclaimer: BASE_T.disclaimer, lastAnalyzed: BASE_T.lastAnalyzed,
     nav: BASE_T.nav,
     communityTitle: BASE_T.communityTitle, communitySub: BASE_T.communitySub,
     communityPost: BASE_T.communityPost, communityFeed: BASE_T.communityFeed,
-    communityShareTitle: BASE_T.communityShareTitle,
-    communityShareBtn: BASE_T.communityShareBtn, communityCancel: BASE_T.communityCancel,
+    communityShareTitle: BASE_T.communityShareTitle, communityShareBtn: BASE_T.communityShareBtn,
+    communityCancel: BASE_T.communityCancel, communityPosted: BASE_T.communityPosted,
+    communityLike: BASE_T.communityLike, communityEmpty: BASE_T.communityEmpty,
+    discordTitle: BASE_T.discordTitle, discordSub: BASE_T.discordSub, discordBtn: BASE_T.discordBtn,
     guidesTitle: BASE_T.guidesTitle, guidesSub: BASE_T.guidesSub,
     guideBuyBtn: BASE_T.guideBuyBtn, guideComingSoon: BASE_T.guideComingSoon,
     translating: BASE_T.translating,
+    // Founder story
+    storyLabel: BASE_T.storyLabel, storyTitle: BASE_T.storyTitle,
+    storyP1: BASE_T.storyP1, storyP2: BASE_T.storyP2, storyP3: BASE_T.storyP3,
+    missionLabel: BASE_T.missionLabel, missionText: BASE_T.missionText,
+    copyright: BASE_T.copyright, skinScore: BASE_T.skinScore, consistencyRating: BASE_T.consistencyRating,
+    // UI labels
+    weekOneLabel: BASE_T.weekOneLabel, expectedTimeline: BASE_T.expectedTimeline,
+    whenDermatologist: BASE_T.whenDermatologist, criticalRuleLabel: BASE_T.criticalRuleLabel,
+    clinicalAssessmentLabel: BASE_T.clinicalAssessmentLabel, techniqueLabel: BASE_T.techniqueLabel,
+    transitionLabel: BASE_T.transitionLabel, recommendedBladesLabel: BASE_T.recommendedBladesLabel,
+    avoidLabel: BASE_T.avoidLabel, expertInsight: BASE_T.expertInsight,
+    analysisComplete: BASE_T.analysisComplete, yourProtocol: BASE_T.yourProtocol,
+    shaveCritical: BASE_T.shaveCritical, medDisclaimer: BASE_T.medDisclaimer,
+    loadSteps: BASE_T.loadSteps,
+    // Skin quiz
+    q_feel: BASE_T.q_feel, q_breakouts: BASE_T.q_breakouts,
+    q_sensitivity: BASE_T.q_sensitivity, q_age: BASE_T.q_age,
+    q_concern: BASE_T.q_concern, q_budget: BASE_T.q_budget,
+    opts_feel: BASE_T.opts_feel, opts_breakouts: BASE_T.opts_breakouts,
+    opts_sensitivity: BASE_T.opts_sensitivity, opts_age: BASE_T.opts_age,
+    opts_concern: BASE_T.opts_concern, opts_budget: BASE_T.opts_budget,
+    quizHints: BASE_T.quizHints,
+    // Shave quiz
+    shaveQ1: BASE_T.shaveQ1, shaveQ2: BASE_T.shaveQ2, shaveQ3: BASE_T.shaveQ3,
+    shaveQ4: BASE_T.shaveQ4, shaveQ5: BASE_T.shaveQ5, shaveQ6: BASE_T.shaveQ6, shaveQ7: BASE_T.shaveQ7,
+    shaveOpts1: BASE_T.shaveOpts1, shaveOpts2: BASE_T.shaveOpts2, shaveOpts3: BASE_T.shaveOpts3,
+    shaveOpts4: BASE_T.shaveOpts4, shaveOpts5: BASE_T.shaveOpts5,
+    shaveOpts6: BASE_T.shaveOpts6, shaveOpts7: BASE_T.shaveOpts7,
+    // Moods
+    moods: BASE_T.moods,
   };
 
   return `Translate ALL values in this JSON from English to ${langName} (${langCode}).
@@ -1567,8 +1606,8 @@ Return:
                 <div className="arc-n"><div className="arc-v">{score}</div><div className="arc-mx">/100</div></div>
               </div>
               <div className="s-info">
-                <div className="s-title">Skin Score</div>
-                <div className="s-sub">Consistency Rating</div>
+                <div className="s-title">{t.skinScore}</div>
+                <div className="s-sub">{t.consistencyRating}</div>
                 <div className="s-bar"><div className="s-bar-f" style={{width:`${score}%`}}/></div>
               </div>
             </div>
@@ -1606,22 +1645,18 @@ Return:
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
             <div style={{width:1,height:32,background:"var(--gold)",flexShrink:0}}/>
             <div>
-              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:3}}>The Story Behind SKINR</div>
-              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>Why I Built This</div>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:3}}>{t.storyLabel}</div>
+              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>{t.storyTitle}</div>
             </div>
           </div>
-
-          {/* Story paragraphs */}
           <div style={{fontFamily:"var(--fc)",fontSize:16,lineHeight:2,color:"var(--soft)",fontStyle:"italic",marginBottom:28,maxWidth:680,borderLeft:"1px solid var(--border)",paddingLeft:20}}>
-            <p style={{marginBottom:18}}>As a man who shaves every day, I had no idea what my blade was actually doing to my skin. Every morning — the same routine, the same razor, the same result. Razor bumps. Redness. Irritation that stayed for days. I went to barbers who made it worse. I changed products constantly — one after another, hoping something would work, never understanding why nothing did.</p>
-            <p style={{marginBottom:18}}>The answer, it turned out, was not in a better product. It was in understanding my skin. Once I learned my skin type, why my specific blade was causing bumps, which ingredients actually work for my biology, and how to build a routine in the right order — everything changed. Fewer bumps. Less redness. Better skin. And for the first time, genuine confidence about how I looked.</p>
-            <p>That is why SKINR exists. A single platform where every man — regardless of age, skin type, or budget — can understand his skin biology, make informed decisions about what goes on his face, and build a routine that actually works. Not someone else's routine. His.</p>
+            <p style={{marginBottom:18}}>{t.storyP1}</p>
+            <p style={{marginBottom:18}}>{t.storyP2}</p>
+            <p>{t.storyP3}</p>
           </div>
-
-          {/* Mission */}
           <div style={{border:"1px solid var(--goldb)",borderLeft:"3px solid var(--gold)",padding:"18px 20px",marginBottom:32,background:"var(--gold3)"}}>
-            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>Our Mission</div>
-            <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",lineHeight:1.5}}>To be the one-stop platform where every man discovers his skin biology, makes the right decisions, and takes care of his skin — at every age.</div>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>{t.missionLabel}</div>
+            <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",lineHeight:1.5}}>{t.missionText}</div>
           </div>
 
           {/* Footer bar */}
@@ -1634,7 +1669,7 @@ Return:
             <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"right",lineHeight:1.7}}>
               <div>Free. Clinical. Built for Men.</div>
               <div style={{marginTop:3}}>Amazon affiliate links support this free service at no extra cost to you.</div>
-              <div style={{marginTop:3}}>© {new Date().getFullYear()} SKINR. All rights reserved.</div>
+              <div style={{marginTop:3}}>© {new Date().getFullYear()} SKINR. {t.copyright}</div>
             </div>
           </div>
         </footer>
