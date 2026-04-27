@@ -1278,18 +1278,13 @@ export default function SkinrApp() {
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
-    // Load cached translation synchronously — no delay, no flash
-    const savedLang = LS.get(SK.lang);
-    const initialLang = savedLang || detectBrowserLang();
     setLang(initialLang);
-
-    // Try to load from cache first (instant)
+    // Try cached translation first — instant, no spinner
     if(initialLang !== "en"){
       const cached = LS.get(getCacheKey(initialLang));
       if(cached){
-        setT(cached); // Instant — no API call needed
+        setT(cached);
       } else {
-        // Not cached yet — load in background after render
         loadTranslation(initialLang);
       }
       document.documentElement.dir = LANGUAGES.find(x=>x.code===initialLang)?.dir || "ltr";
