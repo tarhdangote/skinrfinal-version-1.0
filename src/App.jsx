@@ -438,15 +438,60 @@ Rules: morning 3-4 products ending with SPF, evening 2-3 products no SPF, all on
 const buildShavePrompt = (answers, skinProfile, lang) => {
   const ln = (LANGUAGES.find(l=>l.code===lang)?.label || "English");
   const tier = answers.budget || "mid";
-  const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0,3).join(", ") || "Cremo, Nivea Men";
-  const skinType = skinProfile?.skinType || "unknown";
+  const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0,3).join(", ") || "Cremo, Proraso, Nivea Men";
+  const skinType = skinProfile?.skinType || "combination";
   const hasBumps = answers.activeBumps && answers.activeBumps !== "none";
 
-  return `Shaving dermatologist. ${ln} only. Return raw JSON only — no markdown.
-Profile: method=${answers.method},beard=${answers.beard},problem=${answers.problem},bumps=${answers.activeBumps||"none"},blade=${answers.currentBlade||"?"},freq=${answers.frequency},budget=${tier},skin=${skinType}
-Brands:${brands}
-JSON(max 15 words per string):{"clinicalFinding":"","severityAssessment":"","bladeRecommendation":{"recommendedType":"","specificModel":"","whyThisRazor":"","bladeGap":"","recommendedBlades":[{"name":"","estimatedPrice":"","why":"","rating":"","amazonSearch":""}],"transitionNote":"","techniqueAdjustment":""},"preShave":[{"step":1,"title":"","instruction":"","duration":"","why":""}],"shaveProtocol":[{"step":1,"title":"","instruction":"","why":""}],"postShave":[{"step":1,"title":"","instruction":"","why":""}],"preventionProducts":[{"name":"","brand":"","category":"","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"}]${hasBumps?`,"treatmentProducts":[{"name":"","brand":"","category":"","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","expectedTimeline":""}],"treatmentProtocol":""`:``},"criticalRule":"","weekOneProtocol":"","expectedImprovement":"","whenToSeeDoctor":"","skinBiologyTeaser":""}
-Fill every field. preShave=3steps,shaveProtocol=3steps,postShave=3steps,prevention=2items,within ${tier} budget.`;
+  return `You are a shaving dermatologist. Respond in ${ln}. Return ONLY valid JSON. No markdown. No explanation.
+
+Input: method=${answers.method||"cartridge"}, beard=${answers.beard||"medium"}, problem=${answers.problem||"redness"}, bumps=${answers.activeBumps||"none"}, blade=${answers.currentBlade||"unknown"}, frequency=${answers.frequency||"daily"}, budget=${tier}, skin=${skinType}
+Brands available: ${brands}
+
+Return exactly this JSON structure with all fields filled (keep each string under 20 words):
+
+{
+  "clinicalFinding": "one sentence root cause",
+  "severityAssessment": "self-manage or see doctor",
+  "criticalRule": "most important single change",
+  "bladeRecommendation": {
+    "recommendedType": "razor type name",
+    "specificModel": "exact product name",
+    "whyThisRazor": "clinical reason under 15 words",
+    "bladeGap": "mild or medium or aggressive",
+    "techniqueAdjustment": "key technique tip",
+    "transitionNote": "how to switch from current method",
+    "recommendedBlades": [
+      {"name": "blade name", "estimatedPrice": "$X per 100", "why": "reason", "rating": "X.X/5 Amazon", "amazonSearch": "search term"}
+    ]
+  },
+  "preShave": [
+    {"step": 1, "title": "Warm the skin", "instruction": "what to do", "duration": "60 seconds", "why": "biological reason"},
+    {"step": 2, "title": "Exfoliate", "instruction": "what to do", "duration": "30 seconds", "why": "biological reason"},
+    {"step": 3, "title": "Apply lubricant", "instruction": "what to do", "duration": "30 seconds", "why": "biological reason"}
+  ],
+  "shaveProtocol": [
+    {"step": 1, "title": "First pass", "instruction": "what to do", "why": "dermatological reason"},
+    {"step": 2, "title": "Rinse", "instruction": "what to do", "why": "dermatological reason"},
+    {"step": 3, "title": "Final pass", "instruction": "what to do", "why": "dermatological reason"}
+  ],
+  "postShave": [
+    {"step": 1, "title": "Cold rinse", "instruction": "what to do", "why": "physiological effect"},
+    {"step": 2, "title": "Pat dry", "instruction": "what to do", "why": "physiological effect"},
+    {"step": 3, "title": "Moisturise", "instruction": "what to do", "why": "physiological effect"}
+  ],
+  "preventionProducts": [
+    {"name": "product name", "brand": "brand", "category": "shave-cream", "estimatedPrice": "$X", "keyIngredient": "ingredient", "use": "how to use", "clinicalMechanism": "how it works", "knownRating": "X.X/5 Amazon", "amazonSearch": "search term", "priority": "essential"},
+    {"name": "product name", "brand": "brand", "category": "post-shave-balm", "estimatedPrice": "$X", "keyIngredient": "ingredient", "use": "how to use", "clinicalMechanism": "how it works", "knownRating": "X.X/5 Amazon", "amazonSearch": "search term", "priority": "essential"}
+  ],
+  "weekOneProtocol": "specific day by day guidance",
+  "expectedImprovement": "honest week 1, week 4, week 8 milestones",
+  "whenToSeeDoctor": "specific clinical warning signs",
+  "skinBiologyTeaser": "two sentences about fascinating skin biology"${hasBumps ? `,
+  "treatmentProducts": [
+    {"name": "product name", "brand": "brand", "category": "bump-treatment", "estimatedPrice": "$X", "keyIngredient": "Salicylic Acid 2%", "use": "how to use", "clinicalMechanism": "mechanism", "knownRating": "X.X/5", "amazonSearch": "search term", "expectedTimeline": "timeline"}
+  ],
+  "treatmentProtocol": "daily bump treatment routine paragraph"` : ''}
+}`;
 };
 
 const buildCheckinPrompt = (mood, profile, history, lang) => {
@@ -1015,56 +1060,55 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 /* OLIVE color override for success/positive states */
 :root{--green:#5C6B3A;--green-light:rgba(92,107,58,0.15);}
 
-/* ── ACCESSIBILITY OVERRIDES ──────────────────────────────────────────────────
-   Goal: WCAG AA minimum contrast 4.5:1 for normal text, 3:1 for large text.
-   Problem: Cormorant Garamond italic at 13-14px on #050505 fails contrast.
-   Fix: Increase sizes, improve contrast values, reduce italics on body copy.
+/* ── READABILITY UPGRADES ─────────────────────────────────────────────────────
+   Base: 16px body, 17px quiz options, 18px questions — WCAG AA compliant
 ────────────────────────────────────────────────────────────────────────────── */
 
-/* Body text — remove italic, increase size and contrast */
-.hero-body{font-size:18px;line-height:2;color:var(--cream);font-style:normal;}
+/* Body text — readable weight and size */
+.hero-body{font-size:17px;line-height:1.95;color:var(--cream);font-style:normal;}
 .p-desc{font-size:16px;line-height:1.85;color:var(--cream);font-style:normal;}
+
+/* Quiz */
+.q-text{font-size:clamp(19px,3.2vw,28px);line-height:1.3;}
+.q-hint{font-size:15px;color:var(--cream);font-style:normal;margin-bottom:22px;}
+.opt-lbl{font-size:16px;color:var(--cream);font-style:normal;font-weight:500;}
+.opt.sel .opt-lbl{color:var(--white);}
+.opt{min-height:52px;padding:14px 16px;}
+
+/* Protocol steps */
 .step-instruction{font-size:15px;line-height:1.75;color:var(--white);}
 .step-why{font-size:14px;line-height:1.75;color:var(--cream);font-style:normal;}
 .sci-text{font-size:14px;line-height:1.8;color:var(--cream);font-style:normal;}
 .ins-text{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
-.phase-step-inst{font-size:14px;line-height:1.7;color:var(--white);}
+.phase-step-inst{font-size:15px;line-height:1.7;color:var(--white);}
 .phase-step-why{font-size:13px;line-height:1.65;color:var(--cream);font-style:normal;}
-.post-text{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+
+/* Chat and community */
 .msg.ai .msg-bubble{font-size:15px;line-height:1.75;color:var(--white);}
-.p-sum{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+.post-text{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
 .hist-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
-.comm-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
-.shave-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
-.ci-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
 
-/* Quiz — larger question text and option labels */
-.q-text{font-size:clamp(20px,3.5vw,30px);}
-.opt-lbl{font-size:16px;color:var(--cream);font-style:normal;}
-.opt.sel .opt-lbl{color:var(--white);}
-.q-hint{font-size:14px;color:var(--cream);font-style:normal;}
-
-/* Mood options */
-.mood-d{font-size:13px;color:var(--cream);font-style:normal;}
-
-/* Cards — increase soft text size */
-.step-brand{font-size:11px;letter-spacing:1px;}
-.path-sub{font-size:16px;color:var(--cream);font-style:normal;}
+/* Summaries */
+.p-sum{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+.comm-s,.shave-s,.ci-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
 .shave-finding-text{font-size:15px;line-height:1.8;color:var(--white);}
 .shave-severity-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
 .crit-text{font-size:15px;line-height:1.75;color:var(--white);font-style:normal;}
 
-/* Minimum touch target 44px for mobile accessibility */
-.opt{min-height:52px;}
-.mood-opt{min-height:72px;}
-.btn{min-height:44px;}
-.ntab{min-height:54px;}
+/* Moods */
+.mood-d{font-size:13px;color:var(--cream);font-style:normal;}
+.mood-l{font-size:14px;}
 
-/* Soft text minimum contrast boost */
+/* Touch targets */
+.btn{min-height:44px;font-size:13px;}
+.mood-opt{min-height:72px;}
+
+/* Soft text contrast boost */
 :root{--soft:#B8AEA6;}
 
-/* Focus rings — visible on all interactive elements */
-button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+/* Focus rings */
+button:focus-visible,a:focus-visible,input:focus-visible,
+textarea:focus-visible,select:focus-visible{
   outline:2px solid var(--gold);outline-offset:3px;border-radius:2px;}
 `;
 
@@ -1234,15 +1278,23 @@ export default function SkinrApp() {
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
-    // Always show English immediately — never block rendering on translation
-    setT(BASE_T);
+    // Load cached translation synchronously — no delay, no flash
+    const savedLang = LS.get(SK.lang);
+    const initialLang = savedLang || detectBrowserLang();
     setLang(initialLang);
-    setReady(true);
-    // Translate in background if needed
+
+    // Try to load from cache first (instant)
     if(initialLang !== "en"){
+      const cached = LS.get(getCacheKey(initialLang));
+      if(cached){
+        setT(cached); // Instant — no API call needed
+      } else {
+        // Not cached yet — load in background after render
+        loadTranslation(initialLang);
+      }
       document.documentElement.dir = LANGUAGES.find(x=>x.code===initialLang)?.dir || "ltr";
-      loadTranslation(initialLang);
     }
+    setReady(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -1530,17 +1582,16 @@ Return:
 
   // Nav items — only show sections relevant to the user's progress
   // Home and Guides always visible. Others appear after completing analysis.
+  // NAV_ITEMS — shown in desktop tab bar and mobile dropdown
+  // HOME is placed next to the logo separately in JSX
+  // GUIDES only shows after at least one protocol is completed
   const NAV_ITEMS = [
-    {id:"home", l:t.nav.home, show:true},
-    // Results: show only if skin analysis done (and hide if they are already on results)
-    ...(has ? [{id:"results", l:t.nav.analysis, show:true}] : []),
-    ...(has ? [{id:"coach",   l:t.nav.coach,    show:true}] : []),
-    ...(has ? [{id:"checkin", l:t.nav.checkin,  show:true}] : []),
-    // Shave: show only if shave protocol done
-    ...(hasShave ? [{id:"shave", l:t.nav.shave, show:true}] : []),
-    // Community: show if user has done any analysis
-    ...((has||hasShave) ? [{id:"community", l:t.nav.community, show:true}] : []),
-    {id:"guides", l:t.nav.guides, show:true},
+    ...(has ? [{id:"results",   l:t.nav.analysis}] : []),
+    ...(has ? [{id:"coach",     l:t.nav.coach}]    : []),
+    ...(has ? [{id:"checkin",   l:t.nav.checkin}]  : []),
+    ...(hasShave ? [{id:"shave",l:t.nav.shave}]    : []),
+    ...((has||hasShave) ? [{id:"community",l:t.nav.community}] : []),
+    ...((has||hasShave) ? [{id:"guides",   l:t.nav.guides}]    : []),
   ];
 
   if(!ready) return (
@@ -1558,11 +1609,20 @@ Return:
 
       {/* NAV */}
       <nav className="nav" role="navigation" aria-label="Main navigation">
-        <button className="logo" onClick={()=>{go("home");setMenuOpen(false);}} aria-label="SKINR — Home">
-          <div className="logo-m" aria-hidden="true"/>{t.appName}
-        </button>
 
-        {/* Desktop tabs — hidden on mobile */}
+        {/* Left — logo + HOME immediately after */}
+        <div style={{display:"flex",alignItems:"stretch",flexShrink:0}}>
+          <button className="logo" onClick={()=>{go("home");setMenuOpen(false);}} aria-label="SKINR — Home">
+            <div className="logo-m" aria-hidden="true"/>{t.appName}
+          </button>
+          <button className={`ntab${view==="home"?" active":""}`}
+            onClick={()=>go("home")} style={{paddingLeft:8,paddingRight:16}}
+            aria-current={view==="home"?"page":undefined}>
+            {t.nav.home}
+          </button>
+        </div>
+
+        {/* Centre — remaining nav tabs (desktop only) */}
         <div className="nav-c" role="menubar">
           {NAV_ITEMS.map(tb=>(
             <button key={tb.id}
@@ -1574,13 +1634,12 @@ Return:
           ))}
         </div>
 
-        {/* Right side — hamburger (mobile) + language */}
+        {/* Right — hamburger (mobile) + language */}
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
 
           {/* Hamburger — mobile only */}
           <div ref={menuRef} style={{position:"relative"}}>
-            <button
-              className="hamburger-btn"
+            <button className="hamburger-btn"
               onClick={()=>setMenuOpen(p=>!p)}
               aria-label="Open navigation menu"
               aria-expanded={menuOpen}>
@@ -1590,6 +1649,12 @@ Return:
             </button>
             {menuOpen&&(
               <div className="mobile-menu" role="menu">
+                <button role="menuitem"
+                  className={`mobile-menu-item${view==="home"?" active":""}`}
+                  onClick={()=>{go("home");setMenuOpen(false);}}>
+                  {view==="home"&&<span style={{color:"var(--gold)",marginRight:8}}>◆</span>}
+                  {t.nav.home}
+                </button>
                 {NAV_ITEMS.map(tb=>(
                   <button key={tb.id} role="menuitem"
                     className={`mobile-menu-item${view===tb.id?" active":""}`}
@@ -1811,17 +1876,27 @@ Return:
       {/* ── RESULTS ── */}
       {view==="results"&&profile&&<div className="wrap fade-in">
         <div className="res-wrap">
-          {/* Language mismatch — offer to regenerate in current language */}
+          {/* Language mismatch — results were generated in a different language */}
           {profile.lang && profile.lang !== lang && (
-            <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
-              padding:"12px 16px",marginBottom:12,display:"flex",
-              alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-              <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--gold)",fontStyle:"italic"}}>
-                This analysis was generated in English. Regenerate it in {LANGUAGES.find(l=>l.code===lang)?.native}?
+            <div style={{
+              border:"2px solid var(--gold)",background:"var(--gold3)",
+              padding:"16px 20px",marginBottom:16,position:"relative",overflow:"hidden"
+            }}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,
+                background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,
+                color:"var(--gold)",textTransform:"uppercase",marginBottom:6}}>
+                Language Notice
               </div>
-              <button className="btn btn-p" style={{padding:"8px 16px",fontSize:11,flexShrink:0}}
-                onClick={startSkinQuiz}>
-                Retake in {LANGUAGES.find(l=>l.code===lang)?.native}
+              <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--white)",
+                marginBottom:14,lineHeight:1.65}}>
+                Your analysis was generated in English. Retake the 6-question quiz to get your
+                full protocol in <strong>{LANGUAGES.find(l=>l.code===lang)?.native}</strong>.
+                It only takes 60 seconds.
+              </div>
+              <button className="btn btn-p" onClick={startSkinQuiz}
+                style={{width:"100%",fontSize:13}}>
+                Retake in {LANGUAGES.find(l=>l.code===lang)?.native} — 60 seconds
               </button>
             </div>
           )}
