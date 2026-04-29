@@ -442,11 +442,9 @@ const buildShavePrompt1 = (answers, skinProfile, lang) => {
   const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0, 3).join(", ") || "Cremo, Proraso, Nivea Men";
   const skin = skinProfile?.skinType || "combination";
   const bumps = answers.activeBumps || "none";
-  return `Shaving dermatologist. Language: ${ln}. Return ONLY raw JSON, no markdown.
-Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin}
-Brands: ${brands}
-Return ONLY this JSON with real clinical values:
-{"clinicalFinding":"root cause one sentence","severityAssessment":"self-manage or see dermatologist","criticalRule":"most important single change","bladeRecommendation":{"recommendedType":"razor type","specificModel":"exact product name","whyThisRazor":"clinical reason","bladeGap":"mild or medium or aggressive","techniqueAdjustment":"key technique change","transitionNote":"how to switch safely","recommendedBlades":[{"name":"blade name","estimatedPrice":"$X per 100","why":"reason","rating":"X.X/5","amazonSearch":"search term"}]}}`;
+  return `Shaving dermatologist. Language: ${ln}. CRITICAL: Return ONLY compact single-line JSON with NO whitespace, no newlines, no markdown, no code fences. Start with { end with }.
+Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin}. Brands:${brands}.
+Fill this schema with real clinical values (keep strings under 15 words): {"clinicalFinding":"","severityAssessment":"","criticalRule":"","bladeRecommendation":{"recommendedType":"","specificModel":"","whyThisRazor":"","bladeGap":"","techniqueAdjustment":"","transitionNote":"","recommendedBlades":[{"name":"","estimatedPrice":"","why":"","rating":"","amazonSearch":""}]}}`;
 };
 
 // ── SHAVE PROMPT 2: Protocol + Products (~900 output tokens, loads lazily) ────
@@ -457,13 +455,11 @@ const buildShavePrompt2 = (answers, diagnosis, lang) => {
   const bumps = answers.activeBumps || "none";
   const hasBumps = bumps !== "none";
   const bumpExtra = hasBumps
-    ? `,"treatmentProducts":[{"name":"product","brand":"brand","category":"bump-treatment","estimatedPrice":"$X","keyIngredient":"Salicylic Acid 2%","use":"how to apply","clinicalMechanism":"mechanism","knownRating":"X.X/5","amazonSearch":"search term","expectedTimeline":"timeline"}],"treatmentProtocol":"daily routine for existing bumps"`
+    ? `,"treatmentProducts":[{"name":"","brand":"","category":"bump-treatment","estimatedPrice":"","keyIngredient":"Salicylic Acid 2%","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","expectedTimeline":""}],"treatmentProtocol":""`
     : ``;
-  return `Shaving dermatologist. Language: ${ln}. Return ONLY raw JSON, no markdown.
-Diagnosis: ${diagnosis||"shaving irritation"}. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},bumps=${bumps},budget=${tier}
-Brands: ${brands}
-Return ONLY this JSON with real clinical values (max 20 words per string):
-{"preShave":[{"step":1,"title":"Warm the skin","instruction":"specific action","duration":"60 seconds","why":"reason"},{"step":2,"title":"Pre-shave prep","instruction":"specific action","duration":"30 seconds","why":"reason"},{"step":3,"title":"Apply lubricant","instruction":"product and method","duration":"30 seconds","why":"reason"}],"shaveProtocol":[{"step":1,"title":"First pass","instruction":"specific technique","why":"reason"},{"step":2,"title":"Rinse and assess","instruction":"specific action","why":"reason"},{"step":3,"title":"Finish","instruction":"specific technique","why":"reason"}],"postShave":[{"step":1,"title":"Cold rinse","instruction":"specific action","why":"reason"},{"step":2,"title":"Pat dry","instruction":"specific action","why":"reason"},{"step":3,"title":"Apply treatment","instruction":"product and amount","why":"reason"}],"preventionProducts":[{"name":"product","brand":"brand","category":"shave-cream","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"},{"name":"product","brand":"brand","category":"post-shave-balm","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"}]${bumpExtra},"weekOneProtocol":"day by day guidance","expectedImprovement":"week 1 week 4 week 8","whenToSeeDoctor":"warning signs","skinBiologyTeaser":"two biology sentences"}`;
+  return `Shaving dermatologist. Language: ${ln}. CRITICAL: Return ONLY compact single-line JSON with NO whitespace, no newlines, no markdown, no code fences. Start with { end with }.
+Diagnosis:${diagnosis||"shaving irritation"}. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},bumps=${bumps},budget=${tier}. Brands:${brands}.
+Fill this schema with real clinical values (keep strings under 15 words): {"preShave":[{"step":1,"title":"","instruction":"","duration":"","why":""},{"step":2,"title":"","instruction":"","duration":"","why":""},{"step":3,"title":"","instruction":"","duration":"","why":""}],"shaveProtocol":[{"step":1,"title":"","instruction":"","why":""},{"step":2,"title":"","instruction":"","why":""},{"step":3,"title":"","instruction":"","why":""}],"postShave":[{"step":1,"title":"","instruction":"","why":""},{"step":2,"title":"","instruction":"","why":""},{"step":3,"title":"","instruction":"","why":""}],"preventionProducts":[{"name":"","brand":"","category":"shave-cream","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"},{"name":"","brand":"","category":"post-shave-balm","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"}]${bumpExtra},"weekOneProtocol":"","expectedImprovement":"","whenToSeeDoctor":"","skinBiologyTeaser":""}`;
 };
 
 const buildCheckinPrompt = (mood, profile, history, lang) => {
