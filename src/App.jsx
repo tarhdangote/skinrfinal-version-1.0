@@ -9,17 +9,15 @@ const CONFIG = {
     domain:            "https://www.getskinr.com",
     affiliateTag:      "skinr07-20",
     amazonBase:        "https://www.amazon.com",
-    skincareGuide:     "",   // Paste Gumroad/Etsy URL when live
-    shavingGuide:      "",   // Paste Gumroad/Etsy URL when live
-    // Optional $10 reports — set unlock code after Gumroad purchase
-    // Gumroad: set redirect URL to https://www.getskinr.com?unlock=YOUR_CODE
+    // Stripe Price IDs — confirmed live
+    stripeBiologyPriceId: "price_1TRbMlCi5YWsRAVAIq1CPgvG",
+    stripeRoutinePriceId:  "price_1TRbOsCi5YWsRAVAH72I6TS1",
+    stripeComboPriceId:    "price_1TRbQgCi5YWsRAVAFDHlX0LM",
     biologyReportPrice:  10,
     routineCardPrice:    10,
     comboPrice:          15,
-    unlockCode:          "SKINR2025",  // Change this to match your Gumroad product
-    biologyGumroad:      "",  // Paste Gumroad link for Biology Report
-    routineCardGumroad:  "",  // Paste Gumroad link for Routine Card
-    comboGumroad:        "",  // Paste Gumroad link for Combo ($15)
+    unlockCode:          "SKINR2025",
+    formspree:           "261158684435060",
     twitterHandle:       "@getskinr",
   },
   // Skincare brands by budget tier
@@ -1498,6 +1496,15 @@ export default function SkinrApp() {
   const [emailDone, setEmailDone]=useState(false);
   const [showPrivacy, setShowPrivacy]=useState(false);
   const [showTerms, setShowTerms]=useState(false);
+  // Payment state
+  const [payModal, setPayModal]             = useState(null); // null | "biology" | "routine" | "combo"
+  const [payLoading, setPayLoading]         = useState(false);
+  const [payError, setPayError]             = useState("");
+  const [paySuccess, setPaySuccess]         = useState(false);
+  const [stripeLoaded, setStripeLoaded]     = useState(false);
+  const [stripeObj, setStripeObj]           = useState(null);
+  const [cardElement, setCardElement]       = useState(null);
+  const [clientSecret, setClientSecret]     = useState("");
   const [emailSaved, setEmailSaved]=useState(null);
   // community
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -1585,6 +1592,94 @@ export default function SkinrApp() {
     return()=>clearInterval(iv);
   },[view,lang]);
   useEffect(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},[messages]);
+
+  // Load Stripe.js once on mount — non-blocking, only when needed
+  useEffect(()=>{
+    if(window.Stripe){ setStripeLoaded(true); setStripeObj(window.Stripe(process.env.REACT_APP_STRIPE_PK||"pk_live_placeholder")); return; }
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/v3/";
+    script.async = true;
+    script.onload = () => {
+      setStripeLoaded(true);
+      // Publishable key is safe in frontend — Stripe designed it to be public
+      const pk = "pk_live_51RRbHsCi5YWsRAVAmc6fwNtSVBpVxg3CIlE7gEtknKpjyBhXmW3UiHQfxLCvMNkblbJ00JhHhc5sRxY2ux4WF00lvHFMH5B";
+      setStripeObj(window.Stripe(pk));
+    };
+    document.head.appendChild(script);
+  },[]);
+
+  // Open payment modal — fetch clientSecret from our Netlify function
+  const openPayment = async (product) => {
+    setPayModal(product);
+    setPayError("");
+    setPaySuccess(false);
+    setPayLoading(true);
+    try {
+      const res = await fetch("/.netlify/functions/stripe", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          product,
+          email: emailSaved || "",
+          skinType: profile?.skinType || "",
+        }),
+      });
+      const data = await res.json();
+      if(!res.ok || data.error) throw new Error(data.error || "Payment setup failed");
+      setClientSecret(data.clientSecret);
+    } catch(e) {
+      setPayError(e.message);
+    }
+    setPayLoading(false);
+  };
+
+  // Mount Stripe Card Element into the modal after clientSecret is ready
+  useEffect(()=>{
+    if(!clientSecret || !stripeObj || !payModal) return;
+    const container = document.getElementById("skinr-card-element");
+    if(!container || container.children.length > 0) return;
+    const elements = stripeObj.elements();
+    const card = elements.create("card", {
+      style:{
+        base:{
+          color:"#F2EEE6", fontFamily:"'Josefin Sans', sans-serif",
+          fontSize:"15px", "::placeholder":{color:"#4E4844"},
+          iconColor:"#B8972A",
+        },
+        invalid:{color:"#9E2B2B"},
+      },
+    });
+    card.mount("#skinr-card-element");
+    setCardElement(card);
+    return ()=>{ try{ card.destroy(); }catch(_){} };
+  },[clientSecret, stripeObj, payModal]);
+
+  // Confirm payment — card data goes directly to Stripe, never to our server
+  const confirmPayment = async () => {
+    if(!stripeObj || !cardElement || !clientSecret) return;
+    setPayLoading(true);
+    setPayError("");
+    try {
+      const result = await stripeObj.confirmCardPayment(clientSecret, {
+        payment_method:{
+          card: cardElement,
+          billing_details:{ email: emailSaved || undefined },
+        },
+      });
+      if(result.error) throw new Error(result.error.message);
+      if(result.paymentIntent?.status === "succeeded") {
+        // Unlock the purchased product
+        setUnlocked(true);
+        LS.set(SK.unlocked, true);
+        LS.set("skinr2:purchasedProduct", payModal);
+        setPaySuccess(true);
+        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); }, 3000);
+      }
+    } catch(e) {
+      setPayError(e.message);
+    }
+    setPayLoading(false);
+  };
 
   const saveChat = useCallback((m)=>{ LS.set(SK.chat, m.slice(-30)); },[]);
   const toggleSci = (id) => setExpanded(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
@@ -2530,6 +2625,7 @@ Return:
                 <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.7,marginBottom:14}}>{t.optionalSub}</div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,background:"var(--border)",margin:"0 0 2px"}}>
+                {/* Biology Report */}
                 <div style={{background:"var(--card)",padding:"16px 18px"}}>
                   <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.biologyTitle}</div>
                   <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.biologyDesc}</div>
@@ -2537,16 +2633,16 @@ Return:
                     bioReport?(
                       <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--cream)",fontStyle:"italic",lineHeight:1.8,maxHeight:260,overflowY:"auto"}}>{bioReport}</div>
                     ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>{bioLoad?"Generating...":"Generate Report"}</button>
+                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>{bioLoad?t.generatingLabel:t.generateReport}</button>
                     )
-                  ):(CONFIG.business.biologyGumroad?(
-                    <a href={CONFIG.business.biologyGumroad} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}}>{t.unlockBtn}</button>
-                    </a>
                   ):(
-                    <button className="btn btn-g" style={{width:"100%",fontSize:11,opacity:.4,cursor:"not-allowed"}} disabled>{t.unlockBtn} — Coming Soon</button>
-                  ))}
+                    <button className="btn btn-p" style={{width:"100%",fontSize:11}}
+                      onClick={()=>openPayment("biology")}>
+                      {t.unlockBtn} — ${CONFIG.business.biologyReportPrice}
+                    </button>
+                  )}
                 </div>
+                {/* Routine Card */}
                 <div style={{background:"var(--card)",padding:"16px 18px"}}>
                   <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.routineCardTitle}</div>
                   <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.routineCardDesc}</div>
@@ -2558,24 +2654,27 @@ Return:
                         {cardReport.rememberLine&&<div style={{borderTop:"1px solid var(--border)",marginTop:8,paddingTop:8,color:"var(--gold)",fontStyle:"italic",fontSize:11}}>{cardReport.rememberLine}</div>}
                       </div>
                     ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>{cardLoad?"Generating...":"Generate Card"}</button>
+                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>{cardLoad?t.generatingLabel:t.generateCard}</button>
                     )
-                  ):(CONFIG.business.routineCardGumroad?(
-                    <a href={CONFIG.business.routineCardGumroad} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}}>{t.unlockBtn}</button>
-                    </a>
                   ):(
-                    <button className="btn btn-g" style={{width:"100%",fontSize:11,opacity:.4,cursor:"not-allowed"}} disabled>{t.unlockBtn} — Coming Soon</button>
-                  ))}
+                    <button className="btn btn-p" style={{width:"100%",fontSize:11}}
+                      onClick={()=>openPayment("routine")}>
+                      {t.unlockBtn} — ${CONFIG.business.routineCardPrice}
+                    </button>
+                  )}
                 </div>
               </div>
+              {/* Combo + unlock code row */}
               <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
                 {unlocked?(
-                  <div style={{textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>{t.alreadyUnlocked} Reports Unlocked</div>
+                  <div style={{textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>{t.alreadyUnlocked}</div>
                 ):(
-                  <div>
-                    <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic",marginBottom:8}}>{t.enterCode}</div>
-                    <div style={{display:"flex",gap:7}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    <button className="btn btn-p" style={{width:"100%",fontSize:12}}
+                      onClick={()=>openPayment("combo")}>
+                      ◆ {t.comboBtn} — ${CONFIG.business.comboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
+                    </button>
+                    <div style={{display:"flex",gap:7,alignItems:"center"}}>
                       <input
                         style={{flex:1,background:"var(--bg)",border:`1px solid ${unlockErr?"var(--red)":"var(--border)"}`,padding:"8px 12px",fontFamily:"var(--fc)",fontSize:13,color:"var(--white)",outline:"none",fontStyle:"italic"}}
                         placeholder={t.unlockCodePlaceholder}
@@ -2583,9 +2682,12 @@ Return:
                         onChange={e=>{setUnlockInput(e.target.value);setUnlockErr(false);}}
                         onKeyDown={e=>e.key==="Enter"&&tryUnlock()}
                       />
-                      <button className="btn btn-p" style={{padding:"8px 16px",fontSize:11}} onClick={tryUnlock}>{t.unlockCodeBtn}</button>
+                      <button className="btn btn-g" style={{padding:"8px 14px",fontSize:11,flexShrink:0}} onClick={tryUnlock}>{t.unlockCodeBtn}</button>
                     </div>
-                    {unlockErr&&<div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--red)",fontStyle:"italic",marginTop:5}}>Invalid code. Purchase a report to receive your unlock code.</div>}
+                    {unlockErr&&<div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--red)",fontStyle:"italic"}}>Invalid code.</div>}
+                    <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center"}}>
+                      {lang==="fr"?"Paiement sécurisé via Stripe — aucune donnée de carte stockée":lang==="es"?"Pago seguro via Stripe — ningún dato de tarjeta almacenado":"Secure payment via Stripe — card data never stored on our servers"}
+                    </div>
                   </div>
                 )}
               </div>
@@ -3254,6 +3356,120 @@ Return:
         </div>
       </div>
     </div>}
+
+    {/* ── STRIPE PAYMENT MODAL ── */}
+    {payModal&&(
+      <div className="modal-ov" role="dialog" aria-modal="true">
+        <div className="modal" onClick={e=>e.stopPropagation()}>
+          <div className="modal-inner">
+            {paySuccess?(
+              <div style={{textAlign:"center",padding:"20px 0"}}>
+                <div style={{fontSize:32,marginBottom:12}}>◆</div>
+                <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:700,fontStyle:"italic",color:"var(--gold)",marginBottom:8}}>
+                  {lang==="fr"?"Paiement Confirmé!":lang==="es"?"¡Pago Confirmado!":"Payment Confirmed!"}
+                </div>
+                <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",fontStyle:"italic"}}>
+                  {lang==="fr"?"Tes rapports sont maintenant déverrouillés.":lang==="es"?"Tus informes ya están desbloqueados.":"Your reports are now unlocked. Generating now..."}
+                </div>
+              </div>
+            ):(
+              <>
+                {/* Header */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+                  <div>
+                    <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+                      {lang==="fr"?"Paiement Sécurisé":lang==="es"?"Pago Seguro":"Secure Payment"}
+                    </div>
+                    <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>
+                      {payModal==="biology"
+                        ? t.biologyTitle
+                        : payModal==="routine"
+                        ? t.routineCardTitle
+                        : t.comboTitle}
+                    </div>
+                    <div style={{fontFamily:"var(--fm)",fontSize:11,color:"var(--gold)",marginTop:4}}>
+                      ${payModal==="combo" ? CONFIG.business.comboPrice : CONFIG.business.biologyReportPrice} USD
+                      {lang==="fr"&&<span style={{color:"var(--soft)",marginLeft:6,fontSize:10}}>(~${payModal==="combo"?Math.round(15*1.36):Math.round(10*1.36)} CAD)</span>}
+                    </div>
+                  </div>
+                  <button onClick={()=>{setPayModal(null);setPayError("");setClientSecret("");setCardElement(null);}}
+                    style={{background:"none",border:"none",color:"var(--soft)",fontSize:20,cursor:"pointer",padding:4}}>
+                    ✕
+                  </button>
+                </div>
+
+                {/* Personalised context */}
+                {profile&&(
+                  <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+                    padding:"10px 14px",marginBottom:16,fontSize:13,fontFamily:"var(--fc)",
+                    color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                    {payModal==="biology"
+                      ? (lang==="fr"
+                          ? `Ce rapport explique exactement pourquoi ta peau ${profile.skinType?.toLowerCase()||""} se comporte comme elle le fait — au niveau cellulaire.`
+                          : lang==="es"
+                          ? `Este informe explica exactamente por qué tu piel ${profile.skinType?.toLowerCase()||""} se comporta como lo hace — a nivel celular.`
+                          : `This report explains exactly why your ${profile.skinType||""} skin behaves the way it does — at the cellular level.`)
+                      : payModal==="routine"
+                      ? (lang==="fr"
+                          ? `Une carte de routine imprimable construite à partir de ton profil exact — pas un guide générique.`
+                          : lang==="es"
+                          ? `Una tarjeta de rutina imprimible construida desde tu perfil exacto — no una guía genérica.`
+                          : `A printable routine card built from your exact profile — not a generic guide.`)
+                      : (lang==="fr"
+                          ? `Les deux rapports personnalisés à ton profil ${profile.skinType?.toLowerCase()||""} — meilleure valeur.`
+                          : lang==="es"
+                          ? `Ambos informes personalizados para tu perfil ${profile.skinType?.toLowerCase()||""} — mejor valor.`
+                          : `Both reports personalised to your ${profile.skinType||""} profile — best value.`)
+                    }
+                  </div>
+                )}
+
+                {/* Card form */}
+                {payLoading&&!clientSecret?(
+                  <div style={{textAlign:"center",padding:"20px 0",fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic"}}>
+                    {lang==="fr"?"Configuration du paiement...":lang==="es"?"Configurando el pago...":"Setting up payment..."}
+                  </div>
+                ):(
+                  <>
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--soft)",textTransform:"uppercase",marginBottom:8}}>
+                        {lang==="fr"?"Détails de la carte":lang==="es"?"Detalles de la tarjeta":"Card details"}
+                      </div>
+                      {/* Stripe Card Element mounts here */}
+                      <div id="skinr-card-element"
+                        style={{border:"1px solid var(--border)",padding:"12px 14px",
+                          background:"var(--bg)",minHeight:44}}/>
+                      {payError&&(
+                        <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--red)",fontStyle:"italic",marginTop:8}}>
+                          {payError}
+                        </div>
+                      )}
+                    </div>
+                    <button className="btn btn-p" style={{width:"100%",marginBottom:10}}
+                      onClick={confirmPayment} disabled={payLoading||!clientSecret||!cardElement}>
+                      {payLoading
+                        ? (lang==="fr"?"Traitement...":lang==="es"?"Procesando...":"Processing...")
+                        : (lang==="fr"?`Payer $${payModal==="combo"?15:10} USD`:lang==="es"?`Pagar $${payModal==="combo"?15:10} USD`:`Pay $${payModal==="combo"?15:10} USD`)}
+                    </button>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                      fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic"}}>
+                      <span>🔒</span>
+                      <span>
+                        {lang==="fr"
+                          ? "Paiement sécurisé par Stripe. Aucune donnée de carte stockée sur nos serveurs."
+                          : lang==="es"
+                          ? "Pago seguro por Stripe. Ningún dato de tarjeta almacenado en nuestros servidores."
+                          : "Secured by Stripe. Card data is processed by Stripe and never touches our servers."}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* ── PRIVACY POLICY MODAL ── */}
     {showPrivacy&&(
