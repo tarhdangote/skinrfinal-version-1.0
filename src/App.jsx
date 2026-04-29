@@ -435,63 +435,35 @@ Return this JSON (keep all string values short — max 20 words each):
 Rules: morning 3-4 products ending with SPF, evening 2-3 products no SPF, all on Amazon within ${tier} budget using brands: ${brands}.`;
 };
 
-const buildShavePrompt = (answers, skinProfile, lang) => {
+// ── SHAVE PROMPT 1: Diagnosis + Blade (~500 output tokens, always completes) ──
+const buildShavePrompt1 = (answers, skinProfile, lang) => {
   const ln = LANGUAGES.find(l => l.code === lang)?.label || "English";
   const tier = answers.budget || "mid";
   const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0, 3).join(", ") || "Cremo, Proraso, Nivea Men";
   const skin = skinProfile?.skinType || "combination";
   const bumps = answers.activeBumps || "none";
-  const hasBumps = bumps !== "none";
-
-  const bumpSection = hasBumps
-    ? `"treatmentProducts": [{"name":"product","brand":"brand","category":"bump-treatment","estimatedPrice":"$X","keyIngredient":"Salicylic Acid 2%","use":"application method","clinicalMechanism":"how it treats bumps","knownRating":"X.X/5","amazonSearch":"search term","expectedTimeline":"2-4 weeks"}],
-  "treatmentProtocol": "daily treatment routine for existing bumps",`
-    : ``;
-
-  return `You are a shaving dermatologist. Language: ${ln}. Return ONLY valid JSON — no markdown, no code fences, no explanation. Start your response with { and end with }.
-
-Patient: method=${answers.method || "cartridge"}, beard=${answers.beard || "medium"}, problem=${answers.problem || "redness"}, bumps=${bumps}, blade=${answers.currentBlade || "unknown"}, frequency=${answers.frequency || "daily"}, budget=${tier}, skin=${skin}
+  return `Shaving dermatologist. Language: ${ln}. Return ONLY raw JSON, no markdown.
+Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin}
 Brands: ${brands}
+Return ONLY this JSON with real clinical values:
+{"clinicalFinding":"root cause one sentence","severityAssessment":"self-manage or see dermatologist","criticalRule":"most important single change","bladeRecommendation":{"recommendedType":"razor type","specificModel":"exact product name","whyThisRazor":"clinical reason","bladeGap":"mild or medium or aggressive","techniqueAdjustment":"key technique change","transitionNote":"how to switch safely","recommendedBlades":[{"name":"blade name","estimatedPrice":"$X per 100","why":"reason","rating":"X.X/5","amazonSearch":"search term"}]}}`;
+};
 
-JSON template — replace every placeholder string with real clinical content (under 20 words each):
-{
-  "clinicalFinding": "root cause sentence",
-  "severityAssessment": "self-manage or see doctor",
-  "criticalRule": "most important change",
-  "bladeRecommendation": {
-    "recommendedType": "razor type",
-    "specificModel": "exact product name",
-    "whyThisRazor": "clinical reason",
-    "bladeGap": "mild or medium or aggressive",
-    "techniqueAdjustment": "technique tip",
-    "transitionNote": "how to switch safely",
-    "recommendedBlades": [{"name":"blade name","estimatedPrice":"$X per 100","why":"reason","rating":"X.X/5","amazonSearch":"search term"}]
-  },
-  "preShave": [
-    {"step":1,"title":"Warm the skin","instruction":"specific action","duration":"60 seconds","why":"biological reason"},
-    {"step":2,"title":"Pre-shave prep","instruction":"specific action","duration":"30 seconds","why":"biological reason"},
-    {"step":3,"title":"Apply lubricant","instruction":"specific product and method","duration":"30 seconds","why":"biological reason"}
-  ],
-  "shaveProtocol": [
-    {"step":1,"title":"First pass","instruction":"specific technique","why":"dermatological reason"},
-    {"step":2,"title":"Rinse and assess","instruction":"specific action","why":"dermatological reason"},
-    {"step":3,"title":"Finish","instruction":"specific technique","why":"dermatological reason"}
-  ],
-  "postShave": [
-    {"step":1,"title":"Cold rinse","instruction":"specific action","why":"physiological effect"},
-    {"step":2,"title":"Pat dry","instruction":"specific action","why":"physiological effect"},
-    {"step":3,"title":"Apply treatment","instruction":"specific product and amount","why":"physiological effect"}
-  ],
-  "preventionProducts": [
-    {"name":"product name","brand":"brand","category":"shave-cream","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"biological action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"},
-    {"name":"product name","brand":"brand","category":"post-shave-balm","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"biological action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"}
-  ],
-  ${bumpSection}
-  "weekOneProtocol": "day by day guidance for days 1 through 7",
-  "expectedImprovement": "week 1 week 4 week 8 milestones",
-  "whenToSeeDoctor": "specific warning signs",
-  "skinBiologyTeaser": "two sentences about the skin biology behind their specific problem"
-}`;
+// ── SHAVE PROMPT 2: Protocol + Products (~900 output tokens, loads lazily) ────
+const buildShavePrompt2 = (answers, diagnosis, lang) => {
+  const ln = LANGUAGES.find(l => l.code === lang)?.label || "English";
+  const tier = answers.budget || "mid";
+  const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0, 3).join(", ") || "Cremo, Proraso, Nivea Men";
+  const bumps = answers.activeBumps || "none";
+  const hasBumps = bumps !== "none";
+  const bumpExtra = hasBumps
+    ? `,"treatmentProducts":[{"name":"product","brand":"brand","category":"bump-treatment","estimatedPrice":"$X","keyIngredient":"Salicylic Acid 2%","use":"how to apply","clinicalMechanism":"mechanism","knownRating":"X.X/5","amazonSearch":"search term","expectedTimeline":"timeline"}],"treatmentProtocol":"daily routine for existing bumps"`
+    : ``;
+  return `Shaving dermatologist. Language: ${ln}. Return ONLY raw JSON, no markdown.
+Diagnosis: ${diagnosis||"shaving irritation"}. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},bumps=${bumps},budget=${tier}
+Brands: ${brands}
+Return ONLY this JSON with real clinical values (max 20 words per string):
+{"preShave":[{"step":1,"title":"Warm the skin","instruction":"specific action","duration":"60 seconds","why":"reason"},{"step":2,"title":"Pre-shave prep","instruction":"specific action","duration":"30 seconds","why":"reason"},{"step":3,"title":"Apply lubricant","instruction":"product and method","duration":"30 seconds","why":"reason"}],"shaveProtocol":[{"step":1,"title":"First pass","instruction":"specific technique","why":"reason"},{"step":2,"title":"Rinse and assess","instruction":"specific action","why":"reason"},{"step":3,"title":"Finish","instruction":"specific technique","why":"reason"}],"postShave":[{"step":1,"title":"Cold rinse","instruction":"specific action","why":"reason"},{"step":2,"title":"Pat dry","instruction":"specific action","why":"reason"},{"step":3,"title":"Apply treatment","instruction":"product and amount","why":"reason"}],"preventionProducts":[{"name":"product","brand":"brand","category":"shave-cream","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"},{"name":"product","brand":"brand","category":"post-shave-balm","estimatedPrice":"$X","keyIngredient":"ingredient","use":"how and when","clinicalMechanism":"action","knownRating":"X.X/5","amazonSearch":"search term","priority":"essential"}]${bumpExtra},"weekOneProtocol":"day by day guidance","expectedImprovement":"week 1 week 4 week 8","whenToSeeDoctor":"warning signs","skinBiologyTeaser":"two biology sentences"}`;
 };
 
 const buildCheckinPrompt = (mood, profile, history, lang) => {
@@ -1377,40 +1349,53 @@ export default function SkinrApp() {
     }
   };
   const runShaveAnalysis = async (ans) => {
+    // ── STAGE 1: Diagnosis + Blade (fast, ~3-5 seconds) ──────────────────────
+    let diagnosis = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`Shave attempt ${attempt}/3 — budget=${ans.budget}, bumps=${ans.activeBumps}`);
-        const prompt = buildShavePrompt(ans, profile, lang);
-        // 2000 tokens — enough for the full protocol without timeout risk
-        const raw = await callAI([{ role: "user", content: prompt }], "", 2000);
-        console.log(`Attempt ${attempt} → length=${raw.length}, starts:`, raw.slice(0, 60));
-
-        if (!raw || raw.length < 30) {
-          console.warn(`Attempt ${attempt}: empty response — retrying`);
-          continue;
-        }
+        console.log(`Shave stage 1, attempt ${attempt}/3`);
+        const raw = await callAI([{ role: "user", content: buildShavePrompt1(ans, profile, lang) }], "", 800);
+        console.log(`Stage 1 attempt ${attempt} → length=${raw.length}`);
+        if (!raw || raw.length < 30) { console.warn("Stage 1 empty — retry"); continue; }
         const parsed = parseJSON(raw);
-        if (!parsed) {
-          console.warn(`Attempt ${attempt}: JSON parse failed — raw:`, raw.slice(0, 200));
-          continue;
-        }
-        if (!parsed.clinicalFinding && !parsed.bladeRecommendation) {
-          console.warn(`Attempt ${attempt}: parsed but missing key fields — retrying`);
-          continue;
-        }
-        // Success
-        setShaveResult(parsed);
-        setSavedShave({ ...parsed, answers: ans });
-        LS.set(SK.shave, { ...parsed, answers: ans });
+        if (!parsed?.clinicalFinding) { console.warn("Stage 1 parse failed:", raw.slice(0, 100)); continue; }
+        diagnosis = parsed;
+        break;
+      } catch (e) { console.error(`Stage 1 attempt ${attempt}:`, e.message); }
+    }
+
+    if (!diagnosis) {
+      console.error("Stage 1 failed — all attempts exhausted");
+      setShaveError(true);
+      return;
+    }
+
+    // Show partial results immediately — user can read while stage 2 loads
+    setShaveResult(diagnosis);
+
+    // ── STAGE 2: Protocol + Products (loads progressively while user reads) ──
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`Shave stage 2, attempt ${attempt}/3`);
+        const raw = await callAI([{ role: "user", content: buildShavePrompt2(ans, diagnosis.clinicalFinding, lang) }], "", 1200);
+        console.log(`Stage 2 attempt ${attempt} → length=${raw.length}`);
+        if (!raw || raw.length < 30) { console.warn("Stage 2 empty — retry"); continue; }
+        const parsed = parseJSON(raw);
+        if (!parsed?.preShave) { console.warn("Stage 2 parse failed:", raw.slice(0, 100)); continue; }
+        // Merge stage 2 into the already-displayed stage 1 result
+        const full = { ...diagnosis, ...parsed };
+        setShaveResult(full);
+        setSavedShave({ ...full, answers: ans });
+        LS.set(SK.shave, { ...full, answers: ans });
         if (!LS.get(SK.email)) setShowEmail(true);
         return;
-      } catch (e) {
-        console.error(`Attempt ${attempt} threw:`, e.message);
-      }
+      } catch (e) { console.error(`Stage 2 attempt ${attempt}:`, e.message); }
     }
-    // All 3 attempts failed — show error state
-    console.error("All 3 shave analysis attempts failed");
-    setShaveError(true);
+    // Stage 2 failed but stage 1 succeeded — save partial result, still useful
+    console.warn("Stage 2 failed — saving partial result from stage 1");
+    setSavedShave({ ...diagnosis, answers: ans });
+    LS.set(SK.shave, { ...diagnosis, answers: ans });
+    if (!LS.get(SK.email)) setShowEmail(true);
   };
 
   // ── COACH ──
@@ -2246,8 +2231,21 @@ Return:
             </div>
           )}
 
-          {/* Results */}
-          {shaveResult&&!shaveLoad&&<>
+          {/* Results — shown as soon as stage 1 completes */}
+          {shaveResult&&<>
+
+            {/* Stage 2 still loading indicator */}
+            {shaveLoad&&(
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",
+                border:"1px solid var(--goldb)",background:"var(--gold3)",marginBottom:12}}>
+                <div style={{width:14,height:14,border:"1px solid var(--gold)",
+                  borderTopColor:"transparent",borderRadius:"50%",
+                  animation:"rs 1.2s linear infinite",flexShrink:0}}/>
+                <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--gold)",fontStyle:"italic"}}>
+                  Loading full protocol...
+                </div>
+              </div>
+            )}
 
             {/* ── CLINICAL FINDING ── */}
             {shaveResult.clinicalFinding&&(
