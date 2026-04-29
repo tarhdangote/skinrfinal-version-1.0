@@ -1277,22 +1277,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 @keyframes rs{to{transform:rotate(360deg)}}
 .t-loading-text{font-family:var(--fc);font-size:13px;color:var(--soft);font-style:italic;letter-spacing:2px;}
 
-@media(prefers-color-scheme:dark){:root{--soft:#B0A898;--cream:#E0DAD0;--white:#F5F0E8;}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}.nav-ticker{animation:none;}}
-@media(forced-colors:active){.btn-p{background:Highlight;color:HighlightText;}.opt.sel{border-color:Highlight;}}
-
-@media(max-width:640px){
-  .path-grid{grid-template-columns:1fr;}
-  .mood-grid{grid-template-columns:1fr;}
-  .wrap{padding:0 14px 48px;}
-  .nav{padding:0 12px;gap:8px;}
-  .nav-c{display:none;}
-  .hamburger-btn{display:flex;}
-}
-
-/* HAMBURGER MENU — mobile only */
+/* HAMBURGER MENU — hidden by default on desktop, shown on mobile */
 .hamburger-btn{display:none;flex-direction:column;justify-content:center;
-  align-items:center;gap:5px;width:36px;height:36px;background:none;
+  align-items:center;gap:5px;width:40px;height:40px;background:none;
   border:1px solid var(--border);cursor:pointer;padding:0;flex-shrink:0;
   transition:border-color .25s;}
 .hamburger-btn:hover{border-color:var(--goldb);}
@@ -1301,6 +1288,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .hb-line.open:nth-child(1){transform:translateY(6.5px) rotate(45deg);background:var(--gold);}
 .hb-line.open:nth-child(2){opacity:0;transform:scaleX(0);}
 .hb-line.open:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--gold);}
+
+@media(prefers-color-scheme:dark){:root{--soft:#B0A898;--cream:#E0DAD0;--white:#F5F0E8;}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
+@media(forced-colors:active){.btn-p{background:Highlight;color:HighlightText;}.opt.sel{border-color:Highlight;}}
+
+/* Mobile breakpoint — hamburger:flex comes AFTER display:none above so it wins */
+@media(max-width:640px){
+  .path-grid{grid-template-columns:1fr;}
+  .mood-grid{grid-template-columns:1fr;}
+  .wrap{padding:0 14px 48px;}
+  .nav{padding:0 12px;gap:8px;}
+  .nav-c{display:none;}
+  .hamburger-btn{display:flex !important;}
+}
 
 /* Mobile full-width nav dropdown */
 .mobile-menu{
@@ -1495,6 +1496,8 @@ export default function SkinrApp() {
   const [showEmail, setShowEmail]=useState(false);
   const [emailVal, setEmailVal] = useState("");
   const [emailDone, setEmailDone]=useState(false);
+  const [showPrivacy, setShowPrivacy]=useState(false);
+  const [showTerms, setShowTerms]=useState(false);
   const [emailSaved, setEmailSaved]=useState(null);
   // community
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -1502,6 +1505,11 @@ export default function SkinrApp() {
   const [shareText, setShareText]           = useState("");
   const [sharePosted, setSharePosted]       = useState(false);
   const [postLikes, setPostLikes]           = useState({});
+  // User-submitted reviews
+  const [reviews, setReviews]               = useState([]);
+  const [reviewText, setReviewText]         = useState("");
+  const [reviewName, setReviewName]         = useState("");
+  const [reviewPosted, setReviewPosted]     = useState(false);
   const [unlocked, setUnlocked]             = useState(false);
   const [unlockInput, setUnlockInput]       = useState("");
   const [unlockErr, setUnlockErr]           = useState(false);
@@ -1559,6 +1567,7 @@ export default function SkinrApp() {
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
+    setReviews(LS.get("skinr2:reviews")||[]);
     setLang(initialLang);
     // Instant — static pre-translated files, zero API calls, zero delay
     setT(getT(initialLang));
@@ -1629,8 +1638,18 @@ export default function SkinrApp() {
 
   // ── SHAVE QUIZ ──
   const startShaveQuiz = () => {
-    setShaveStep(0); setShaveAns({}); setShaveSel(null); setShaveResult(null); setShavePrev([]); setShaveError(false); go("shave");
+    setShaveStep(0); setShaveAns({}); setShaveSel(null);
+    setShaveResult(null); setShavePrev([]); setShaveError(false);
+    go("shave");
   };
+
+  // On mount — if savedShave exists, populate shaveResult so returning users
+  // see their protocol immediately without regenerating
+  useEffect(() => {
+    if (savedShave && !shaveResult) {
+      setShaveResult(savedShave);
+    }
+  }, [savedShave]); // eslint-disable-line
   const handleShaveBack = () => {
     if(shavePrev.length===0) return;
     const prev = shavePrev[shavePrev.length-1];
@@ -1848,6 +1867,27 @@ Return:
   const likePost = (id) => {
     const updated = {...postLikes,[id]:(postLikes[id]||0)+1};
     setPostLikes(updated); LS.set("skinr2:likes",updated);
+  };
+
+  const submitReview = async () => {
+    if (!reviewText.trim()) return;
+    const review = {
+      id: Date.now().toString(),
+      name: reviewName.trim() || (lang==="fr"?"Anonyme":lang==="es"?"Anónimo":"Anonymous"),
+      text: reviewText.trim(),
+      skinType: profile?.skinType || null,
+      date: new Date().toLocaleDateString(lang==="fr"?"fr-CA":lang==="es"?"es":"en-CA",{month:"short",day:"numeric",year:"numeric"}),
+    };
+    const updated = [review, ...reviews].slice(0, 50);
+    setReviews(updated); LS.set("skinr2:reviews", updated);
+    try {
+      await fetch("https://formspree.io/f/261158684435060", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({_subject:"New SKINR Review", name:review.name, review:review.text, skinType:review.skinType||"Not analysed"}),
+      });
+    } catch(_) {}
+    setReviewText(""); setReviewName(""); setReviewPosted(true);
+    setTimeout(()=>setReviewPosted(false), 4000);
   };
 
   // ── PRODUCT CATEGORY ICON ──
@@ -2186,6 +2226,66 @@ Return:
                 ? "Los testimonios representan resultados individuales. Los resultados varían según el tipo de piel y la consistencia del protocolo."
                 : "Testimonials represent individual results. Results vary by skin type and protocol consistency."}
             </div>
+
+            {/* ── REVIEW SUBMISSION FORM ── */}
+            <div style={{marginTop:28,border:"1px solid var(--border)",padding:"24px 20px",background:"var(--s)"}}>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
+                textTransform:"uppercase",marginBottom:6}}>
+                {lang==="fr"?"Partagez Votre Expérience":lang==="es"?"Comparte Tu Experiencia":"Share Your Experience"}
+              </div>
+              <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",
+                color:"var(--white)",marginBottom:16}}>
+                {lang==="fr"?"Comment SKINR a changé ta routine?":lang==="es"?"¿Cómo cambió SKINR tu rutina?":"How has SKINR changed your routine?"}
+              </div>
+              {reviewPosted ? (
+                <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--gold)",fontStyle:"italic",
+                  padding:"16px",border:"1px solid var(--goldb)",textAlign:"center"}}>
+                  ◆ {lang==="fr"?"Merci — nous avons bien reçu ton avis.":lang==="es"?"Gracias — hemos recibido tu reseña.":"Thank you — your review has been received."}
+                </div>
+              ) : (
+                <>
+                  <input
+                    style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
+                      padding:"10px 14px",fontFamily:"var(--fc)",fontSize:14,color:"var(--white)",
+                      marginBottom:10,outline:"none",fontStyle:"italic"}}
+                    placeholder={lang==="fr"?"Ton prénom (optionnel)":lang==="es"?"Tu nombre (opcional)":"Your first name (optional)"}
+                    value={reviewName} onChange={e=>setReviewName(e.target.value)}/>
+                  <textarea
+                    rows={4}
+                    style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
+                      padding:"10px 14px",fontFamily:"var(--fc)",fontSize:14,color:"var(--white)",
+                      resize:"vertical",outline:"none",fontStyle:"italic",marginBottom:12}}
+                    placeholder={lang==="fr"?"Décris ton expérience avec SKINR — ton type de peau, le protocole, les résultats...":lang==="es"?"Describe tu experiencia con SKINR — tu tipo de piel, el protocolo, los resultados...":"Describe your experience with SKINR — your skin type, the protocol, the results..."}
+                    value={reviewText} onChange={e=>setReviewText(e.target.value)}/>
+                  <button className="btn btn-p" style={{width:"100%"}}
+                    onClick={submitReview} disabled={!reviewText.trim()}>
+                    {lang==="fr"?"Soumettre Mon Avis":lang==="es"?"Enviar Mi Reseña":"Submit My Review"}
+                  </button>
+                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
+                    fontStyle:"italic",marginTop:8,textAlign:"center"}}>
+                    {lang==="fr"?"Les avis sont vérifiés avant publication. Données jamais vendues.":lang==="es"?"Las reseñas se verifican antes de publicarse. Datos nunca vendidos.":"Reviews are verified before publishing. Your data is never sold."}
+                  </div>
+                </>
+              )}
+              {/* Show submitted reviews */}
+              {reviews.length > 0 && (
+                <div style={{marginTop:20,borderTop:"1px solid var(--border)",paddingTop:16}}>
+                  {reviews.slice(0,5).map((r,i)=>(
+                    <div key={r.id||i} style={{marginBottom:14,paddingBottom:14,
+                      borderBottom:i<Math.min(reviews.length,5)-1?"1px solid var(--border)":"none"}}>
+                      <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--cream)",
+                        fontStyle:"italic",lineHeight:1.75,marginBottom:6}}>&ldquo;{r.text}&rdquo;</div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:700,color:"var(--white)"}}>
+                          {r.name}{r.skinType&&<span style={{color:"var(--soft)",fontWeight:400,marginLeft:6,fontSize:11}}>· {r.skinType}</span>}
+                        </div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--muted)",letterSpacing:2}}>{r.date}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Section label */}
@@ -2217,6 +2317,20 @@ Return:
               <div>Free. Clinical. Built for Men.</div>
               <div style={{marginTop:3}}>Amazon affiliate links support this free service at no extra cost to you.</div>
               <div style={{marginTop:3}}>© {new Date().getFullYear()} SKINR. {t.copyright}</div>
+              <div style={{marginTop:8,display:"flex",gap:16,justifyContent:"flex-end",flexWrap:"wrap"}}>
+                <button onClick={()=>setShowPrivacy(true)}
+                  style={{background:"none",border:"none",fontFamily:"var(--fc)",fontSize:11,
+                    color:"var(--muted)",fontStyle:"italic",cursor:"pointer",padding:0,
+                    textDecoration:"underline",textDecorationColor:"var(--border)"}}>
+                  Privacy Policy
+                </button>
+                <button onClick={()=>setShowTerms(true)}
+                  style={{background:"none",border:"none",fontFamily:"var(--fc)",fontSize:11,
+                    color:"var(--muted)",fontStyle:"italic",cursor:"pointer",padding:0,
+                    textDecoration:"underline",textDecorationColor:"var(--border)"}}>
+                  Terms of Service
+                </button>
+              </div>
             </div>
           </div>
         </footer>
@@ -3140,5 +3254,49 @@ Return:
         </div>
       </div>
     </div>}
+
+    {/* ── PRIVACY POLICY MODAL ── */}
+    {showPrivacy&&(
+      <div className="modal-ov" role="dialog" aria-modal="true" onClick={()=>setShowPrivacy(false)}>
+        <div className="modal" onClick={e=>e.stopPropagation()} style={{maxHeight:"80vh",overflowY:"auto"}}>
+          <div className="modal-inner">
+            <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:16,color:"var(--gold)"}}>Privacy Policy</div>
+            <div style={{fontFamily:"var(--fc)",fontSize:14,lineHeight:1.85,color:"var(--cream)",fontStyle:"normal"}}>
+              <p style={{marginBottom:12}}><strong>Last updated: {new Date().getFullYear()}</strong></p>
+              <p style={{marginBottom:12}}>SKINR does not collect, sell, or share your personal data with any third party for commercial purposes.</p>
+              <p style={{marginBottom:12}}><strong>What we store:</strong> Your skin profile, shave protocol results, and check-in history are stored locally in your browser (localStorage). This data never leaves your device unless you choose to submit your email.</p>
+              <p style={{marginBottom:12}}><strong>Email:</strong> If you provide your email address, it is sent to our team via Formspree and used solely to deliver your protocol and occasional skin tips. We do not sell or rent your email.</p>
+              <p style={{marginBottom:12}}><strong>Amazon affiliate links:</strong> SKINR participates in the Amazon Associates program. We earn a small commission when you purchase through our links. This does not affect the price you pay or the recommendations we make.</p>
+              <p style={{marginBottom:12}}><strong>Analytics:</strong> We may use anonymised analytics to understand how the product is used. No personally identifiable information is collected.</p>
+              <p style={{marginBottom:12}}><strong>Contact:</strong> For any privacy questions, contact us at privacy@getskinr.com</p>
+            </div>
+            <button className="btn btn-p" style={{width:"100%",marginTop:16}} onClick={()=>setShowPrivacy(false)}>Close</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── TERMS OF SERVICE MODAL ── */}
+    {showTerms&&(
+      <div className="modal-ov" role="dialog" aria-modal="true" onClick={()=>setShowTerms(false)}>
+        <div className="modal" onClick={e=>e.stopPropagation()} style={{maxHeight:"80vh",overflowY:"auto"}}>
+          <div className="modal-inner">
+            <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:16,color:"var(--gold)"}}>Terms of Service</div>
+            <div style={{fontFamily:"var(--fc)",fontSize:14,lineHeight:1.85,color:"var(--cream)",fontStyle:"normal"}}>
+              <p style={{marginBottom:12}}><strong>Last updated: {new Date().getFullYear()}</strong></p>
+              <p style={{marginBottom:12}}><strong>General guidance only.</strong> SKINR provides general skincare and shaving guidance based on your answers. This is not medical advice and is not a substitute for professional dermatological consultation.</p>
+              <p style={{marginBottom:12}}><strong>Not a medical service.</strong> SKINR is not a medical service and does not diagnose, treat, or cure any skin condition. If you have a medical skin condition, consult a board-certified dermatologist.</p>
+              <p style={{marginBottom:12}}><strong>Product recommendations.</strong> Product recommendations are generated by AI based on your profile. Individual results vary. SKINR makes no guarantee that recommended products will work for your specific skin.</p>
+              <p style={{marginBottom:12}}><strong>Affiliate disclosure.</strong> SKINR participates in affiliate programs including Amazon Associates. We may earn a commission on qualifying purchases. Our recommendations are not influenced by commercial arrangements.</p>
+              <p style={{marginBottom:12}}><strong>Limitation of liability.</strong> SKINR is provided "as is" without warranty. We are not liable for any adverse reactions to products recommended by the platform. Always patch-test new skincare products.</p>
+              <p style={{marginBottom:12}}><strong>Age.</strong> SKINR is intended for users aged 18 and over.</p>
+              <p style={{marginBottom:12}}><strong>Contact:</strong> legal@getskinr.com</p>
+            </div>
+            <button className="btn btn-p" style={{width:"100%",marginTop:16}} onClick={()=>setShowTerms(false)}>Close</button>
+          </div>
+        </div>
+      </div>
+    )}
+
   </>);
 }
