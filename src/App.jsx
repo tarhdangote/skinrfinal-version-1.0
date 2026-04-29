@@ -311,135 +311,388 @@ const BASE_T = {
   currencyNote:"Prices in USD. Approx. CAD shown.",
 };
 
-// ── TRANSLATION ENGINE ────────────────────────────────────────────────────────
-// Translates UI strings via AI for FR and ES (3 languages total).
+// ── STATIC TRANSLATIONS ───────────────────────────────────────────────────────
+// Pre-translated permanently — zero API calls, instant switching.
+// FR = Quebec French (Canadian). ES = Latin American Spanish.
+// To add a string: add to BASE_T, then add the translation in FR_T and ES_T.
 // Only translates ~20 essential visible strings — small enough to complete
 // reliably within Netlify function timeout. Quiz protocols are already
 // generated in the user's language by Claude so quiz options can stay in English.
 
-const TRANSLATION_CACHE_VERSION = "v7"; // Quebec French + all protocol labels + CAD prices
-const getCacheKey = (langCode) => `skinr2:t_${langCode}_${TRANSLATION_CACHE_VERSION}`;
-
-// Only the 3 languages — EN (base), FR, ES
 const SUPPORTED_LANGS = ["en", "fr", "es"];
 
-const translateAndCache = async (langCode) => {
-  if(langCode === "en") return BASE_T;
-  if(!SUPPORTED_LANGS.includes(langCode)) return BASE_T;
-
-  const cached = LS.get(getCacheKey(langCode));
-  if(cached) return cached;
-
-  const langInfo = LANGUAGES.find(l => l.code === langCode);
-  const langName = langInfo?.native || langCode;
-
-  // Translate ONLY the ~20 strings users see before starting the quiz
-  // Keep quiz options in English — the AI generates results in user's language anyway
-  const minimal = {
-    // Hero and cards
-    badge:BASE_T.badge,
-    heroTitle:BASE_T.heroTitle, heroTitle2:BASE_T.heroTitle2, heroBody:BASE_T.heroBody,
-    pathTitle:BASE_T.pathTitle, pathSub:BASE_T.pathSub,
-    skinCardTitle:BASE_T.skinCardTitle, skinCardDesc:BASE_T.skinCardDesc, skinCardBtn:BASE_T.skinCardBtn,
-    shaveCardTitle:BASE_T.shaveCardTitle, shaveCardDesc:BASE_T.shaveCardDesc, shaveCardBtn:BASE_T.shaveCardBtn,
-    // Navigation and buttons
-    back:BASE_T.back, next:BASE_T.next, analyze:BASE_T.analyze, analyzeShave:BASE_T.analyzeShave,
-    nav:BASE_T.nav,
-    // Email and welcome
-    emailTitle:BASE_T.emailTitle, emailDesc:BASE_T.emailDesc,
-    emailBtn:BASE_T.emailBtn, emailSkip:BASE_T.emailSkip,
-    welcomeBack:BASE_T.welcomeBack, continueJourney:BASE_T.continueJourney,
-    // Founder story
-    storyTitle:BASE_T.storyTitle, storyP1:BASE_T.storyP1,
-    storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
-    missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
-    // Protocol result labels — fully translated
-    avoidLabel:BASE_T.avoidLabel, expertInsight:BASE_T.expertInsight,
-    keyIngredientLabel:BASE_T.keyIngredientLabel,
-    activeIngredientLabel:BASE_T.activeIngredientLabel,
-    treatmentProtocolLabel:BASE_T.treatmentProtocolLabel,
-    treatmentBadge:BASE_T.treatmentBadge,
-    medDisclaimerLabel:BASE_T.medDisclaimerLabel,
-    loadingProtocol:BASE_T.loadingProtocol,
-    weekOneLabel:BASE_T.weekOneLabel, expectedTimeline:BASE_T.expectedTimeline,
-    whenDermatologist:BASE_T.whenDermatologist,
-    criticalRuleLabel:BASE_T.criticalRuleLabel,
-    clinicalAssessmentLabel:BASE_T.clinicalAssessmentLabel,
-    techniqueLabel:BASE_T.techniqueLabel, transitionLabel:BASE_T.transitionLabel,
-    recommendedBladesLabel:BASE_T.recommendedBladesLabel,
-    currencyNote:BASE_T.currencyNote,
-    // Skin quiz questions
-    q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts,
-    q_sensitivity:BASE_T.q_sensitivity, q_age:BASE_T.q_age,
-    q_concern:BASE_T.q_concern, q_budget:BASE_T.q_budget,
-    quizHints:BASE_T.quizHints,
-    opts_feel:BASE_T.opts_feel, opts_breakouts:BASE_T.opts_breakouts,
-    opts_sensitivity:BASE_T.opts_sensitivity, opts_age:BASE_T.opts_age,
-    opts_concern:BASE_T.opts_concern, opts_budget:BASE_T.opts_budget,
-    // Shave quiz questions (labels only — v values never translated)
-    shaveQ1:BASE_T.shaveQ1, shaveQ2:BASE_T.shaveQ2, shaveQ3:BASE_T.shaveQ3,
-    shaveQ4:BASE_T.shaveQ4, shaveQ5:BASE_T.shaveQ5,
-    shaveQ6:BASE_T.shaveQ6, shaveQ7:BASE_T.shaveQ7,
-    s1:BASE_T.shaveOpts1.map(o=>o.label),
-    s2:BASE_T.shaveOpts2.map(o=>o.label),
-    s3:BASE_T.shaveOpts3.map(o=>o.label),
-    s4:BASE_T.shaveOpts4.map(o=>o.label),
-    s5:BASE_T.shaveOpts5.map(o=>o.label),
-    s6:BASE_T.shaveOpts6.map(o=>o.label),
-    s7:BASE_T.shaveOpts7.map(o=>o.label),
-    // Moods
-    ml:BASE_T.moods.map(o=>o.label),
-    md:BASE_T.moods.map(o=>o.desc),
-  };
-
-  try {
-    const prompt = `Translate these English strings to ${langName} (${langCode}). Rules: Never translate "SKINR". Keep ◆▲■▼→← unchanged. ${langCode==="fr"?"Use Quebec French (Canadian French from Quebec — NOT European French). Use natural Quebec phrasing, avoid Gallicisms.":"Use Latin American Spanish."} Return ONLY raw JSON starting with { and ending with } — no markdown, no backticks, no explanation, nothing else.
-
-${JSON.stringify(minimal)}`;
-
-    const raw = await callAI([{role:"user", content:prompt}], "", 4000);
-    console.log("Translation for " + langCode + ": " + raw.length + " chars");
-
-    const parsed = parseJSON(raw);
-    if(!parsed){
-      console.error("Translation parse failed for " + langCode);
-      return BASE_T;
-    }
-
-    // Merge translated strings over BASE_T — everything else stays English
-    const result = {...BASE_T, ...parsed};
-    if(parsed.nav) result.nav = {...BASE_T.nav, ...parsed.nav};
-
-    // Reconstruct shaveOpts — v values preserved from BASE_T, labels translated
-    ['1','2','3','4','5','6','7'].forEach(n => {
-      const labels = parsed[`s${n}`];
-      if(labels?.length) {
-        result[`shaveOpts${n}`] = BASE_T[`shaveOpts${n}`].map((o,i) => ({
-          ...o, label: labels[i] || o.label
-        }));
-      }
-    });
-
-    // Reconstruct moods
-    if(parsed.ml?.length && parsed.md?.length) {
-      result.moods = BASE_T.moods.map((m,i) => ({
-        ...m,
-        label: parsed.ml[i] || m.label,
-        desc:  parsed.md[i] || m.desc,
-      }));
-    }
-
-    result.appName = "SKINR";
-
-    LS.set(getCacheKey(langCode), result);
-    console.log("Translation cached for " + langCode);
-    return result;
-  } catch(e) {
-    console.error("translateAndCache error:", e.message);
-    return BASE_T;
-  }
+// ── QUÉBEC FRENCH (fr) ────────────────────────────────────────────────────────
+const FR_T = {
+  appName:"SKINR",
+  badge:"Gratuit. Clinique. Fait pour les Hommes.",
+  heroTitle:"Ta Peau. Ton Rasage.", heroTitle2:"Enfin Compris.",
+  heroBody:"La plupart des gars ont aucune idée de ce que leur peau a vraiment besoin. Ils prennent ce qui a l'air correct, l'appliquent dans le mauvais ordre, puis se demandent pourquoi rien change. SKINR règle ça. Six questions honnêtes. Un profil cutané clinique, une routine personnalisée matin et soir, et les produits exacts qui marchent pour ta biologie et ton budget. Sans rendez-vous. Sans devinettes. En soixante secondes.",
+  pathTitle:"Deux Problèmes. Une Plateforme.",
+  pathSub:"Science clinique du rasage et soins personnalisés — les deux gratuits, les deux faits pour les hommes.",
+  skinCardTitle:"Analyse de Peau",
+  skinCardDesc:"Six questions. Un profil cutané clinique. Une routine personnalisée matin et soir avec instructions précises. Recommandations de produits adaptées à ton budget — avec la raison scientifique derrière chacun.",
+  skinCardPills:["6 Questions","Profil Clinique","Adapté au Budget","Science des Ingrédients"],
+  skinCardBtn:"Analyser Ma Peau",
+  shaveCardTitle:"Protocole de Rasage",
+  shaveCardDesc:"Sept questions — type de lame, caractéristiques de la barbe, boutons actifs, fréquence de rasage. La raison biologique exacte de l'échec de ton rasage identifiée. Un protocole clinique en trois phases et des produits adaptés à ton budget pour corriger ça de façon permanente.",
+  shaveCardPills:["7 Questions","Science des Lames","Prévention + Traitement","Protocole Clinique"],
+  shaveCardBtn:"Construire Mon Protocole",
+  back:"← Retour", next:"Continuer", analyze:"Analyser Ma Peau",
+  analyzing:"ANALYSE EN COURS",
+  loadSteps:["Lecture de ton profil...","Analyse de la chimie cutanée...","Correspondance produits-budget...","Vérification de la compatibilité...","Finalisation du protocole..."],
+  q_feel:"Une heure après le lavage — sans produits — comment ton visage se sent?",
+  q_breakouts:"À quelle fréquence t'as des boutons?",
+  q_sensitivity:"Comment ta peau réagit aux nouveaux produits ou au rasage?",
+  q_age:"Dans quelle tranche d'âge t'es?",
+  q_concern:"C'est quoi ta principale préoccupation cutanée?",
+  q_budget:"C'est quoi ton budget mensuel pour les soins de la peau?",
+  opts_feel:["Tendue, sèche, qui squame peut-être","Confortable et équilibrée","Visiblement grasse sur tout le visage","Grasse en zone T, sèche sur les joues"],
+  opts_breakouts:["Rarement, si jamais","Une ou deux fois par mois","Plusieurs fois par semaine","En permanence — toujours là"],
+  opts_sensitivity:["Aucune réaction. Très résistante.","Légère rougeur occasionnelle","Irritation fréquente ou picotements","Réactivité quasi-constante ou rosacée"],
+  opts_age:["Moins de 25","25 – 35","36 – 50","50+"],
+  opts_concern:["Sécheresse et texture rugueuse","Excès de sébum et brillance","Acné et boutons","Vieillissement — rides et teint terne","Rougeurs et irritation","Hyperpigmentation et taches"],
+  opts_budget:["Budget — Moins de 35 $","Milieu de gamme — 35 $–80 $","Premium — 80 $–150 $","Luxe — 150 $+"],
+  quizHints:[
+    "Sois précis. Personne te regarde.",
+    "Tout bouton — papules, kystes, points blancs, points noirs.",
+    "Rougeurs, brûlures, picotements ou démangeaisons après application.",
+    "Les besoins cutanés changent significativement par décennie.",
+    "Choisir la préoccupation qui te dérange le plus en ce moment.",
+    "Ça détermine quelles marques et produits on recommande.",
+  ],
+  analysisComplete:"Analyse Terminée",
+  yourProtocol:"Ton Protocole Quotidien",
+  morning:"Routine du Matin", evening:"Routine du Soir",
+  whyThisWorks:"Pourquoi ces produits fonctionnent ensemble →",
+  hideScience:"Fermer ↑",
+  findProduct:"Trouver sur Amazon ↗",
+  findSephora:"Trouver sur Sephora ↗",
+  ingredientWarning:"Avertissement — Conflit d'Ingrédients",
+  emailTitle:"Recevoir Ton Protocole en PDF",
+  emailDesc:"On t'envoie ta routine complète matin et soir, ta liste de produits avec liens directs, et des conseils cutanés hebdomadaires. Un seul courriel. Zéro spam.",
+  emailBtn:"Envoyer Mon Protocole",
+  emailSkip:"Non merci",
+  emailSuccess:"Vérifie tes courriels — ton protocole s'en vient.",
+  emailPlaceholder:"ton@courriel.com",
+  coachTitle:"Pose n'importe quelle question au Coach.",
+  coachSub:"Ton coach IA a passé en revue ton profil complet et ton budget. Pose des questions sur les produits, les ingrédients, le timing, ou tout ce que le protocole couvre pas.",
+  coachOnline:"Coach Disponible",
+  suggestions:["Pourquoi j'ai encore des boutons?","Peut-on ajouter du rétinol à ma routine?","Dans quel ordre j'applique mes produits?","Combien de temps avant de voir des vrais résultats?","Ma routine est-elle adaptée pour l'été?"],
+  youLabel:"Toi", coachLabel:"Coach",
+  inputPlaceholder:"Pose n'importe quelle question sur ta peau ou ton protocole...",
+  checkinTitle:"Comment le Protocole Avance?",
+  checkinSub:"Un suivi de 30 secondes affine ton protocole selon les vrais résultats. L'IA adapte ses conseils à ce que ta peau dit vraiment.",
+  todayStatus:"Statut Actuel",
+  submitCheckin:"Soumettre le Suivi",
+  submitting:"Traitement...",
+  progressHistory:"Journal de Progrès",
+  noHistory:"Ton journal apparaîtra après ton premier suivi.",
+  moods:[
+    {v:"excellent",emoji:"◆",label:"Excellent",    desc:"Peau claire, hydratée, performante"},
+    {v:"improving",emoji:"▲",label:"En Amélioration",desc:"Changements positifs visibles cette semaine"},
+    {v:"stable",   emoji:"■",label:"Stable",       desc:"Pas de changement — ni mieux ni pire"},
+    {v:"worse",    emoji:"▼",label:"En Déclin",    desc:"Quelque chose irrite ou provoque des boutons"},
+  ],
+  shaveTitle:"Protocole de Rasage",
+  shaveSub:"Une analyse clinique en 7 questions — type de lame, caractéristiques de la barbe, type de peau, et problèmes actifs analysés ensemble. L'outil de rasage le plus précis jamais construit pour les hommes.",
+  shaveQ1:"C'est quoi ta méthode de rasage principale en ce moment?",
+  shaveOpts1:[{v:"cartridge",label:"Rasoir cartouche (2–5 lames)"},{v:"safety",label:"Rasoir de sûreté / double-tranchant (lame unique)"},{v:"electric_foil",label:"Rasoir électrique à grille (Braun, Panasonic)"},{v:"electric_rotary",label:"Rasoir électrique rotatif (Philips Norelco)"},{v:"straight",label:"Rasoir droit"},{v:"oneblade",label:"OneBlade / Leaf Razor (pivot lame unique)"},{v:"beard",label:"J'entretiens une barbe — pas de rasage de près"}],
+  shaveQ2:"Comment tu décrirais ta barbe?",
+  shaveOpts2:[{v:"fine_straight",label:"Fine et droite — pousse douce, peu de résistance"},{v:"medium",label:"Moyenne — épaisseur et densité normales"},{v:"coarse_straight",label:"Épaisse et droite — chaume lourd et dense"},{v:"coarse_curly",label:"Épaisse et bouclée — boucles serrées, vagues ou coils"},{v:"patchy",label:"Inégale — densité variable sur le visage"}],
+  shaveQ3:"C'est quoi ton principal problème de rasage?",
+  shaveOpts3:[{v:"bumps",label:"Boutons de rasoir et poils incarnés"},{v:"redness",label:"Rougeurs, brûlures et irritation"},{v:"dryness",label:"Sécheresse et tiraillement post-rasage"},{v:"cuts",label:"Coupures et entailles fréquentes"},{v:"none",label:"Aucun problème majeur — juste optimiser"}],
+  shaveQ4:"T'as présentement des boutons de rasoir actifs sur le visage ou le cou?",
+  shaveOpts4:[{v:"none",label:"Aucun — pas de boutons en ce moment"},{v:"mild",label:"Légers — quelques boutons occasionnels"},{v:"moderate",label:"Modérés — plusieurs boutons, certains enflammés"},{v:"severe",label:"Sévères — répandus, douloureux, ou causant des cicatrices"}],
+  shaveQ5:"Quel rasoir ou quelle lame t'utilises en ce moment?",
+  shaveOpts5:[{v:"gillette",label:"Gillette Fusion, Mach3, ou cartouche similaire"},{v:"dollar_shave",label:"Dollar Shave Club ou abonnement cartouche"},{v:"merkur",label:"Rasoir de sûreté Merkur"},{v:"feather",label:"Lame Feather ou rasoir japonais"},{v:"braun",label:"Rasoir électrique Braun"},{v:"philips",label:"Rasoir électrique Philips Norelco"},{v:"other",label:"Autre marque ou pas sûr"},{v:"none_currently",label:"Je rase pas régulièrement en ce moment"}],
+  shaveQ6:"À quelle fréquence tu te rases?",
+  shaveOpts6:[{v:"daily",label:"Tous les jours"},{v:"every_other",label:"Un jour sur deux"},{v:"twice_week",label:"Deux fois par semaine"},{v:"weekly",label:"Une fois par semaine ou moins"}],
+  shaveQ7:"C'est quoi ton budget mensuel pour le rasage?",
+  shaveOpts7:[{v:"budget",label:"Budget — Moins de 20 $/mois"},{v:"mid",label:"Milieu de gamme — 20 $–50 $/mois"},{v:"premium",label:"Premium — 50 $–100 $/mois"},{v:"luxury",label:"Luxe — 100 $+/mois"}],
+  analyzeShave:"Générer Mon Protocole Clinique",
+  shaveAnalyzing:"Analyse de ton profil de rasage...",
+  shaveResult:"Ton Protocole de Rasage Clinique",
+  bladeSection:"Recommandation de Lame et Rasoir",
+  preShave:"Préparation Avant Rasage",
+  duringShave:"Le Rasage",
+  postShave:"Traitement Post-Rasage",
+  preventionProducts:"Produits de Prévention",
+  treatmentProducts:"Traitement des Boutons Actifs",
+  shaveCritical:"Constat Clinique",
+  medDisclaimer:"Ce protocole fournit des orientations cliniques générales. La pseudofolliculite de la barbe (boutons de rasoir), l'irritation persistante ou les affections cutanées suspectées devraient être évaluées par un dermatologue certifié. Ce n'est pas un substitut aux conseils médicaux professionnels.",
+  optionalTitle:"Déverrouille Ton Analyse Complète",
+  optionalSub:"Deux rapports optionnels générés spécifiquement à partir de tes résultats. Pas des guides génériques — construits à partir de ton profil exact.",
+  biologyTitle:"Connais la Biologie de Ta Peau",
+  biologyDesc:"L'explication cellulaire complète de pourquoi ta peau se comporte exactement comme elle le fait. Le mécanisme biologique de chaque ingrédient dans ton protocole. Ta trajectoire cutanée à long terme.",
+  routineCardTitle:"Carte de Routine Quotidienne Personnalisée",
+  routineCardDesc:"Tes produits exacts, dans ton ordre exact, avec tes instructions d'application exactes — formaté comme une carte prête à imprimer pour le mur de ta salle de bain.",
+  comboTitle:"Les Deux Rapports — Meilleure Valeur",
+  unlockBtn:"Déverrouiller — 10 $",
+  comboBtn:"Obtenir les Deux — 15 $",
+  enterCode:"T'as un code de déverrouillage?",
+  unlockCodePlaceholder:"Entrer le code",
+  unlockCodeBtn:"Déverrouiller",
+  alreadyUnlocked:"◆ Rapports Déverrouillés",
+  nav:{home:"Accueil",analysis:"Analyse",coach:"Coach",checkin:"Progrès",shave:"Rasage",guides:"Guides",community:"Communauté"},
+  communityTitle:"La Communauté SKINR",
+  communitySub:"De vrais gars. De vrais résultats. De vrais types de peau. Partagez vos progrès et lisez ce qui marche vraiment pour les hommes avec votre profil exact.",
+  communityPost:"Partager Mes Progrès",
+  communityFeed:"Fil des Progrès",
+  communityEmpty:"Aucune mise à jour pour l'instant. Soyez le premier à partager vos progrès.",
+  communityShareTitle:"Partager Votre Mise à Jour",
+  communityShareSub:"Anonyme par défaut. Votre type de peau et mise à jour sont visibles — pas votre nom.",
+  communitySharePlaceholder:"Qu'est-ce qui a changé depuis le début de votre protocole? Qu'est-ce qui marche? Qu'est-ce qui est difficile?",
+  communityShareBtn:"Publier Ma Mise à Jour",
+  communityCancel:"Annuler",
+  communityPosted:"Ta mise à jour a été partagée.",
+  communityLike:"◆ Utile",
+  skinTypeLabel:"Type de Peau",
+  weekLabel:"Semaine",
+  discordTitle:"Rejoins la Conversation",
+  discordSub:"Pour des discussions en temps réel, questions, et partage avant/après — rejoins la communauté Discord SKINR.",
+  discordBtn:"Rejoindre SKINR Discord",
+  guidesTitle:"Les Guides SKINR",
+  guidesSub:"La référence écrite complète pour tout ce que le quiz couvre — et tout ce qu'il peut pas couvrir en 60 secondes.",
+  skincareGuideTitle:"Le Guide de Soins Sans Bullshit pour Hommes",
+  skincareGuideDesc:"Ton protocole cutané complet. Fiches de notation de produits. Antisèche des conflits d'ingrédients. Ajustements saisonniers. Cartes de routine imprimables.",
+  shavingGuideTitle:"La Bible du Rasage",
+  shavingGuideDesc:"Le guide clinique complet pour un rasage parfait. Mécanique des lames et science de sélection. Protocole pré-rasage. Traitement post-rasage pour chaque type de peau et de barbe.",
+  guidePrice:"9 $ USD (~12 $ CAD)",
+  guideBuyBtn:"Obtenir le Guide",
+  guideComingSoon:"Bientôt Disponible",
+  welcomeBack:"Content de te Revoir.",
+  continueJourney:"Ton protocole t'attend.",
+  lastAnalyzed:"Dernière analyse",
+  viewProtocol:"Voir le Protocole",
+  consultCoach:"Consulter le Coach",
+  newAnalysis:"Nouvelle Analyse",
+  newShave:"Nouvelle Analyse de Rasage",
+  disclaimer:"Les liens affiliés Amazon soutiennent ce service gratuit sans coût supplémentaire pour toi. Toutes les recommandations sont basées uniquement sur ton profil cutané et ton budget.",
+  of:"/",
+  translating:"Configuration de ta langue...",
+  storyLabel:"L'Histoire Derrière SKINR",
+  storyTitle:"Pourquoi J'ai Créé Ça",
+  storyP1:"En tant qu'gars qui se rase tous les jours, j'avais aucune idée de ce que ma lame faisait vraiment à ma peau. Chaque matin — la même routine, le même rasoir, le même résultat. Des boutons de rasoir. Des rougeurs. Une irritation qui durait des jours. J'allais chez des barbiers qui empiraient les choses. Je changeais de produits constamment — l'un après l'autre, en espérant que quelque chose marche, sans jamais comprendre pourquoi rien fonctionnait.",
+  storyP2:"La réponse, il s'est avéré, était pas dans un meilleur produit. C'était dans la compréhension de ma peau. Une fois que j'ai appris mon type de peau, pourquoi ma lame spécifique causait des boutons, quels ingrédients marchent vraiment pour ma biologie, et comment construire une routine dans le bon ordre — tout a changé. Moins de boutons. Moins de rougeurs. Meilleure peau. Et pour la première fois, une vraie confiance en mon apparence.",
+  storyP3:"C'est pourquoi SKINR existe. Une seule plateforme où chaque homme — peu importe son âge, son type de peau ou son budget — peut comprendre sa biologie cutanée, prendre les bonnes décisions sur ce qu'il met sur son visage, et construire une routine qui marche vraiment. Pas la routine de quelqu'un d'autre. La sienne.",
+  missionLabel:"Notre Mission",
+  missionText:"Être la plateforme unique où chaque homme découvre sa biologie cutanée, prend les bonnes décisions et prend soin de sa peau — à tout âge.",
+  copyright:"Tous droits réservés.",
+  skinScore:"Score de Peau",
+  consistencyRating:"Indice de Régularité",
+  weekOneLabel:"Protocole Semaine Un",
+  expectedTimeline:"Chronologie Prévue",
+  whenDermatologist:"Quand Consulter un Dermatologue",
+  criticalRuleLabel:"Règle Critique",
+  clinicalAssessmentLabel:"Évaluation Clinique",
+  techniqueLabel:"Technique",
+  transitionLabel:"Note de Transition",
+  recommendedBladesLabel:"Lames Recommandées",
+  avoidLabel:"À Éviter",
+  expertInsight:"Conseil d'Expert",
+  keyIngredientLabel:"Ingrédient Clé",
+  activeIngredientLabel:"Ingrédient Actif",
+  treatmentProtocolLabel:"Protocole de Traitement",
+  treatmentBadge:"Traitement",
+  medDisclaimerLabel:"Avis Médical",
+  loadingProtocol:"Chargement du protocole complet...",
+  stepLabel:"Étape",
+  generatingLabel:"Génération...",
+  generateReport:"Générer le Rapport",
+  generateCard:"Générer la Carte",
+  comingSoon:"Bientôt Disponible",
+  currencyNote:"Prix en USD. Équivalent CAD affiché.",
 };
 
+// ── LATIN AMERICAN SPANISH (es) ───────────────────────────────────────────────
+const ES_T = {
+  appName:"SKINR",
+  badge:"Gratis. Clínico. Hecho para Hombres.",
+  heroTitle:"Tu Piel. Tu Afeitado.", heroTitle2:"Por Fin, Comprendidos.",
+  heroBody:"La mayoría de los hombres no tienen idea de lo que su piel realmente necesita. Agarran lo que parece correcto, lo aplican en el orden equivocado, y se preguntan por qué nada cambia. SKINR acaba con eso. Seis preguntas honestas. Un perfil clínico de piel, una rutina personalizada de mañana y noche, y los productos exactos que funcionan para tu biología y tu presupuesto. Sin citas. Sin adivinanzas. En sesenta segundos.",
+  pathTitle:"Dos Problemas. Una Plataforma.",
+  pathSub:"Ciencia clínica del afeitado y cuidado personalizado — ambos gratis, ambos hechos para hombres.",
+  skinCardTitle:"Análisis de Piel",
+  skinCardDesc:"Seis preguntas. Un perfil clínico de tipo de piel. Una rutina personalizada de mañana y noche con instrucciones precisas de aplicación. Recomendaciones de productos adaptadas a tu presupuesto — con la razón científica detrás de cada una.",
+  skinCardPills:["6 Preguntas","Perfil Clínico","Según Presupuesto","Ciencia de Ingredientes"],
+  skinCardBtn:"Analizar Mi Piel",
+  shaveCardTitle:"Protocolo de Afeitado",
+  shaveCardDesc:"Siete preguntas — tipo de hoja, características de la barba, granos activos, frecuencia de afeitado. La razón biológica exacta del fallo de tu afeitado identificada. Un protocolo clínico de tres fases y productos adaptados a tu presupuesto para corregirlo permanentemente.",
+  shaveCardPills:["7 Preguntas","Ciencia de Hojas","Prevención + Tratamiento","Protocolo Clínico"],
+  shaveCardBtn:"Crear Mi Protocolo",
+  back:"← Atrás", next:"Continuar", analyze:"Analizar Mi Piel",
+  analyzing:"ANALIZANDO",
+  loadSteps:["Leyendo tu perfil...","Analizando la química cutánea...","Combinando productos con el presupuesto...","Verificando compatibilidad de ingredientes...","Finalizando tu protocolo..."],
+  q_feel:"Una hora después de lavarte — sin productos — ¿cómo se siente tu cara?",
+  q_breakouts:"¿Con qué frecuencia tienes granos?",
+  q_sensitivity:"¿Cómo responde tu piel a productos nuevos o al afeitado?",
+  q_age:"¿Cuál es tu rango de edad?",
+  q_concern:"¿Cuál es tu principal preocupación de piel?",
+  q_budget:"¿Cuál es tu presupuesto mensual para el cuidado de la piel?",
+  opts_feel:["Tensa, seca, posiblemente descamando","Cómoda y equilibrada","Visiblemente grasa en toda la cara","Grasa en zona T, seca en mejillas"],
+  opts_breakouts:["Raramente, si acaso","Una o dos veces al mes","Varias veces a la semana","Persistentemente — siempre presente"],
+  opts_sensitivity:["Sin reacción. Muy resistente.","Leve rojez ocasional","Irritación frecuente o picazón","Reactividad casi constante o rosácea"],
+  opts_age:["Menos de 25","25 – 35","36 – 50","50+"],
+  opts_concern:["Sequedad y textura áspera","Exceso de grasa y brillos","Acné y granos","Envejecimiento — líneas y opacidad","Rojez e irritación","Hiperpigmentación y manchas"],
+  opts_budget:["Económico — Menos de $35","Gama Media — $35–$80","Premium — $80–$150","Lujo — $150+"],
+  quizHints:[
+    "Sé preciso. Nadie te está viendo.",
+    "Cualquier grano — pápulas, quistes, puntos blancos, puntos negros.",
+    "Rojez, ardor, picazón o comezón después de aplicar.",
+    "Las necesidades de la piel cambian significativamente por década.",
+    "Selecciona la preocupación que más te molesta en este momento.",
+    "Esto determina qué marcas y productos recomendamos.",
+  ],
+  analysisComplete:"Análisis Completo",
+  yourProtocol:"Tu Protocolo Diario",
+  morning:"Rutina de Mañana", evening:"Rutina de Noche",
+  whyThisWorks:"Por qué estos productos funcionan juntos →",
+  hideScience:"Cerrar ↑",
+  findProduct:"Buscar en Amazon ↗",
+  findSephora:"Buscar en Sephora ↗",
+  ingredientWarning:"Advertencia — Conflicto de Ingredientes",
+  emailTitle:"Recibe Tu Protocolo en PDF",
+  emailDesc:"Te enviaremos tu rutina completa de mañana y noche, tu lista de productos con enlaces directos, y consejos de piel semanales. Un solo correo. Cero spam.",
+  emailBtn:"Enviar Mi Protocolo",
+  emailSkip:"No gracias",
+  emailSuccess:"Revisa tu correo — tu protocolo está en camino.",
+  emailPlaceholder:"tu@correo.com",
+  coachTitle:"Pregunta Cualquier Cosa al Coach.",
+  coachSub:"Tu coach de IA ha revisado tu perfil completo y tu presupuesto. Pregunta sobre productos, ingredientes, tiempos o cualquier cosa que el protocolo no cubra.",
+  coachOnline:"Coach Disponible",
+  suggestions:["¿Por qué sigo teniendo granos?","¿Puedo agregar retinol a mi rutina?","¿En qué orden aplico mis productos?","¿Cuánto tiempo hasta ver resultados reales?","¿Es mi rutina adecuada para el verano?"],
+  youLabel:"Tú", coachLabel:"Coach",
+  inputPlaceholder:"Pregunta cualquier cosa sobre tu piel o protocolo...",
+  checkinTitle:"¿Cómo Está Funcionando el Protocolo?",
+  checkinSub:"Un seguimiento de 30 segundos refina tu protocolo según resultados reales. La IA adapta sus consejos a lo que tu piel realmente está diciendo.",
+  todayStatus:"Estado Actual",
+  submitCheckin:"Enviar Seguimiento",
+  submitting:"Procesando...",
+  progressHistory:"Registro de Progreso",
+  noHistory:"Tu registro aparecerá después de tu primer seguimiento.",
+  moods:[
+    {v:"excellent",emoji:"◆",label:"Excelente",    desc:"Piel clara, hidratada, funcionando bien"},
+    {v:"improving",emoji:"▲",label:"Mejorando",    desc:"Cambios positivos visibles esta semana"},
+    {v:"stable",   emoji:"■",label:"Estable",      desc:"Sin cambio — ni mejor ni peor"},
+    {v:"worse",    emoji:"▼",label:"Declinando",   desc:"Algo irrita o está causando granos"},
+  ],
+  shaveTitle:"Protocolo de Afeitado",
+  shaveSub:"Un análisis clínico de 7 preguntas — tipo de hoja, características de la barba, tipo de piel y problemas activos analizados juntos. La herramienta de afeitado más precisa jamás construida para hombres.",
+  shaveQ1:"¿Cuál es tu método de afeitado principal actualmente?",
+  shaveOpts1:[{v:"cartridge",label:"Maquinilla de cartucho (2–5 hojas)"},{v:"safety",label:"Maquinilla de seguridad / doble filo (hoja única)"},{v:"electric_foil",label:"Afeitadora eléctrica de lámina (Braun, Panasonic)"},{v:"electric_rotary",label:"Afeitadora eléctrica rotatoria (Philips Norelco)"},{v:"straight",label:"Navaja de afeitar"},{v:"oneblade",label:"OneBlade / Leaf Razor (pivote hoja única)"},{v:"beard",label:"Mantengo barba — sin afeitado al ras"}],
+  shaveQ2:"¿Cómo describirías tu barba?",
+  shaveOpts2:[{v:"fine_straight",label:"Fina y recta — crece suave, poca resistencia"},{v:"medium",label:"Media — grosor y densidad promedio"},{v:"coarse_straight",label:"Gruesa y recta — barba densa y pesada"},{v:"coarse_curly",label:"Gruesa y rizada — rizos apretados, ondas o coils"},{v:"patchy",label:"Irregular — densidad variable en la cara"}],
+  shaveQ3:"¿Cuál es tu principal problema al afeitarte?",
+  shaveOpts3:[{v:"bumps",label:"Granos de afeitar y pelos encarnados"},{v:"redness",label:"Rojez, ardor e irritación"},{v:"dryness",label:"Sequedad y tirante post-afeitado"},{v:"cuts",label:"Cortes y heridas frecuentes"},{v:"none",label:"Sin problemas significativos — solo optimizar"}],
+  shaveQ4:"¿Tienes actualmente granos de afeitar activos en la cara o el cuello?",
+  shaveOpts4:[{v:"none",label:"Ninguno — sin granos en este momento"},{v:"mild",label:"Leves — algunos granos ocasionales"},{v:"moderate",label:"Moderados — varios granos, algunos inflamados"},{v:"severe",label:"Severos — generalizados, dolorosos o causando cicatrices"}],
+  shaveQ5:"¿Qué maquinilla o hoja estás usando actualmente?",
+  shaveOpts5:[{v:"gillette",label:"Gillette Fusion, Mach3 o cartucho similar"},{v:"dollar_shave",label:"Dollar Shave Club o cartucho por suscripción"},{v:"merkur",label:"Maquinilla de seguridad Merkur"},{v:"feather",label:"Hoja Feather o maquinilla japonesa"},{v:"braun",label:"Afeitadora eléctrica Braun"},{v:"philips",label:"Philips Norelco eléctrica"},{v:"other",label:"Otra marca o no estoy seguro"},{v:"none_currently",label:"No me afeito regularmente en este momento"}],
+  shaveQ6:"¿Con qué frecuencia te afeitas?",
+  shaveOpts6:[{v:"daily",label:"Todos los días"},{v:"every_other",label:"Un día de por medio"},{v:"twice_week",label:"Dos veces a la semana"},{v:"weekly",label:"Una vez a la semana o menos"}],
+  shaveQ7:"¿Cuál es tu presupuesto mensual para el afeitado?",
+  shaveOpts7:[{v:"budget",label:"Económico — Menos de $20/mes"},{v:"mid",label:"Gama Media — $20–$50/mes"},{v:"premium",label:"Premium — $50–$100/mes"},{v:"luxury",label:"Lujo — $100+/mes"}],
+  analyzeShave:"Generar Mi Protocolo Clínico",
+  shaveAnalyzing:"Analizando tu perfil de afeitado...",
+  shaveResult:"Tu Protocolo Clínico de Afeitado",
+  bladeSection:"Recomendación de Hoja y Maquinilla",
+  preShave:"Preparación Pre-Afeitado",
+  duringShave:"El Afeitado",
+  postShave:"Tratamiento Post-Afeitado",
+  preventionProducts:"Productos de Prevención",
+  treatmentProducts:"Tratamiento de Granos Activos",
+  shaveCritical:"Hallazgo Clínico",
+  medDisclaimer:"Este protocolo proporciona orientación clínica general. La pseudofoliculitis de la barba (granos de afeitar), irritación persistente o condiciones cutáneas sospechadas deben ser evaluadas por un dermatólogo certificado. Esto no es sustituto del consejo médico profesional.",
+  optionalTitle:"Desbloquea Tu Análisis Completo",
+  optionalSub:"Dos informes opcionales generados específicamente de tus resultados. No guías genéricas — construidos desde tu perfil exacto.",
+  biologyTitle:"Conoce la Biología de Tu Piel",
+  biologyDesc:"La explicación celular completa de por qué tu piel se comporta exactamente como lo hace. El mecanismo biológico de cada ingrediente en tu protocolo. Tu trayectoria cutánea a largo plazo.",
+  routineCardTitle:"Tarjeta de Rutina Diaria Personalizada",
+  routineCardDesc:"Tus productos exactos, en tu orden exacto, con tus instrucciones exactas de aplicación — formateado como una tarjeta lista para imprimir para la pared de tu baño.",
+  comboTitle:"Ambos Informes — Mejor Valor",
+  unlockBtn:"Desbloquear — $10",
+  comboBtn:"Obtener Ambos — $15",
+  enterCode:"¿Tienes un código de desbloqueo?",
+  unlockCodePlaceholder:"Ingresar código",
+  unlockCodeBtn:"Desbloquear",
+  alreadyUnlocked:"◆ Informes Desbloqueados",
+  nav:{home:"Inicio",analysis:"Análisis",coach:"Coach",checkin:"Progreso",shave:"Afeitado",guides:"Guías",community:"Comunidad"},
+  communityTitle:"La Comunidad SKINR",
+  communitySub:"Hombres reales. Resultados reales. Tipos de piel reales. Comparte tu progreso y lee lo que realmente funciona para hombres con tu perfil exacto.",
+  communityPost:"Compartir Mi Progreso",
+  communityFeed:"Hilo de Progreso",
+  communityEmpty:"Sin actualizaciones aún. Sé el primero en compartir tu progreso.",
+  communityShareTitle:"Compartir Tu Actualización",
+  communityShareSub:"Anónimo por defecto. Tu tipo de piel y actualización son visibles — tu nombre no.",
+  communitySharePlaceholder:"¿Qué ha cambiado desde que empezaste tu protocolo? ¿Qué funciona? ¿Con qué luchas?",
+  communityShareBtn:"Publicar Mi Actualización",
+  communityCancel:"Cancelar",
+  communityPosted:"Tu actualización ha sido compartida.",
+  communityLike:"◆ Útil",
+  skinTypeLabel:"Tipo de Piel",
+  weekLabel:"Semana",
+  discordTitle:"Únete a la Conversación",
+  discordSub:"Para discusión en tiempo real, preguntas, y compartir antes/después — únete a la comunidad Discord de SKINR.",
+  discordBtn:"Unirse a SKINR Discord",
+  guidesTitle:"Las Guías SKINR",
+  guidesSub:"La referencia escrita completa para todo lo que cubre el quiz — y todo lo que no puede cubrir en 60 segundos.",
+  skincareGuideTitle:"La Guía Sin Rodeos de Cuidado de Piel para Hombres",
+  skincareGuideDesc:"Tu protocolo cutáneo completo. Fichas de puntuación de productos. Hoja de trucos de conflictos de ingredientes. Ajustes estacionales. Tarjetas de rutina imprimibles.",
+  shavingGuideTitle:"La Biblia del Afeitado",
+  shavingGuideDesc:"La guía clínica completa para un afeitado perfecto. Mecánica de hojas y ciencia de selección. Protocolo pre-afeitado. Tratamiento post-afeitado para cada tipo de piel y barba.",
+  guidePrice:"$9 USD",
+  guideBuyBtn:"Obtener la Guía",
+  guideComingSoon:"Próximamente",
+  welcomeBack:"Bienvenido de Vuelta.",
+  continueJourney:"Tu protocolo te espera.",
+  lastAnalyzed:"Último análisis",
+  viewProtocol:"Ver Protocolo",
+  consultCoach:"Consultar Coach",
+  newAnalysis:"Nuevo Análisis",
+  newShave:"Nuevo Análisis de Afeitado",
+  disclaimer:"Los enlaces de afiliados de Amazon apoyan este servicio gratuito sin costo adicional para ti. Todas las recomendaciones se basan únicamente en tu perfil de piel y presupuesto.",
+  of:"/",
+  translating:"Configurando tu idioma...",
+  storyLabel:"La Historia Detrás de SKINR",
+  storyTitle:"Por Qué Lo Construí",
+  storyP1:"Como hombre que se afeita todos los días, no tenía idea de lo que mi hoja estaba haciendo realmente a mi piel. Cada mañana — la misma rutina, la misma maquinilla, el mismo resultado. Granos de afeitar. Rojez. Irritación que duraba días. Iba a barberías que lo empeoraban. Cambiaba de productos constantemente — uno tras otro, esperando que algo funcionara, sin entender nunca por qué nada lo hacía.",
+  storyP2:"La respuesta, resultó, no estaba en un mejor producto. Estaba en entender mi piel. Una vez que aprendí mi tipo de piel, por qué mi hoja específica causaba granos, qué ingredientes funcionan para mi biología, y cómo construir una rutina en el orden correcto — todo cambió. Menos granos. Menos rojez. Mejor piel. Y por primera vez, verdadera confianza en mi apariencia.",
+  storyP3:"Por eso existe SKINR. Una sola plataforma donde cada hombre — sin importar su edad, tipo de piel o presupuesto — puede entender su biología cutánea, tomar las decisiones correctas sobre lo que pone en su cara, y construir una rutina que realmente funcione. No la rutina de otra persona. La suya.",
+  missionLabel:"Nuestra Misión",
+  missionText:"Ser la plataforma única donde cada hombre descubre su biología cutánea, toma las decisiones correctas y cuida su piel — a cualquier edad.",
+  copyright:"Todos los derechos reservados.",
+  skinScore:"Puntuación de Piel",
+  consistencyRating:"Índice de Consistencia",
+  weekOneLabel:"Protocolo Semana Uno",
+  expectedTimeline:"Cronología Esperada",
+  whenDermatologist:"Cuándo Ver a un Dermatólogo",
+  criticalRuleLabel:"Regla Crítica",
+  clinicalAssessmentLabel:"Evaluación Clínica",
+  techniqueLabel:"Técnica",
+  transitionLabel:"Nota de Transición",
+  recommendedBladesLabel:"Hojas Recomendadas",
+  avoidLabel:"Evitar",
+  expertInsight:"Consejo de Experto",
+  keyIngredientLabel:"Ingrediente Clave",
+  activeIngredientLabel:"Ingrediente Activo",
+  treatmentProtocolLabel:"Protocolo de Tratamiento",
+  treatmentBadge:"Tratamiento",
+  medDisclaimerLabel:"Aviso Médico",
+  loadingProtocol:"Cargando protocolo completo...",
+  stepLabel:"Paso",
+  generatingLabel:"Generando...",
+  generateReport:"Generar Informe",
+  generateCard:"Generar Tarjeta",
+  comingSoon:"Próximamente",
+  currencyNote:"Precios en USD.",
+};
+
+// ── GET TRANSLATION — instant, zero API calls ─────────────────────────────────
+const getT = (langCode) => {
+  if (langCode === "fr") return {...BASE_T, ...FR_T};
+  if (langCode === "es") return {...BASE_T, ...ES_T};
+  return BASE_T;
+};
 
 // Detect browser language on first visit — returns "en", "fr", or "es" only
 const detectBrowserLang = () => {
@@ -1203,7 +1456,7 @@ const injectSEO = (lang) => {
 export default function SkinrApp() {
   const [lang, setLang]         = useState("en");
   const [t, setT]               = useState(BASE_T);
-  const [tLoading, setTLoading] = useState(false);
+  
   const [langOpen, setLangOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView]         = useState("home");
@@ -1277,30 +1530,13 @@ export default function SkinrApp() {
   // ── CORE NAVIGATION & LANGUAGE (defined before useEffects that call them) ──
   const go = (v) => { setAnim(true); setTimeout(()=>{setView(v);setAnim(false);},220); };
 
-  const loadTranslation = async (langCode) => {
-    if(langCode === "en"){ setT(BASE_T); return; }
-    setTLoading(true);
-    try {
-      const translated = await translateAndCache(langCode);
-      if(translated) setT(translated);
-      else setT(BASE_T);
-    } catch(e){ setT(BASE_T); }
-    setTLoading(false);
-  };
-
-  const switchLang = async (l) => {
-    setLang(l); LS.set(SK.lang, l); setLangOpen(false);
+  // Language switching is now instant — no API calls, no spinner
+  const switchLang = (l) => {
+    setLang(l);
+    LS.set(SK.lang, l);
+    setLangOpen(false);
+    setT(getT(l));
     document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
-    if (l === "en") { setT(BASE_T); return; }
-    // Check cache first — instant switch if cached
-    const cached = LS.get(getCacheKey(l));
-    if (cached) {
-      setT(cached);
-      // Still clear and refresh in background to pick up v7 changes
-      return;
-    }
-    // Not cached — load with spinner
-    await loadTranslation(l);
   };
 
   // Load from localStorage on mount + auto-detect language
@@ -1316,14 +1552,9 @@ export default function SkinrApp() {
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
     setLang(initialLang);
-    // Try cached translation first — instant, no spinner
+    // Instant — static pre-translated files, zero API calls, zero delay
+    setT(getT(initialLang));
     if(initialLang !== "en"){
-      const cached = LS.get(getCacheKey(initialLang));
-      if(cached){
-        setT(cached);
-      } else {
-        loadTranslation(initialLang);
-      }
       document.documentElement.dir = LANGUAGES.find(x=>x.code===initialLang)?.dir || "ltr";
     }
     setReady(true);
@@ -1737,7 +1968,7 @@ Return:
                 padding:"6px 10px",fontFamily:"var(--fm)",fontSize:9,letterSpacing:2,
                 cursor:"pointer",display:"flex",alignItems:"center",gap:6,
                 transition:"all .25s",textTransform:"uppercase",whiteSpace:"nowrap"}}>
-              {tLoading?<span style={{opacity:.5}}>...</span>:(LANGUAGES.find(l=>l.code===lang)?.native||"EN")}
+              {LANGUAGES.find(l=>l.code===lang)?.native||"EN"}
               <span style={{fontSize:7,opacity:.6}}>{langOpen?"▲":"▼"}</span>
             </button>
             {langOpen&&(
@@ -2779,12 +3010,7 @@ Return:
     </div>
 
     {/* Translation loading overlay */}
-    {tLoading&&(
-      <div className="t-loading">
-        <div className="t-loading-ring"/>
-        <div className="t-loading-text">{BASE_T.translating}</div>
-      </div>
-    )}
+    
 
     {/* Email capture modal */}
     {showEmail&&<div className="modal-ov" role="dialog" aria-modal="true" aria-label={t.emailTitle}>
