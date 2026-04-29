@@ -1594,16 +1594,16 @@ export default function SkinrApp() {
   useEffect(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:"smooth"});},[messages]);
 
   // Load Stripe.js once on mount — non-blocking, only when needed
+  // Publishable key is hardcoded — safe by design, Stripe built it to be public
+  const STRIPE_PK = "pk_live_51RRbHsCi5YWsRAVAmc6fwNtSVBpVxg3CIlE7gEtknKpjyBhXmW3UiHQfxLCvMNkblbJ00JhHhc5sRxY2ux4WF00lvHFMH5B";
   useEffect(()=>{
-    if(window.Stripe){ setStripeLoaded(true); setStripeObj(window.Stripe(process.env.REACT_APP_STRIPE_PK||"pk_live_placeholder")); return; }
+    if(window.Stripe){ setStripeLoaded(true); setStripeObj(window.Stripe(STRIPE_PK)); return; }
     const script = document.createElement("script");
     script.src = "https://js.stripe.com/v3/";
     script.async = true;
     script.onload = () => {
       setStripeLoaded(true);
-      // Publishable key is safe in frontend — Stripe designed it to be public
-      const pk = "pk_live_51RRbHsCi5YWsRAVAmc6fwNtSVBpVxg3CIlE7gEtknKpjyBhXmW3UiHQfxLCvMNkblbJ00JhHhc5sRxY2ux4WF00lvHFMH5B";
-      setStripeObj(window.Stripe(pk));
+      setStripeObj(window.Stripe(STRIPE_PK));
     };
     document.head.appendChild(script);
   },[]);
