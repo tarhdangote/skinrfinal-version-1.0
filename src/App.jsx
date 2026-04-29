@@ -9,16 +9,30 @@ const CONFIG = {
     domain:            "https://www.getskinr.com",
     affiliateTag:      "skinr07-20",
     amazonBase:        "https://www.amazon.com",
-    // Stripe Price IDs — confirmed live
-    stripeBiologyPriceId: "price_1TRbMlCi5YWsRAVAIq1CPgvG",
-    stripeRoutinePriceId:  "price_1TRbOsCi5YWsRAVAH72I6TS1",
-    stripeComboPriceId:    "price_1TRbQgCi5YWsRAVAFDHlX0LM",
-    biologyReportPrice:  10,
-    routineCardPrice:    10,
-    comboPrice:          15,
-    unlockCode:          "SKINR2025",
-    formspree:           "261158684435060",
-    twitterHandle:       "@getskinr",
+    unlockCode:        "SKINR2025",
+    formspree:         "261158684435060",
+    twitterHandle:     "@getskinr",
+    // ── SKIN ANALYSIS REPORTS ──────────────────────────────────────
+    stripeBiologyPriceId:      "price_1TRbMlCi5YWsRAVAIq1CPgvG",
+    stripeRoutinePriceId:      "price_1TRbOsCi5YWsRAVAH72I6TS1",
+    stripeSkinComboPriceId:    "price_1TRbQgCi5YWsRAVAFDHlX0LM",
+    biologyReportPrice:        15,
+    routineCardPrice:          12,
+    skinComboPrice:            22,
+    // ── SHAVE PROTOCOL REPORTS ─────────────────────────────────────
+    stripeShaveBiologyPriceId: "price_1TRf10Ci5YWsRAVARhNuKC4u",
+    stripeShaveCardPriceId:    "price_1TRf3hCi5YWsRAVA4oNz5i34",
+    stripeShaveComboPriceId:   "price_1TRf5hCi5YWsRAVAmZpTERl9",
+    shaveBiologyPrice:         15,
+    shaveCardPrice:            12,
+    shaveComboPrice:           22,
+    // ── GUIDES ────────────────────────────────────────────────────
+    stripeSkincareGuidePriceId:"price_1TRfOLCi5YWsRAVAezkOgVmT",
+    stripeShavingGuidePriceId: "price_1TRfPyCi5YWsRAVAwIFSPFyN",
+    stripeGuidesComboPriceId:  "price_1TRfRMCi5YWsRAVA3sIcGC6I",
+    skincareGuidePrice:        9,
+    shavingGuidePrice:         9,
+    guideComboPrice:           15,
   },
   // Skincare brands by budget tier
   skinBrandsByTier: {
@@ -1517,9 +1531,13 @@ export default function SkinrApp() {
   const [reviewText, setReviewText]         = useState("");
   const [reviewName, setReviewName]         = useState("");
   const [reviewPosted, setReviewPosted]     = useState(false);
-  const [unlocked, setUnlocked]             = useState(false);
-  const [biologyUnlocked, setBiologyUnlocked] = useState(false);
-  const [routineUnlocked, setRoutineUnlocked] = useState(false);
+  const [unlocked, setUnlocked]               = useState(false);
+  const [biologyUnlocked, setBiologyUnlocked]     = useState(false);
+  const [routineUnlocked, setRoutineUnlocked]     = useState(false);
+  const [shaveBioUnlocked, setShaveBioUnlocked]   = useState(false);
+  const [shaveCardUnlocked, setShaveCardUnlocked] = useState(false);
+  const [skincareGuideUnlocked, setSkincareGuideUnlocked] = useState(false);
+  const [shavingGuideUnlocked, setShavingGuideUnlocked]   = useState(false);
   const [unlockInput, setUnlockInput]       = useState("");
   const [unlockErr, setUnlockErr]           = useState(false);
   const [bioReport, setBioReport]           = useState(null);
@@ -1576,6 +1594,10 @@ export default function SkinrApp() {
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
     if(LS.get("skinr2:biologyUnlocked")) setBiologyUnlocked(true);
     if(LS.get("skinr2:routineUnlocked")) setRoutineUnlocked(true);
+    if(LS.get("skinr2:shaveBioUnlocked")) setShaveBioUnlocked(true);
+    if(LS.get("skinr2:shaveCardUnlocked")) setShaveCardUnlocked(true);
+    if(LS.get("skinr2:skincareGuideUnlocked")) setSkincareGuideUnlocked(true);
+    if(LS.get("skinr2:shavingGuideUnlocked")) setShavingGuideUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
     setReviews(LS.get("skinr2:reviews")||[]);
@@ -1646,12 +1668,18 @@ export default function SkinrApp() {
     if(!clientSecret || !stripeObj || !payModal) return;
 
     // ── PAYMENT REQUEST BUTTON (Apple Pay / Google Pay) ──
-    const amount = payModal === "combo" ? 1500 : 1000;
-    const label = payModal === "biology"
-      ? "SKINR Biology Report"
-      : payModal === "routine"
-      ? "SKINR Routine Card"
-      : "SKINR Biology Report + Routine Card";
+    const AMOUNTS = {
+      "biology":1500,"routine":1200,"skin-combo":2200,
+      "shave-biology":1500,"shave-card":1200,"shave-combo":2200,
+      "skincare-guide":900,"shaving-guide":900,"guides-combo":1500,
+    };
+    const LABELS = {
+      "biology":"SKINR Skin Biology Report","routine":"SKINR Routine Card","skin-combo":"SKINR Skin Bundle",
+      "shave-biology":"SKINR Shave Biology Report","shave-card":"SKINR Shave Protocol Card","shave-combo":"SKINR Shave Bundle",
+      "skincare-guide":"SKINR Skincare Guide","shaving-guide":"SKINR Shaving Guide","guides-combo":"SKINR Both Guides",
+    };
+    const amount = AMOUNTS[payModal] || 1500;
+    const label  = LABELS[payModal]  || "SKINR Report";
 
     const pr = stripeObj.paymentRequest({
       country: "CA",
@@ -1690,10 +1718,14 @@ export default function SkinrApp() {
         setPayError(confirmError.message);
       } else {
         ev.complete("success");
-        // Unlock purchased product
-        if(payModal === "biology" || payModal === "combo") { setBiologyUnlocked(true); LS.set("skinr2:biologyUnlocked", true); }
-        if(payModal === "routine" || payModal === "combo") { setRoutineUnlocked(true); LS.set("skinr2:routineUnlocked", true); }
-        if(payModal === "combo") { setUnlocked(true); LS.set("skinr2:unlocked", true); }
+        // Unlock purchased product — Apple Pay path
+        const p = payModal;
+        if(p==="biology"    || p==="skin-combo") { setBiologyUnlocked(true);     LS.set("skinr2:biologyUnlocked",true); }
+        if(p==="routine"    || p==="skin-combo") { setRoutineUnlocked(true);     LS.set("skinr2:routineUnlocked",true); }
+        if(p==="shave-biology"||p==="shave-combo"){ setShaveBioUnlocked(true);  LS.set("skinr2:shaveBioUnlocked",true); }
+        if(p==="shave-card" || p==="shave-combo") { setShaveCardUnlocked(true);  LS.set("skinr2:shaveCardUnlocked",true); }
+        if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
+        if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
         if(ev.payerEmail) setEmailSaved(ev.payerEmail);
         LS.set("skinr2:purchasedProduct", payModal);
         setPaySuccess(true);
@@ -1738,20 +1770,16 @@ export default function SkinrApp() {
       });
       if(result.error) throw new Error(result.error.message);
       if(result.paymentIntent?.status === "succeeded") {
-        // Unlock only what was purchased — not everything
-        if(payModal === "biology" || payModal === "combo") {
-          setBiologyUnlocked(true);
-          LS.set("skinr2:biologyUnlocked", true);
-        }
-        if(payModal === "routine" || payModal === "combo") {
-          setRoutineUnlocked(true);
-          LS.set("skinr2:routineUnlocked", true);
-        }
-        if(payModal === "combo") {
-          setUnlocked(true);
-          LS.set("skinr2:unlocked", true);
-        }
-        LS.set("skinr2:purchasedProduct", payModal);
+        // Unlock only what was purchased
+        const p = payModal;
+        if(p==="biology"    || p==="skin-combo") { setBiologyUnlocked(true);     LS.set("skinr2:biologyUnlocked",true); }
+        if(p==="routine"    || p==="skin-combo") { setRoutineUnlocked(true);     LS.set("skinr2:routineUnlocked",true); }
+        if(p==="shave-biology"|| p==="shave-combo"){ setShaveBioUnlocked(true); LS.set("skinr2:shaveBioUnlocked",true); }
+        if(p==="shave-card" || p==="shave-combo") { setShaveCardUnlocked(true);  LS.set("skinr2:shaveCardUnlocked",true); }
+        if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
+        if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
+        if(p==="skin-combo") { setUnlocked(true); LS.set("skinr2:unlocked",true); }
+        LS.set("skinr2:purchasedProduct", p);
         setPaySuccess(true);
         // Send purchase confirmation email
         const purchasedEmail = emailSaved || "";
@@ -3268,15 +3296,13 @@ Rules:
               </div>
             )}
 
-            {/* ── OPTIONAL REPORTS — $10 each ── */}
+            {/* ── SHAVE OPTIONAL REPORTS ── */}
             {shaveResult.skinBiologyTeaser&&(
               <div style={{border:"1px solid var(--goldb)",marginTop:20,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
                 <div style={{padding:"20px 20px 0"}}>
-                  <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",fontStyle:"italic",marginBottom:8}}>{t.optionalTitle}</div>
-                  <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:900,fontStyle:"italic",marginBottom:6}}>{t.optionalTitle}</div>
-                  <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.7,marginBottom:16}}>{t.optionalSub}</div>
-                  {/* Teaser */}
+                  <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",fontStyle:"italic",marginBottom:6}}>{t.optionalTitle}</div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.7,marginBottom:14}}>{t.optionalSub}</div>
                   <div style={{borderLeft:"2px solid var(--goldb)",paddingLeft:12,marginBottom:16}}>
                     <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:4}}>Why this matters for you</div>
                     <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.7}}>{shaveResult.skinBiologyTeaser}</div>
@@ -3284,87 +3310,66 @@ Rules:
                 </div>
 
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,background:"var(--border)",margin:"0 0 2px"}}>
-                  {/* Biology Report */}
+                  {/* Shave Biology Report */}
                   <div style={{background:"var(--card)",padding:"16px 18px"}}>
-                    <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.biologyTitle}</div>
-                    <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.biologyDesc}</div>
-                    {unlocked?(
+                    <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>
+                      {lang==="fr"?"Rapport Biologie du Rasage":lang==="es"?"Informe Biología del Afeitado":"Shave Biology Report"}
+                    </div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>
+                      {lang==="fr"?"Pourquoi ton type de barbe spécifique cause ces problèmes — au niveau cellulaire.":lang==="es"?"Por qué tu tipo específico de barba causa estos problemas — a nivel celular.":"The cellular reason your specific beard type and skin cause this exact problem."}
+                    </div>
+                    {shaveBioUnlocked?(
                       bioReport?(
-                        <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.8,maxHeight:300,overflowY:"auto",paddingRight:4}}>{bioReport}</div>
+                        <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85,maxHeight:300,overflowY:"auto"}}>{bioReport}</div>
                       ):(
                         <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>
-                          {bioLoad?"Generating...":"Generate My Report"}
+                          {bioLoad?t.generatingLabel:t.generateReport}
                         </button>
                       )
                     ):(
-                      CONFIG.business.biologyGumroad?(
-                        <a href={CONFIG.business.biologyGumroad} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                          <button className="btn btn-p" style={{width:"100%",fontSize:11}}>{t.unlockBtn}</button>
-                        </a>
-                      ):(
-                        <button className="btn btn-g" style={{width:"100%",fontSize:11,opacity:.4,cursor:"not-allowed"}} disabled>{t.unlockBtn} — Coming Soon</button>
-                      )
+                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-biology")}>
+                        {lang==="fr"?`Déverrouiller — $${CONFIG.business.shaveBiologyPrice}`:lang==="es"?`Desbloquear — $${CONFIG.business.shaveBiologyPrice}`:`Unlock — $${CONFIG.business.shaveBiologyPrice}`}
+                      </button>
                     )}
                   </div>
-                  {/* Routine Card */}
+                  {/* Shave Protocol Card */}
                   <div style={{background:"var(--card)",padding:"16px 18px"}}>
-                    <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.routineCardTitle}</div>
-                    <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.routineCardDesc}</div>
-                    {unlocked?(
+                    <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>
+                      {lang==="fr"?"Carte de Protocole de Rasage":lang==="es"?"Tarjeta de Protocolo de Afeitado":"Shave Protocol Card"}
+                    </div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>
+                      {lang==="fr"?"Tes étapes exactes de rasage — pré, pendant, post — formatées pour le mur de ta salle de bain.":lang==="es"?"Tus pasos exactos de afeitado — pre, durante, post — formateados para la pared de tu baño.":"Your exact shaving steps — pre, during, post — formatted as a printable bathroom card."}
+                    </div>
+                    {shaveCardUnlocked?(
                       cardReport?(
-                        <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--cream)",fontStyle:"italic",lineHeight:1.7}}>
-                          <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,fontStyle:"italic",marginBottom:8,color:"var(--gold)"}}>{cardReport.title}</div>
-                          <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",marginBottom:6}}>Morning</div>
-                          {cardReport.morning?.map((s,i)=><div key={i} style={{marginBottom:4}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.product}</strong> — {s.instruction}</div>)}
-                          <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",margin:"10px 0 6px"}}>Evening</div>
-                          {cardReport.evening?.map((s,i)=><div key={i} style={{marginBottom:4}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.product}</strong> — {s.instruction}</div>)}
-                          {cardReport.rememberLine&&<div style={{borderTop:"1px solid var(--border)",marginTop:10,paddingTop:10,color:"var(--gold)",fontStyle:"italic",fontSize:12}}>{cardReport.rememberLine}</div>}
+                        <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85}}>
+                          {cardReport.preShave?.map((s,i)=><div key={i} style={{marginBottom:6}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.title}</strong> — {s.instruction}</div>)}
                         </div>
                       ):(
                         <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>
-                          {cardLoad?"Generating...":"Generate My Card"}
+                          {cardLoad?t.generatingLabel:t.generateCard}
                         </button>
                       )
                     ):(
-                      CONFIG.business.routineCardGumroad?(
-                        <a href={CONFIG.business.routineCardGumroad} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                          <button className="btn btn-p" style={{width:"100%",fontSize:11}}>{t.unlockBtn}</button>
-                        </a>
-                      ):(
-                        <button className="btn btn-g" style={{width:"100%",fontSize:11,opacity:.4,cursor:"not-allowed"}} disabled>{t.unlockBtn} — Coming Soon</button>
-                      )
+                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-card")}>
+                        {lang==="fr"?`Déverrouiller — $${CONFIG.business.shaveCardPrice}`:lang==="es"?`Desbloquear — $${CONFIG.business.shaveCardPrice}`:`Unlock — $${CONFIG.business.shaveCardPrice}`}
+                      </button>
                     )}
                   </div>
                 </div>
-
-                {/* Combo + Unlock Code */}
-                <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
-                  {!unlocked&&CONFIG.business.comboGumroad&&(
-                    <div style={{marginBottom:12,textAlign:"center"}}>
-                      <a href={CONFIG.business.comboGumroad} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                        <button className="btn btn-p" style={{width:"100%"}}>{t.comboTitle} — {t.comboBtn}</button>
-                      </a>
+                {/* Shave combo */}
+                {!shaveBioUnlocked||!shaveCardUnlocked?(
+                  <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
+                    <button className="btn btn-p" style={{width:"100%",fontSize:12}} onClick={()=>openPayment("shave-combo")}>
+                      ◆ {lang==="fr"?`Les Deux — $${CONFIG.business.shaveComboPrice} (meilleure valeur)`:lang==="es"?`Ambos — $${CONFIG.business.shaveComboPrice} (mejor valor)`:`Both — $${CONFIG.business.shaveComboPrice} (best value)`}
+                    </button>
+                    <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center",marginTop:8}}>
+                      {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe"}
                     </div>
-                  )}
-                  {unlocked?(
-                    <div style={{textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>{t.alreadyUnlocked} Reports Unlocked</div>
-                  ):(
-                    <div>
-                      <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic",marginBottom:8}}>{t.enterCode}</div>
-                      <div style={{display:"flex",gap:7}}>
-                        <input
-                          style={{flex:1,background:"var(--bg)",border:`1px solid ${unlockErr?"var(--red)":"var(--border)"}`,padding:"8px 12px",fontFamily:"var(--fc)",fontSize:13,color:"var(--white)",outline:"none",fontStyle:"italic"}}
-                          placeholder={t.unlockCodePlaceholder}
-                          value={unlockInput}
-                          onChange={e=>{setUnlockInput(e.target.value);setUnlockErr(false);}}
-                          onKeyDown={e=>e.key==="Enter"&&tryUnlock()}
-                        />
-                        <button className="btn btn-p" style={{padding:"8px 16px",fontSize:11}} onClick={tryUnlock}>{t.unlockCodeBtn}</button>
-                      </div>
-                      {unlockErr&&<div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--red)",fontStyle:"italic",marginTop:5}}>Invalid code. Purchase a report to receive your unlock code.</div>}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ):(
+                  <div style={{padding:"14px 18px",textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>◆ {t.alreadyUnlocked}</div>
+                )}
               </div>
             )}
 
@@ -3373,18 +3378,6 @@ Rules:
               <div className="med-disclaimer-lbl">{t.medDisclaimerLabel}</div>
               <div className="med-disclaimer-text">{t.medDisclaimer}</div>
             </div>
-
-            {/* Shaving Guide CTA */}
-            {CONFIG.business.shavingGuide&&(
-              <div style={{border:"1px solid var(--goldb)",padding:24,marginTop:16,position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:"linear-gradient(90deg,var(--gold),transparent)"}}/>
-                <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:8}}>{t.shavingGuideTitle}</div>
-                <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",marginBottom:16,lineHeight:1.7}}>{t.shavingGuideDesc}</div>
-                <a href={CONFIG.business.shavingGuide} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                  <button className="btn btn-p" style={{width:"100%"}}>{t.guideBuyBtn} — {t.guidePrice}</button>
-                </a>
-              </div>
-            )}
 
             <button className="btn btn-g" style={{width:"100%",marginTop:12}} onClick={startShaveQuiz}>{t.newShave}</button>
             <p className="disc" style={{marginTop:12}}>{t.disclaimer}</p>
@@ -3503,26 +3496,87 @@ Rules:
           <div className="guides-h">{t.guidesTitle}</div>
           <div className="guides-s">{t.guidesSub}</div>
 
-          {[
-            {title:t.skincareGuideTitle, desc:t.skincareGuideDesc, link:CONFIG.business.skincareGuide},
-            {title:t.shavingGuideTitle,  desc:t.shavingGuideDesc,  link:CONFIG.business.shavingGuide},
-          ].map((g,i)=>(
-            <div key={i} className="guide-card">
-              <div className="guide-h">{g.title}</div>
-              <div className="guide-s">{g.desc}</div>
-              <div className="guide-price">{t.guidePrice}</div>
-              {g.link?(
-                <a href={g.link} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-                  <button className="btn btn-p" style={{width:"100%"}}>{t.guideBuyBtn}</button>
-                </a>
-              ):(
-                <>
-                  <button className="btn btn-g" style={{width:"100%",opacity:.4,cursor:"not-allowed"}} disabled>{t.guideBuyBtn}</button>
-                  <div className="guide-soon">{t.guideComingSoon} — {lang==="fr"?"Disponible bientôt":lang==="es"?"Próximamente":"Available soon"}</div>
-                </>
-              )}
+          {/* Skincare Guide */}
+          <div className="guide-card">
+            <div className="guide-h">{t.skincareGuideTitle}</div>
+            <div className="guide-s">{t.skincareGuideDesc}</div>
+            <div className="guide-price">
+              ${CONFIG.business.skincareGuidePrice} USD
+              {lang==="fr"&&<span style={{color:"var(--soft)",fontSize:11,marginLeft:6}}>(~${Math.round(CONFIG.business.skincareGuidePrice*1.36)} CAD)</span>}
             </div>
-          ))}
+            {skincareGuideUnlocked?(
+              <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--green)",fontStyle:"italic",padding:"10px 0"}}>
+                ◆ {lang==="fr"?"Guide déverrouillé":lang==="es"?"Guía desbloqueada":"Guide Unlocked"}
+              </div>
+            ):(
+              <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("skincare-guide")}>
+                {t.guideBuyBtn} — ${CONFIG.business.skincareGuidePrice}
+              </button>
+            )}
+          </div>
+
+          {/* Shaving Guide */}
+          <div className="guide-card">
+            <div className="guide-h">{t.shavingGuideTitle}</div>
+            <div className="guide-s">{t.shavingGuideDesc}</div>
+            <div className="guide-price">
+              ${CONFIG.business.shavingGuidePrice} USD
+              {lang==="fr"&&<span style={{color:"var(--soft)",fontSize:11,marginLeft:6}}>(~${Math.round(CONFIG.business.shavingGuidePrice*1.36)} CAD)</span>}
+            </div>
+            {shavingGuideUnlocked?(
+              <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--green)",fontStyle:"italic",padding:"10px 0"}}>
+                ◆ {lang==="fr"?"Guide déverrouillé":lang==="es"?"Guía desbloqueada":"Guide Unlocked"}
+              </div>
+            ):(
+              <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("shaving-guide")}>
+                {t.guideBuyBtn} — ${CONFIG.business.shavingGuidePrice}
+              </button>
+            )}
+          </div>
+
+          {/* Both Guides Combo */}
+          {(!skincareGuideUnlocked||!shavingGuideUnlocked)&&(
+            <div style={{border:"1px solid var(--goldb)",padding:"20px",background:"rgba(184,151,42,0.04)",position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),transparent)"}}/>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>
+                {lang==="fr"?"Meilleure Valeur":lang==="es"?"Mejor Valor":"Best Value"}
+              </div>
+              <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",marginBottom:6}}>
+                {lang==="fr"?"Les Deux Guides — $15":lang==="es"?"Ambas Guías — $15":"Both Guides — $15"}
+              </div>
+              <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",marginBottom:14,lineHeight:1.65}}>
+                {lang==="fr"?"La référence complète pour les soins de la peau et le rasage. Économise $3 en achetant les deux.":lang==="es"?"La referencia completa para cuidado de piel y afeitado. Ahorra $3 comprando ambas.":"The complete reference for skincare and shaving together. Save $3 buying both."}
+              </div>
+              <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("guides-combo")}>
+                ◆ {lang==="fr"?"Obtenir les Deux — $15":lang==="es"?"Obtener Ambas — $15":"Get Both — $15"}
+              </button>
+              <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center",marginTop:8}}>
+                {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe — instant access after payment"}
+              </div>
+            </div>
+          )}
+
+          {/* What is inside — teaser */}
+          <div style={{borderTop:"1px solid var(--border)",paddingTop:20,marginTop:8}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:12}}>
+              {lang==="fr"?"Ce Que Vous Obtenez":lang==="es"?"Lo Que Obtienes":"What Is Inside"}
+            </div>
+            {[
+              {label:lang==="fr"?"Guide Soins":lang==="es"?"Guía Cuidado":"Skincare Guide", items:lang==="fr"?["Tous les types de peau expliqués","Chaque ingrédient — mécanisme et conflits","Construire une routine de zéro","Ajustements saisonniers","Comment lire une étiquette de produit"]:lang==="es"?["Todos los tipos de piel explicados","Cada ingrediente — mecanismo y conflictos","Construir una rutina desde cero","Ajustes estacionales","Cómo leer una etiqueta de producto"]:["Every skin type explained in detail","Every major ingredient — mechanism and conflicts","Building a routine from scratch","Seasonal adjustments for winter and summer","How to read a product label"]},
+              {label:lang==="fr"?"Guide Rasage":lang==="es"?"Guía Afeitado":"Shaving Guide", items:lang==="fr"?["Science complète des lames — chaque type de rasoir","Technique pour chaque type de barbe","Chimie pré-rasage et post-rasage","Prévenir et traiter les boutons de rasoir","Guide des ingrédients des produits de rasage"]:lang==="es"?["Ciencia completa de hojas — cada tipo de maquinilla","Técnica para cada tipo de barba","Química pre y post afeitado","Prevenir y tratar granos de afeitar","Guía de ingredientes de productos de afeitado"]:["Complete blade science — every razor type explained","Technique for every beard type","Pre-shave and post-shave chemistry","How to prevent and treat razor bumps","Product ingredient guide for shaving"]},
+            ].map((section,si)=>(
+              <div key={si} style={{marginBottom:16}}>
+                <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,fontStyle:"italic",color:"var(--gold)",marginBottom:8}}>{section.label}</div>
+                {section.items.map((item,ii)=>(
+                  <div key={ii} style={{display:"flex",gap:8,marginBottom:5}}>
+                    <span style={{color:"var(--gold)",flexShrink:0,fontSize:10}}>◆</span>
+                    <span style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.6}}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>}
 
@@ -3584,15 +3638,20 @@ Rules:
                       {lang==="fr"?"Paiement Sécurisé":lang==="es"?"Pago Seguro":"Secure Payment"}
                     </div>
                     <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>
-                      {payModal==="biology"
-                        ? t.biologyTitle
-                        : payModal==="routine"
-                        ? t.routineCardTitle
-                        : t.comboTitle}
+                      {payModal==="biology"       ? t.biologyTitle
+                      :payModal==="routine"        ? t.routineCardTitle
+                      :payModal==="skin-combo"     ? t.comboTitle
+                      :payModal==="shave-biology"  ? (lang==="fr"?"Rapport Biologie du Rasage":lang==="es"?"Informe Biología del Afeitado":"Shave Biology Report")
+                      :payModal==="shave-card"     ? (lang==="fr"?"Carte de Protocole de Rasage":lang==="es"?"Tarjeta de Protocolo de Afeitado":"Shave Protocol Card")
+                      :payModal==="shave-combo"    ? (lang==="fr"?"Bundle Rasage Complet":lang==="es"?"Bundle Completo de Afeitado":"Complete Shave Bundle")
+                      :payModal==="skincare-guide" ? t.skincareGuideTitle
+                      :payModal==="shaving-guide"  ? t.shavingGuideTitle
+                      :payModal==="guides-combo"   ? (lang==="fr"?"Les Deux Guides":lang==="es"?"Ambas Guías":"Both Guides")
+                      : "SKINR Report"}
                     </div>
                     <div style={{fontFamily:"var(--fm)",fontSize:11,color:"var(--gold)",marginTop:4}}>
-                      ${payModal==="combo" ? CONFIG.business.comboPrice : CONFIG.business.biologyReportPrice} USD
-                      {lang==="fr"&&<span style={{color:"var(--soft)",marginLeft:6,fontSize:10}}>(~${payModal==="combo"?Math.round(15*1.36):Math.round(10*1.36)} CAD)</span>}
+                      ${payModal==="skin-combo"||payModal==="shave-combo"?22:payModal==="guides-combo"?15:payModal==="skincare-guide"||payModal==="shaving-guide"?9:payModal==="routine"||payModal==="shave-card"?12:15} USD
+                      {lang==="fr"&&<span style={{color:"var(--soft)",marginLeft:6,fontSize:10}}>(~${Math.round((payModal==="skin-combo"||payModal==="shave-combo"?22:payModal==="guides-combo"?15:payModal==="skincare-guide"||payModal==="shaving-guide"?9:payModal==="routine"||payModal==="shave-card"?12:15)*1.36)} CAD)</span>}
                     </div>
                   </div>
                   <button onClick={()=>{setPayModal(null);setPayError("");setClientSecret("");setCardElement(null);}}
