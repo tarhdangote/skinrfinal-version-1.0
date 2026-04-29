@@ -1302,19 +1302,27 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .hb-line.open:nth-child(2){opacity:0;transform:scaleX(0);}
 .hb-line.open:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--gold);}
 
-/* Mobile dropdown menu */
-.mobile-menu{position:absolute;top:calc(100% + 8px);right:0;
-  background:var(--card);border:1px solid var(--goldb);
-  min-width:200px;z-index:300;box-shadow:0 16px 48px rgba(0,0,0,0.7);
-  overflow:hidden;animation:fadeUp .2s ease;}
-.mobile-menu-item{display:block;width:100%;background:none;
+/* Mobile full-width nav dropdown */
+.mobile-menu{
+  position:fixed;top:54px;left:0;right:0;
+  background:var(--card);border-bottom:1px solid var(--goldb);
+  z-index:500;box-shadow:0 16px 48px rgba(0,0,0,0.8);
+  animation:slideDown .2s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.mobile-menu-item{
+  display:flex;align-items:center;gap:12px;
+  width:100%;background:none;
   border:none;border-bottom:1px solid var(--border);
-  padding:14px 18px;font-family:var(--fc);font-size:16px;
+  padding:16px 20px;font-family:var(--fh);font-size:17px;font-weight:600;
   color:var(--soft);cursor:pointer;text-align:left;font-style:italic;
-  transition:all .2s;}
+  transition:background .15s,color .15s;}
 .mobile-menu-item:hover{background:var(--gold3);color:var(--cream);}
 .mobile-menu-item.active{background:var(--gold3);color:var(--gold);}
 .mobile-menu-item:last-child{border-bottom:none;}
+.mobile-menu-overlay{
+  position:fixed;inset:0;top:54px;background:rgba(0,0,0,0.5);
+  z-index:499;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 /* OLIVE color override for success/positive states */
 :root{--green:#5C6B3A;--green-light:rgba(92,107,58,0.15);}
@@ -1939,22 +1947,26 @@ Return:
               <span className={`hb-line${menuOpen?" open":""}`}/>
             </button>
             {menuOpen&&(
-              <div className="mobile-menu" role="menu">
-                <button role="menuitem"
-                  className={`mobile-menu-item${view==="home"?" active":""}`}
-                  onClick={()=>{go("home");setMenuOpen(false);}}>
-                  {view==="home"&&<span style={{color:"var(--gold)",marginRight:8}}>◆</span>}
-                  {t.nav.home}
-                </button>
-                {NAV_ITEMS.map(tb=>(
-                  <button key={tb.id} role="menuitem"
-                    className={`mobile-menu-item${view===tb.id?" active":""}`}
-                    onClick={()=>{go(tb.id);setMenuOpen(false);}}>
-                    {view===tb.id&&<span style={{color:"var(--gold)",marginRight:8}}>◆</span>}
-                    {tb.l}
+              <>
+                {/* Dimmed overlay — tap to close */}
+                <div className="mobile-menu-overlay" onClick={()=>setMenuOpen(false)}/>
+                <div className="mobile-menu" role="menu">
+                  <button role="menuitem"
+                    className={`mobile-menu-item${view==="home"?" active":""}`}
+                    onClick={()=>{go("home");setMenuOpen(false);}}>
+                    <span style={{color:"var(--gold)",fontSize:8,opacity:view==="home"?1:0}}>◆</span>
+                    {t.nav.home}
                   </button>
-                ))}
-              </div>
+                  {NAV_ITEMS.map(tb=>(
+                    <button key={tb.id} role="menuitem"
+                      className={`mobile-menu-item${view===tb.id?" active":""}`}
+                      onClick={()=>{go(tb.id);setMenuOpen(false);}}>
+                      <span style={{color:"var(--gold)",fontSize:8,opacity:view===tb.id?1:0}}>◆</span>
+                      {tb.l}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -2003,6 +2015,30 @@ Return:
           <div className="hero-h2">{t.heroTitle2}</div>
           <div className="hero-rule"/>
           <p className="hero-body">{t.heroBody}</p>
+
+          {/* Independence statement */}
+          <div style={{
+            display:"flex",alignItems:"flex-start",gap:14,
+            border:"1px solid var(--border)",borderLeft:"3px solid var(--gold)",
+            padding:"14px 18px",marginTop:28,background:"rgba(184,151,42,0.04)"
+          }}>
+            <div style={{color:"var(--gold)",fontSize:14,flexShrink:0,marginTop:1}}>◆</div>
+            <div>
+              <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
+                color:"var(--gold)",textTransform:"uppercase",marginBottom:5}}>
+                {lang==="fr"?"Indépendance Totale":lang==="es"?"Independencia Total":"Fully Independent"}
+              </div>
+              <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",
+                lineHeight:1.75,fontStyle:"normal"}}>
+                {lang==="fr"
+                  ? "Aucune marque ne paie pour apparaître dans SKINR. Nos recommandations sont basées uniquement sur les preuves cliniques et ton profil cutané exact. Si un produit à 12 $ surpasse un produit à 80 $ pour ta biologie, c'est ce qu'on recommande."
+                  : lang==="es"
+                  ? "Ninguna marca paga para aparecer en SKINR. Nuestras recomendaciones se basan únicamente en evidencia clínica y tu perfil de piel exacto. Si un producto de $12 supera a uno de $80 para tu biología, eso es lo que recomendamos."
+                  : "No brand pays to appear in SKINR. Our recommendations are driven entirely by clinical evidence and your exact skin profile. If a $12 drugstore product outperforms an $80 premium one for your biology, that is what we recommend. Always."
+                }
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="path-sec">
@@ -2086,6 +2122,71 @@ Return:
         {/* ── FOUNDER STORY FOOTER ── */}
         <footer style={{borderTop:"1px solid var(--border)",marginTop:52,paddingTop:40,paddingBottom:32,position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:"linear-gradient(90deg,transparent,var(--gold),transparent)"}}/>
+
+          {/* ── SOCIAL PROOF ── */}
+          <div style={{marginBottom:48}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
+              textTransform:"uppercase",marginBottom:6}}>
+              {lang==="fr"?"Ce Que Les Hommes Disent":lang==="es"?"Lo Que Dicen Los Hombres":"What Men Are Saying"}
+            </div>
+            <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:700,fontStyle:"italic",
+              color:"var(--white)",marginBottom:24}}>
+              {lang==="fr"?"De vrais résultats, de vrais profils.":lang==="es"?"Resultados reales, perfiles reales.":"Real results. Real skin types."}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:2,background:"var(--border)"}}>
+              {[
+                {
+                  quote: lang==="fr"
+                    ? "\"J'ai essayé tout ce que les barbiers recommandaient. Rien marchait. SKINR a identifié que ma lame cartouche causait mes boutons à cause du mécanisme lift-and-cut. Switché pour un rasoir de sûreté. En deux semaines, disparu.\""
+                    : lang==="es"
+                    ? "\"Probé todo lo que los barberos recomendaban. Nada funcionó. SKINR identificó que mi maquinilla de cartucho causaba mis granos por el mecanismo lift-and-cut. Cambié a una de seguridad. En dos semanas, desaparecieron.\""
+                    : "\"I tried everything barbers recommended. Nothing worked. SKINR identified that my cartridge razor was causing my bumps through the lift-and-cut mechanism. Switched to a safety razor. Two weeks. Gone.\"",
+                  name: "Marcus T.", type: lang==="fr"?"Peau Grasse · Barbe Bouclée":lang==="es"?"Piel Grasa · Barba Rizada":"Oily · Coarse Curly Beard", week:"Week 3"
+                },
+                {
+                  quote: lang==="fr"
+                    ? "\"Mon dermatologue m'a dit d'utiliser de la crème hydratante. SKINR m'a dit laquelle, pourquoi, dans quel ordre, et quels ingrédients conflictuent avec mon rétinol. C'est une différence énorme.\""
+                    : lang==="es"
+                    ? "\"Mi dermatólogo me dijo que usara hidratante. SKINR me dijo cuál, por qué, en qué orden, y qué ingredientes conflictúan con mi retinol. La diferencia es enorme.\""
+                    : "\"My dermatologist told me to moisturise. SKINR told me which one, why, in what order, and which ingredients conflict with my retinol. That is a completely different level of information.\"",
+                  name: "James K.", type: lang==="fr"?"Peau Mixte · 36–50":lang==="es"?"Piel Mixta · 36–50":"Combination · Age 36–50", week:"Week 6"
+                },
+                {
+                  quote: lang==="fr"
+                    ? "\"Gratuit. Clinique. Honnête. J'ai essayé des applications à 30 $/mois qui donnaient des conseils moins précis. La recommandation de Proraso seule valait l'analyse.\""
+                    : lang==="es"
+                    ? "\"Gratis. Clínico. Honesto. He probado apps de $30/mes que daban consejos menos precisos. La recomendación de Proraso sola valió el análisis.\""
+                    : "\"Free. Clinical. Honest. I have tried $30/month apps that gave less precise advice. The Proraso recommendation alone was worth the analysis.\"",
+                  name: "David R.", type: lang==="fr"?"Peau Sèche · Barbe Fine":lang==="es"?"Piel Seca · Barba Fina":"Dry · Fine Straight Beard", week:"Week 2"
+                },
+              ].map((r,i)=>(
+                <div key={i} style={{background:"var(--card)",padding:"22px 20px"}}>
+                  <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",
+                    lineHeight:1.85,fontStyle:"italic",marginBottom:18}}>
+                    {r.quote}
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+                    <div>
+                      <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,
+                        color:"var(--white)",marginBottom:2}}>{r.name}</div>
+                      <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,
+                        color:"var(--soft)",textTransform:"uppercase"}}>{r.type}</div>
+                    </div>
+                    <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,
+                      color:"var(--gold)",textTransform:"uppercase"}}>{r.week}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
+              fontStyle:"italic",marginTop:10,textAlign:"center",lineHeight:1.6}}>
+              {lang==="fr"
+                ? "Les témoignages représentent des résultats individuels. Les résultats varient selon le type de peau et la cohérence du protocole."
+                : lang==="es"
+                ? "Los testimonios representan resultados individuales. Los resultados varían según el tipo de piel y la consistencia del protocolo."
+                : "Testimonials represent individual results. Results vary by skin type and protocol consistency."}
+            </div>
+          </div>
 
           {/* Section label */}
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
