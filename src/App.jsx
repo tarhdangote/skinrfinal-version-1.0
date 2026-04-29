@@ -107,10 +107,20 @@ const parseJSON = (raw) => {
 // ── TRANSLATIONS ─────────────────────────────────────────────────────────────
 // ── LANGUAGE CONFIG ───────────────────────────────────────────────────────────
 const LANGUAGES = [
-  { code:"en", label:"English",    native:"English",    dir:"ltr" },
-  { code:"fr", label:"French",     native:"Français",   dir:"ltr" },
-  { code:"es", label:"Spanish",    native:"Español",    dir:"ltr" },
+  { code:"en", label:"English",        native:"English",  dir:"ltr" },
+  { code:"fr", label:"Quebec French",  native:"Français", dir:"ltr" },
+  { code:"es", label:"Spanish",        native:"Español",  dir:"ltr" },
 ];
+
+// CAD conversion for Quebec users — shown alongside USD prices
+const USD_TO_CAD = 1.36;
+const showPrice = (usdStr, lang) => {
+  if (lang !== "fr" || !usdStr) return usdStr;
+  const m = usdStr.match(/\$(\d+(?:\.\d+)?)/);
+  if (!m) return usdStr;
+  const cad = Math.round(parseFloat(m[1]) * USD_TO_CAD);
+  return `${usdStr} (~$${cad} CAD)`;
+};
 
 // ── BASE TRANSLATIONS (English) ───────────────────────────────────────────────
 // All other languages are generated from this via AI and cached in localStorage.
@@ -286,6 +296,19 @@ const BASE_T = {
   recommendedBladesLabel:"Recommended Blades",
   avoidLabel:"Avoid",
   expertInsight:"Expert Insight",
+  keyIngredientLabel:"Key Ingredient",
+  activeIngredientLabel:"Active Ingredient",
+  treatmentProtocolLabel:"Treatment Protocol",
+  treatmentBadge:"Treatment",
+  medDisclaimerLabel:"Medical Disclaimer",
+  loadingProtocol:"Loading full protocol...",
+  stepLabel:"Step",
+  generatingLabel:"Generating...",
+  generateReport:"Generate Report",
+  generateCard:"Generate Card",
+  comingSoon:"Coming Soon",
+  // Currency note for Quebec users
+  currencyNote:"Prices in USD. Approx. CAD shown.",
 };
 
 // ── TRANSLATION ENGINE ────────────────────────────────────────────────────────
@@ -294,7 +317,7 @@ const BASE_T = {
 // reliably within Netlify function timeout. Quiz protocols are already
 // generated in the user's language by Claude so quiz options can stay in English.
 
-const TRANSLATION_CACHE_VERSION = "v5"; // includes quiz questions and options
+const TRANSLATION_CACHE_VERSION = "v7"; // Quebec French + all protocol labels + CAD prices
 const getCacheKey = (langCode) => `skinr2:t_${langCode}_${TRANSLATION_CACHE_VERSION}`;
 
 // Only the 3 languages — EN (base), FR, ES
@@ -330,6 +353,21 @@ const translateAndCache = async (langCode) => {
     storyTitle:BASE_T.storyTitle, storyP1:BASE_T.storyP1,
     storyP2:BASE_T.storyP2, storyP3:BASE_T.storyP3,
     missionLabel:BASE_T.missionLabel, missionText:BASE_T.missionText,
+    // Protocol result labels — fully translated
+    avoidLabel:BASE_T.avoidLabel, expertInsight:BASE_T.expertInsight,
+    keyIngredientLabel:BASE_T.keyIngredientLabel,
+    activeIngredientLabel:BASE_T.activeIngredientLabel,
+    treatmentProtocolLabel:BASE_T.treatmentProtocolLabel,
+    treatmentBadge:BASE_T.treatmentBadge,
+    medDisclaimerLabel:BASE_T.medDisclaimerLabel,
+    loadingProtocol:BASE_T.loadingProtocol,
+    weekOneLabel:BASE_T.weekOneLabel, expectedTimeline:BASE_T.expectedTimeline,
+    whenDermatologist:BASE_T.whenDermatologist,
+    criticalRuleLabel:BASE_T.criticalRuleLabel,
+    clinicalAssessmentLabel:BASE_T.clinicalAssessmentLabel,
+    techniqueLabel:BASE_T.techniqueLabel, transitionLabel:BASE_T.transitionLabel,
+    recommendedBladesLabel:BASE_T.recommendedBladesLabel,
+    currencyNote:BASE_T.currencyNote,
     // Skin quiz questions
     q_feel:BASE_T.q_feel, q_breakouts:BASE_T.q_breakouts,
     q_sensitivity:BASE_T.q_sensitivity, q_age:BASE_T.q_age,
@@ -355,7 +393,7 @@ const translateAndCache = async (langCode) => {
   };
 
   try {
-    const prompt = `Translate these English strings to ${langName} (${langCode}). Rules: Never translate "SKINR". Keep ◆▲■▼→← unchanged. ${langCode==="fr"?"Use formal French.":"Use Latin American Spanish."} Return ONLY raw JSON starting with { and ending with } — no markdown, no backticks, no explanation, nothing else.
+    const prompt = `Translate these English strings to ${langName} (${langCode}). Rules: Never translate "SKINR". Keep ◆▲■▼→← unchanged. ${langCode==="fr"?"Use Quebec French (Canadian French from Quebec — NOT European French). Use natural Quebec phrasing, avoid Gallicisms.":"Use Latin American Spanish."} Return ONLY raw JSON starting with { and ending with } — no markdown, no backticks, no explanation, nothing else.
 
 ${JSON.stringify(minimal)}`;
 
@@ -1253,8 +1291,15 @@ export default function SkinrApp() {
   const switchLang = async (l) => {
     setLang(l); LS.set(SK.lang, l); setLangOpen(false);
     document.documentElement.dir = LANGUAGES.find(x=>x.code===l)?.dir || "ltr";
-    // Always clear cache on manual switch to get fresh translation
-    if(l !== "en") LS.del(getCacheKey(l));
+    if (l === "en") { setT(BASE_T); return; }
+    // Check cache first — instant switch if cached
+    const cached = LS.get(getCacheKey(l));
+    if (cached) {
+      setT(cached);
+      // Still clear and refresh in background to pick up v7 changes
+      return;
+    }
+    // Not cached — load with spinner
     await loadTranslation(l);
   };
 
@@ -1947,7 +1992,7 @@ Return:
                     <span className="step-num">Step {i+1}. </span>
                     <span className="step-name">{step.product}</span>
                   </div>
-                  <div className="step-price">{step.estimatedPrice}</div>
+                  <div className="step-price">{showPrice(step.estimatedPrice, lang)}</div>
                 </div>
                 <div className="step-brand">{step.brand}</div>
                 {step.knownRating&&(
@@ -1993,7 +2038,7 @@ Return:
                     <span className="step-num">Step {i+1}. </span>
                     <span className="step-name">{step.product}</span>
                   </div>
-                  <div className="step-price">{step.estimatedPrice}</div>
+                  <div className="step-price">{showPrice(step.estimatedPrice, lang)}</div>
                 </div>
                 <div className="step-brand">{step.brand}</div>
                 {step.knownRating&&(
@@ -2025,9 +2070,9 @@ Return:
 
           {/* Insights */}
           <div style={{marginTop:20}}>
-            <div className="ins-box warn"><div className="ins-lbl">Avoid</div><div className="ins-text">{profile.avoid}</div></div>
-            <div className="ins-box tip"><div className="ins-lbl">Expert Insight</div><div className="ins-text">{profile.proTip}</div></div>
-            {profile.timeToResults&&<div className="ins-box tip"><div className="ins-lbl">Expected Timeline</div><div className="ins-text">{profile.timeToResults}</div></div>}
+            <div className="ins-box warn"><div className="ins-lbl">{t.avoidLabel}</div><div className="ins-text">{profile.avoid}</div></div>
+            <div className="ins-box tip"><div className="ins-lbl">{t.expertInsight}</div><div className="ins-text">{profile.proTip}</div></div>
+            {profile.timeToResults&&<div className="ins-box tip"><div className="ins-lbl">{t.expectedTimeline}</div><div className="ins-text">{profile.timeToResults}</div></div>}
           </div>
 
           {/* Optional reports panel — shown after skin analysis too */}
@@ -2261,7 +2306,7 @@ Return:
                   borderTopColor:"transparent",borderRadius:"50%",
                   animation:"rs 1.2s linear infinite",flexShrink:0}}/>
                 <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--gold)",fontStyle:"italic"}}>
-                  Loading full protocol...
+                  {t.loadingProtocol}
                 </div>
               </div>
             )}
@@ -2277,7 +2322,7 @@ Return:
             {/* ── SEVERITY ASSESSMENT ── */}
             {shaveResult.severityAssessment&&(
               <div className="shave-severity">
-                <div className="shave-severity-lbl">Clinical Assessment</div>
+                <div className="shave-severity-lbl">{t.clinicalAssessmentLabel}</div>
                 <div className="shave-severity-text">{shaveResult.severityAssessment}</div>
               </div>
             )}
@@ -2285,7 +2330,7 @@ Return:
             {/* ── CRITICAL RULE ── */}
             {shaveResult.criticalRule&&(
               <div className="crit-box">
-                <div className="crit-lbl">Critical Rule</div>
+                <div className="crit-lbl">{t.criticalRuleLabel}</div>
                 <div className="crit-text">{shaveResult.criticalRule}</div>
               </div>
             )}
@@ -2311,19 +2356,19 @@ Return:
                   {/* Technique adjustment */}
                   {br.techniqueAdjustment&&(
                     <div style={{borderLeft:"2px solid var(--gold)",paddingLeft:12,marginBottom:14}}>
-                      <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:4}}>Technique</div>
+                      <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:4}}>{t.techniqueLabel}</div>
                       <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65}}>{br.techniqueAdjustment}</div>
                     </div>
                   )}
 
                   {/* Recommended blades */}
                   {br.recommendedBlades?.length>0&&<>
-                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:10}}>Recommended Blades</div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:10}}>{t.recommendedBladesLabel}</div>
                     {br.recommendedBlades.map((blade,i)=>(
                       <div key={i} style={{border:"1px solid var(--border)",padding:"12px 14px",marginBottom:8}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:4}}>
                           <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:600,fontStyle:"italic"}}>{blade.name}</div>
-                          <div style={{fontFamily:"var(--fh)",fontSize:13,color:"var(--gold)",fontStyle:"italic",whiteSpace:"nowrap"}}>{blade.estimatedPrice}</div>
+                          <div style={{fontFamily:"var(--fh)",fontSize:13,color:"var(--gold)",fontStyle:"italic",whiteSpace:"nowrap"}}>{showPrice(blade.estimatedPrice, lang)}</div>
                         </div>
                         {blade.rating&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--green)",letterSpacing:1,marginBottom:6}}>★ {blade.rating}</div>}
                         <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6,marginBottom:8}}>{blade.why}</div>
@@ -2335,7 +2380,7 @@ Return:
                   {/* Transition note */}
                   {br.transitionNote&&(
                     <div style={{background:"var(--s)",padding:"10px 12px",marginTop:4}}>
-                      <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--amber)",fontStyle:"italic",marginBottom:4}}>Transition Note</div>
+                      <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--amber)",fontStyle:"italic",marginBottom:4}}>{t.transitionLabel}</div>
                       <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6}}>{br.transitionNote}</div>
                     </div>
                   )}
@@ -2377,12 +2422,12 @@ Return:
                   </div>
                   <div className="step-top">
                     <div className="step-name">{p.name}</div>
-                    <div className="step-price">{p.estimatedPrice}</div>
+                    <div className="step-price">{showPrice(p.estimatedPrice, lang)}</div>
                   </div>
                   <div className="step-brand">{p.brand}</div>
                   {p.knownRating&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--green)",letterSpacing:1,margin:"4px 0 8px"}}>★ {p.knownRating}</div>}
                   <div style={{borderLeft:"2px solid var(--goldb)",paddingLeft:10,marginBottom:8}}>
-                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:3}}>Key Ingredient</div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--gold)",fontStyle:"italic",marginBottom:3}}>{t.keyIngredientLabel}</div>
                     <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic"}}>{p.keyIngredient}</div>
                   </div>
                   <div className="step-instruction">{p.use}</div>
@@ -2412,23 +2457,23 @@ Return:
               </div>
               {shaveResult.treatmentProtocol&&(
                 <div style={{border:"1px solid rgba(168,48,48,0.2)",borderLeft:"2px solid var(--red)",padding:"12px 16px",marginBottom:12}}>
-                  <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:4,textTransform:"uppercase",color:"var(--red)",fontStyle:"italic",marginBottom:6}}>Treatment Protocol</div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:4,textTransform:"uppercase",color:"var(--red)",fontStyle:"italic",marginBottom:6}}>{t.treatmentProtocolLabel}</div>
                   <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.7}}>{shaveResult.treatmentProtocol}</div>
                 </div>
               )}
               {shaveResult.treatmentProducts.map((p,i)=>(
                 <div className="shave-prod-card" key={i} style={{borderColor:"rgba(168,48,48,0.2)"}}>
                   <div style={{display:"flex",gap:6,marginBottom:8}}>
-                    <div style={{border:"1px solid rgba(168,48,48,0.3)",color:"var(--red)",padding:"2px 8px",fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,textTransform:"uppercase"}}>TREATMENT</div>
+                    <div style={{border:"1px solid rgba(168,48,48,0.3)",color:"var(--red)",padding:"2px 8px",fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,textTransform:"uppercase"}}>{t.treatmentBadge}</div>
                   </div>
                   <div className="step-top">
                     <div className="step-name">{p.name}</div>
-                    <div className="step-price">{p.estimatedPrice}</div>
+                    <div className="step-price">{showPrice(p.estimatedPrice, lang)}</div>
                   </div>
                   <div className="step-brand">{p.brand}</div>
                   {p.knownRating&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--green)",letterSpacing:1,margin:"4px 0 8px"}}>★ {p.knownRating}</div>}
                   <div style={{borderLeft:"2px solid rgba(168,48,48,0.4)",paddingLeft:10,marginBottom:8}}>
-                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--red)",fontStyle:"italic",marginBottom:3}}>Active Ingredient</div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:9,letterSpacing:3,textTransform:"uppercase",color:"var(--red)",fontStyle:"italic",marginBottom:3}}>{t.activeIngredientLabel}</div>
                     <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic"}}>{p.keyIngredient}</div>
                   </div>
                   <div className="step-instruction">{p.use}</div>
@@ -2455,19 +2500,19 @@ Return:
             {/* ── WEEK ONE / TIMELINE / DOCTOR ── */}
             {shaveResult.weekOneProtocol&&(
               <div className="ins-box tip" style={{marginTop:12}}>
-                <div className="ins-lbl">Week One Protocol</div>
+                <div className="ins-lbl">{t.weekOneLabel}</div>
                 <div className="ins-text">{shaveResult.weekOneProtocol}</div>
               </div>
             )}
             {shaveResult.expectedImprovement&&(
               <div className="ins-box tip">
-                <div className="ins-lbl">Expected Timeline</div>
+                <div className="ins-lbl">{t.expectedTimeline}</div>
                 <div className="ins-text">{shaveResult.expectedImprovement}</div>
               </div>
             )}
             {shaveResult.whenToSeeDoctor&&(
               <div className="ins-box warn">
-                <div className="ins-lbl">When to See a Dermatologist</div>
+                <div className="ins-lbl">{t.whenDermatologist}</div>
                 <div className="ins-text">{shaveResult.whenToSeeDoctor}</div>
               </div>
             )}
@@ -2574,7 +2619,7 @@ Return:
 
             {/* ── MEDICAL DISCLAIMER ── */}
             <div className="med-disclaimer" style={{marginTop:16}}>
-              <div className="med-disclaimer-lbl">Medical Disclaimer</div>
+              <div className="med-disclaimer-lbl">{t.medDisclaimerLabel}</div>
               <div className="med-disclaimer-text">{t.medDisclaimer}</div>
             </div>
 
