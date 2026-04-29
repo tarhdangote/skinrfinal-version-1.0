@@ -1029,10 +1029,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 :root{--green:#5C6B3A;--green-light:rgba(92,107,58,0.15);}
 
 /* ── READABILITY UPGRADES ─────────────────────────────────────────────────────
-   Base: 16px body, 17px quiz options, 18px questions — WCAG AA compliant
+   Three tiers:
+   Critical (16px)  — clinical finding, critical rule, product instructions
+   Reading  (15px)  — step instructions, summaries, week one, timeline
+   Support  (14px)  — why, clinical mechanism, severity, supporting text
+   Minimum  (13px)  — labels, badges, mood descriptions (nothing below this)
+   Cormorant Garamond reads optically smaller than its point size — all sizes
+   set 1-2px larger than equivalent sans-serif for equivalent perceived weight.
 ────────────────────────────────────────────────────────────────────────────── */
 
-/* Body text — readable weight and size */
+/* Body text */
 .hero-body{font-size:17px;line-height:1.95;color:var(--cream);font-style:normal;}
 .p-desc{font-size:16px;line-height:1.85;color:var(--cream);font-style:normal;}
 
@@ -1043,35 +1049,52 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .opt.sel .opt-lbl{color:var(--white);}
 .opt{min-height:52px;padding:14px 16px;}
 
-/* Protocol steps */
-.step-instruction{font-size:15px;line-height:1.75;color:var(--white);}
-.step-why{font-size:14px;line-height:1.75;color:var(--cream);font-style:normal;}
-.sci-text{font-size:14px;line-height:1.8;color:var(--cream);font-style:normal;}
-.ins-text{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
-.phase-step-inst{font-size:15px;line-height:1.7;color:var(--white);}
-.phase-step-why{font-size:13px;line-height:1.65;color:var(--cream);font-style:normal;}
+/* ── SKIN ANALYSIS RESULTS ──────────────────────────────────── */
+/* Profile banner */
+.p-hl{font-size:17px;color:var(--gold);line-height:1.5;margin-bottom:10px;}
+.p-sum{font-size:16px;line-height:1.9;color:var(--cream);font-style:normal;}
 
+/* Product cards — skin routine */
+.step-name{font-size:16px;}
+.step-instruction{font-size:16px;line-height:1.8;color:var(--white);font-style:normal;}
+.step-why{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+.sci-text{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+
+/* ── SHAVE PROTOCOL RESULTS ─────────────────────────────────── */
+/* Top findings — most critical text, largest size */
+.shave-finding-text{font-size:16px;line-height:1.85;color:var(--white);font-style:normal;}
+.shave-severity-text{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+.crit-text{font-size:16px;line-height:1.85;color:var(--white);font-style:normal;}
+
+/* Three-phase steps (pre / during / post shave) */
+.phase-step-title{font-size:15px;}
+.phase-step-inst{font-size:15px;line-height:1.8;color:var(--white);font-style:normal;}
+.phase-step-why{font-size:14px;line-height:1.75;color:var(--cream);font-style:normal;}
+
+/* Insight boxes (week one, timeline, doctor warning) */
+.ins-text{font-size:16px;line-height:1.85;color:var(--cream);font-style:normal;}
+.ins-lbl{font-size:9px;letter-spacing:4px;}
+
+/* Prevention and treatment product cards */
+.step-instruction{font-size:16px;line-height:1.8;color:var(--white);font-style:normal;}
+.step-why{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
+
+/* ── SHARED ACROSS BOTH PROTOCOLS ───────────────────────────── */
 /* Chat and community */
-.msg.ai .msg-bubble{font-size:15px;line-height:1.75;color:var(--white);}
+.msg.ai .msg-bubble{font-size:15px;line-height:1.8;color:var(--white);}
 .post-text{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
-.hist-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
-
-/* Summaries */
-.p-sum{font-size:15px;line-height:1.85;color:var(--cream);font-style:normal;}
+.hist-text{font-size:15px;line-height:1.75;color:var(--cream);font-style:normal;}
 .comm-s,.shave-s,.ci-s{font-size:15px;line-height:1.8;color:var(--cream);font-style:normal;}
-.shave-finding-text{font-size:15px;line-height:1.8;color:var(--white);}
-.shave-severity-text{font-size:14px;line-height:1.7;color:var(--cream);font-style:normal;}
-.crit-text{font-size:15px;line-height:1.75;color:var(--white);font-style:normal;}
 
 /* Moods */
-.mood-d{font-size:13px;color:var(--cream);font-style:normal;}
-.mood-l{font-size:14px;}
+.mood-d{font-size:14px;color:var(--cream);font-style:normal;}
+.mood-l{font-size:15px;}
 
 /* Touch targets */
 .btn{min-height:44px;font-size:13px;}
 .mood-opt{min-height:72px;}
 
-/* Soft text contrast boost */
+/* Soft text contrast */
 :root{--soft:#B8AEA6;}
 
 /* Focus rings */
