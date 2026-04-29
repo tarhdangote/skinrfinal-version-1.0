@@ -1595,7 +1595,7 @@ export default function SkinrApp() {
 
   // Load Stripe.js once on mount — non-blocking, only when needed
   // Publishable key is hardcoded — safe by design, Stripe built it to be public
-  const STRIPE_PK = "pk_live_51RRbHsCi5YWsRAVAmc6fwNtSVBpVxg3CIlE7gEtknKpjyBhXmW3UiHQfxLCvMNkblbJ00JhHhc5sRxY2ux4WF00lvHFMH5B";
+  const STRIPE_PK = "pk_live_51RNjveCi5YWsRAVAPPi9HGHutU3PY6bxnE1r5ty317sVlilm5eRH07ivsLnuddSNc9ydpNqQv280yfuwPuvBBtbt00t0MNZPwi";
   useEffect(()=>{
     if(window.Stripe){ setStripeLoaded(true); setStripeObj(window.Stripe(STRIPE_PK)); return; }
     const script = document.createElement("script");
