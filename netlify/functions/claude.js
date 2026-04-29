@@ -38,8 +38,9 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    // Allow caller to request more tokens for translation (capped at 4000)
-    const maxTokens = Math.min(body.maxTokens || 1500, 4000);
+    // Caller controls max_tokens — capped at 4000 for safety.
+    // Default 1500 if not specified. Shave stage 1 sends 800, stage 2 sends 1200.
+    const maxTokens = Math.min(parseInt(body.maxTokens) || 1500, 4000);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
