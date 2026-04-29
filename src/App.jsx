@@ -1518,6 +1518,8 @@ export default function SkinrApp() {
   const [reviewName, setReviewName]         = useState("");
   const [reviewPosted, setReviewPosted]     = useState(false);
   const [unlocked, setUnlocked]             = useState(false);
+  const [biologyUnlocked, setBiologyUnlocked] = useState(false);
+  const [routineUnlocked, setRoutineUnlocked] = useState(false);
   const [unlockInput, setUnlockInput]       = useState("");
   const [unlockErr, setUnlockErr]           = useState(false);
   const [bioReport, setBioReport]           = useState(null);
@@ -1572,6 +1574,8 @@ export default function SkinrApp() {
     setSavedShave(LS.get(SK.shave));
     setEmailSaved(LS.get(SK.email));
     if(LS.get("skinr2:unlocked")) setUnlocked(true);
+    if(LS.get("skinr2:biologyUnlocked")) setBiologyUnlocked(true);
+    if(LS.get("skinr2:routineUnlocked")) setRoutineUnlocked(true);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
     setReviews(LS.get("skinr2:reviews")||[]);
@@ -1633,9 +1637,71 @@ export default function SkinrApp() {
     setPayLoading(false);
   };
 
-  // Mount Stripe Card Element into the modal after clientSecret is ready
+  // Payment Request Button state — handles Apple Pay + Google Pay
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [prButtonAvailable, setPrButtonAvailable] = useState(false);
+
+  // Mount Stripe Card Element and Payment Request Button after clientSecret is ready
   useEffect(()=>{
     if(!clientSecret || !stripeObj || !payModal) return;
+
+    // ── PAYMENT REQUEST BUTTON (Apple Pay / Google Pay) ──
+    const amount = payModal === "combo" ? 1500 : 1000;
+    const label = payModal === "biology"
+      ? "SKINR Biology Report"
+      : payModal === "routine"
+      ? "SKINR Routine Card"
+      : "SKINR Biology Report + Routine Card";
+
+    const pr = stripeObj.paymentRequest({
+      country: "CA",
+      currency: "usd",
+      total: { label, amount },
+      requestPayerEmail: true,
+      requestPayerName: false,
+    });
+
+    pr.canMakePayment().then(result => {
+      if(result) {
+        setPrButtonAvailable(true);
+        setPaymentRequest(pr);
+        // Mount the button
+        setTimeout(() => {
+          const prContainer = document.getElementById("skinr-pr-button");
+          if(!prContainer || prContainer.children.length > 0) return;
+          const elements = stripeObj.elements();
+          const prButton = elements.create("paymentRequestButton", {
+            paymentRequest: pr,
+            style: { paymentRequestButton: { theme:"dark", height:"48px" } },
+          });
+          prButton.mount("#skinr-pr-button");
+        }, 100);
+      }
+    });
+
+    pr.on("paymentmethod", async (ev) => {
+      const { error: confirmError } = await stripeObj.confirmCardPayment(
+        clientSecret,
+        { payment_method: ev.paymentMethod.id },
+        { handleActions: false }
+      );
+      if(confirmError) {
+        ev.complete("fail");
+        setPayError(confirmError.message);
+      } else {
+        ev.complete("success");
+        // Unlock purchased product
+        if(payModal === "biology" || payModal === "combo") { setBiologyUnlocked(true); LS.set("skinr2:biologyUnlocked", true); }
+        if(payModal === "routine" || payModal === "combo") { setRoutineUnlocked(true); LS.set("skinr2:routineUnlocked", true); }
+        if(payModal === "combo") { setUnlocked(true); LS.set("skinr2:unlocked", true); }
+        if(ev.payerEmail) setEmailSaved(ev.payerEmail);
+        LS.set("skinr2:purchasedProduct", payModal);
+        setPaySuccess(true);
+        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); setPaymentRequest(null); setPrButtonAvailable(false); }, 3500);
+      }
+    });
+
+    // ── CARD ELEMENT ──
     const container = document.getElementById("skinr-card-element");
     if(!container || container.children.length > 0) return;
     const elements = stripeObj.elements();
@@ -1651,8 +1717,12 @@ export default function SkinrApp() {
     });
     card.mount("#skinr-card-element");
     setCardElement(card);
-    return ()=>{ try{ card.destroy(); }catch(_){} };
-  },[clientSecret, stripeObj, payModal]);
+    return ()=>{
+      try{ card.destroy(); }catch(_){}
+      setPaymentRequest(null);
+      setPrButtonAvailable(false);
+    };
+  },[clientSecret, stripeObj, payModal]); // eslint-disable-line
 
   // Confirm payment — card data goes directly to Stripe, never to our server
   const confirmPayment = async () => {
@@ -1668,12 +1738,39 @@ export default function SkinrApp() {
       });
       if(result.error) throw new Error(result.error.message);
       if(result.paymentIntent?.status === "succeeded") {
-        // Unlock the purchased product
-        setUnlocked(true);
-        LS.set(SK.unlocked, true);
+        // Unlock only what was purchased — not everything
+        if(payModal === "biology" || payModal === "combo") {
+          setBiologyUnlocked(true);
+          LS.set("skinr2:biologyUnlocked", true);
+        }
+        if(payModal === "routine" || payModal === "combo") {
+          setRoutineUnlocked(true);
+          LS.set("skinr2:routineUnlocked", true);
+        }
+        if(payModal === "combo") {
+          setUnlocked(true);
+          LS.set("skinr2:unlocked", true);
+        }
         LS.set("skinr2:purchasedProduct", payModal);
         setPaySuccess(true);
-        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); }, 3000);
+        // Send purchase confirmation email
+        const purchasedEmail = emailSaved || "";
+        if(purchasedEmail) {
+          try {
+            await fetch("https://formspree.io/f/261158684435060", {
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({
+                _subject:"SKINR Purchase Confirmed",
+                email: purchasedEmail,
+                product: payModal,
+                skinType: profile?.skinType || "Not analysed",
+                source:"SKINR Payment Confirmation",
+              }),
+            });
+          } catch(_) {}
+        }
+        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); }, 3500);
       }
     } catch(e) {
       setPayError(e.message);
@@ -1884,8 +1981,23 @@ Write in flowing prose (no bullet points). Cover:
 
 Write at the level of a highly educated non-specialist. Precise but accessible. Approximately 800-1000 words total.`;
     try {
-      const text = await callAI([{role:"user",content:prompt}]);
+      const text = await callAI([{role:"user",content:prompt}], "", 4000);
       setBioReport(text);
+      // Send biology report to email
+      if(emailSaved && text) {
+        try {
+          await fetch("https://formspree.io/f/261158684435060", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+              _subject:"Your SKINR Biology Report",
+              email: emailSaved,
+              skinType: profile.skinType,
+              biologyReport: text,
+              source:"SKINR Biology Report Delivery",
+            }),
+          });
+        } catch(_) {}
+      }
     } catch(_){}
     setBioLoad(false);
   };
@@ -1895,23 +2007,62 @@ Write at the level of a highly educated non-specialist. Precise but accessible. 
     if(!profile||cardLoad) return;
     setCardLoad(true);
     const ln=(LANGUAGES.find(l=>l.code===lang)?.label || "English");
-    const prompt = `Create a personalized daily routine card for this man in ${ln}. Return ONLY valid JSON.
+    const prompt = `You are a clinical dermatologist creating a premium personalised routine card in ${ln}. Return ONLY valid JSON — no markdown.
 
-Profile: ${JSON.stringify(profile)}
-Skin type: ${profile.skinType}
+Patient: skinType=${profile.skinType}, concern=${profile.answers?.concern||"general"}, age=${profile.answers?.age||"adult"}, sensitivity=${profile.answers?.sensitivity||"normal"}, budget=${profile.answers?.budget||"mid"}
+Morning products: ${profile.morning?.map(p=>p.product+" ("+p.brand+")").join(", ")||"from profile"}
+Evening products: ${profile.evening?.map(p=>p.product+" ("+p.brand+")").join(", ")||"from profile"}
 
-Return:
+Return this exact JSON:
 {
-  "title": "Personalized routine card title including skin type",
-  "morning": [{"step": 1, "product": "product name", "brand": "brand", "instruction": "exact brief instruction max 8 words", "timing": "e.g. 30 seconds"}],
-  "evening": [same structure],
-  "goldenRules": ["Rule 1 max 10 words", "Rule 2", "Rule 3"],
-  "rememberLine": "One powerful sentence to remember — the most important thing for this skin type"
-}`;
+  "title": "Personalised ${profile.skinType} Routine Card",
+  "morning": [
+    {
+      "step": 1,
+      "product": "exact product name",
+      "brand": "brand name",
+      "instruction": "Precise how-to: amount, technique, direction. E.g. Wet face. Dispense 2 pumps. Massage 45 seconds in circular motions. Rinse with cool water.",
+      "timing": "e.g. 30 seconds",
+      "why": "Clinical reason this step matters for this specific skin type — one sentence"
+    }
+  ],
+  "evening": [same structure, 2-3 steps, no SPF],
+  "goldenRules": [
+    "Most important rule specific to this skin type — max 12 words",
+    "Second rule",
+    "Third rule"
+  ],
+  "weeklyAdd": "One weekly treatment specifically for this skin type — product and method",
+  "rememberLine": "The single most powerful thing to remember about this skin — one sentence"
+}
+
+Rules:
+- Morning: 3-4 steps ending with SPF. First step is always cleanser.
+- Evening: 2-3 steps. Never include SPF. Last step is always moisturiser.
+- instruction must be specific: exact ml/drops/pumps, exact technique, exact duration
+- why must explain the clinical mechanism for THIS skin type specifically
+- goldenRules must be personalised — not generic advice any person could give`;
     try {
-      const raw = await callAI([{role:"user",content:prompt}]);
+      const raw = await callAI([{role:"user",content:prompt}], "", 2000);
       const parsed = parseJSON(raw);
-      setCardReport(parsed);
+      if(parsed) {
+        setCardReport(parsed);
+        // Auto-send routine card to email if we have it
+        if(emailSaved) {
+          try {
+            await fetch("https://formspree.io/f/261158684435060", {
+              method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({
+                _subject:"Your SKINR Routine Card",
+                email: emailSaved,
+                skinType: profile.skinType,
+                routineCard: JSON.stringify(parsed, null, 2),
+                source:"SKINR Routine Card Delivery",
+              }),
+            });
+          } catch(_) {}
+        }
+      }
     } catch(_){}
     setCardLoad(false);
   };
@@ -2629,9 +2780,16 @@ Return:
                 <div style={{background:"var(--card)",padding:"16px 18px"}}>
                   <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.biologyTitle}</div>
                   <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.biologyDesc}</div>
-                  {unlocked?(
+                  {biologyUnlocked?(
                     bioReport?(
-                      <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--cream)",fontStyle:"italic",lineHeight:1.8,maxHeight:260,overflowY:"auto"}}>{bioReport}</div>
+                      <div>
+                        <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85,maxHeight:300,overflowY:"auto",marginBottom:12}}>{bioReport}</div>
+                        {emailSaved&&(
+                          <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",borderTop:"1px solid var(--border)",paddingTop:10,marginTop:10}}>
+                            {lang==="fr"?"Ce rapport a été envoyé à ton courriel.":lang==="es"?"Este informe fue enviado a tu correo.":"This report has been sent to your email."}
+                          </div>
+                        )}
+                      </div>
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>{bioLoad?t.generatingLabel:t.generateReport}</button>
                     )
@@ -2646,12 +2804,57 @@ Return:
                 <div style={{background:"var(--card)",padding:"16px 18px"}}>
                   <div style={{fontFamily:"var(--fh)",fontSize:15,fontWeight:700,fontStyle:"italic",marginBottom:6}}>{t.routineCardTitle}</div>
                   <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>{t.routineCardDesc}</div>
-                  {unlocked?(
+                  {routineUnlocked?(
                     cardReport?(
-                      <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--cream)",fontStyle:"italic",lineHeight:1.7}}>
-                        <div style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:700,fontStyle:"italic",marginBottom:8,color:"var(--gold)"}}>{cardReport.title}</div>
-                        {cardReport.morning?.map((s,i)=><div key={i} style={{marginBottom:3}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.product}</strong> — {s.instruction}</div>)}
-                        {cardReport.rememberLine&&<div style={{borderTop:"1px solid var(--border)",marginTop:8,paddingTop:8,color:"var(--gold)",fontStyle:"italic",fontSize:11}}>{cardReport.rememberLine}</div>}
+                      <div>
+                        <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,fontStyle:"italic",marginBottom:12,color:"var(--gold)"}}>{cardReport.title}</div>
+                        {cardReport.morning?.length>0&&(
+                          <div style={{marginBottom:14}}>
+                            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>☀ Morning</div>
+                            {cardReport.morning.map((s,i)=>(
+                              <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<cardReport.morning.length-1?"1px solid var(--border)":"none"}}>
+                                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                                  <span style={{color:"var(--gold)",fontFamily:"var(--fm)",fontSize:10,flexShrink:0,marginTop:2}}>{i+1}.</span>
+                                  <div>
+                                    <div style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:700,fontStyle:"italic",color:"var(--white)",marginBottom:2}}>{s.product}</div>
+                                    <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.65}}>{s.instruction}</div>
+                                    {s.timing&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--soft)",letterSpacing:1,marginTop:3}}>{s.timing}</div>}
+                                    {s.why&&<div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",marginTop:3}}>{s.why}</div>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {cardReport.evening?.length>0&&(
+                          <div style={{marginBottom:14}}>
+                            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>☽ Evening</div>
+                            {cardReport.evening.map((s,i)=>(
+                              <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<cardReport.evening.length-1?"1px solid var(--border)":"none"}}>
+                                <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                                  <span style={{color:"var(--gold)",fontFamily:"var(--fm)",fontSize:10,flexShrink:0,marginTop:2}}>{i+1}.</span>
+                                  <div>
+                                    <div style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:700,fontStyle:"italic",color:"var(--white)",marginBottom:2}}>{s.product}</div>
+                                    <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.65}}>{s.instruction}</div>
+                                    {s.timing&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--soft)",letterSpacing:1,marginTop:3}}>{s.timing}</div>}
+                                    {s.why&&<div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",marginTop:3}}>{s.why}</div>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {cardReport.goldenRules?.length>0&&(
+                          <div style={{borderTop:"1px solid var(--border)",paddingTop:10,marginTop:4}}>
+                            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>Golden Rules</div>
+                            {cardReport.goldenRules.map((r,i)=>(
+                              <div key={i} style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic",marginBottom:4}}>◆ {r}</div>
+                            ))}
+                          </div>
+                        )}
+                        {cardReport.rememberLine&&(
+                          <div style={{borderTop:"1px solid var(--border)",marginTop:10,paddingTop:10,color:"var(--gold)",fontStyle:"italic",fontSize:13,fontFamily:"var(--fc)"}}>{cardReport.rememberLine}</div>
+                        )}
                       </div>
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>{cardLoad?t.generatingLabel:t.generateCard}</button>
@@ -2666,7 +2869,7 @@ Return:
               </div>
               {/* Combo + unlock code row */}
               <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
-                {unlocked?(
+                {(biologyUnlocked&&routineUnlocked)?(
                   <div style={{textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>{t.alreadyUnlocked}</div>
                 ):(
                   <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -3424,6 +3627,25 @@ Return:
                   </div>
                 )}
 
+                {/* Email field for report delivery */}
+                <div style={{marginBottom:14}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--soft)",textTransform:"uppercase",marginBottom:6}}>
+                    {lang==="fr"?"Courriel pour recevoir le rapport":lang==="es"?"Email para recibir el informe":"Email to receive your report"}
+                  </div>
+                  <input
+                    type="email"
+                    style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
+                      padding:"10px 14px",fontFamily:"var(--fc)",fontSize:14,color:"var(--white)",
+                      outline:"none",fontStyle:"italic"}}
+                    placeholder={emailSaved || t.emailPlaceholder}
+                    defaultValue={emailSaved || ""}
+                    onChange={e=>{if(e.target.value) setEmailSaved(e.target.value);}}
+                  />
+                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",marginTop:4}}>
+                    {lang==="fr"?"Ton rapport sera envoyé à cette adresse après paiement.":lang==="es"?"Tu informe será enviado a este correo tras el pago.":"Your report will be emailed here after payment."}
+                  </div>
+                </div>
+
                 {/* Card form */}
                 {payLoading&&!clientSecret?(
                   <div style={{textAlign:"center",padding:"20px 0",fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic"}}>
@@ -3431,6 +3653,19 @@ Return:
                   </div>
                 ):(
                   <>
+                    {/* Apple Pay / Google Pay — shows automatically if available */}
+                    {prButtonAvailable&&(
+                      <div style={{marginBottom:16}}>
+                        <div id="skinr-pr-button" style={{minHeight:48}}/>
+                        <div style={{display:"flex",alignItems:"center",gap:10,margin:"12px 0"}}>
+                          <div style={{flex:1,height:1,background:"var(--border)"}}/>
+                          <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",whiteSpace:"nowrap"}}>
+                            {lang==="fr"?"ou payer par carte":lang==="es"?"o pagar con tarjeta":"or pay by card"}
+                          </div>
+                          <div style={{flex:1,height:1,background:"var(--border)"}}/>
+                        </div>
+                      </div>
+                    )}
                     <div style={{marginBottom:12}}>
                       <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--soft)",textTransform:"uppercase",marginBottom:8}}>
                         {lang==="fr"?"Détails de la carte":lang==="es"?"Detalles de la tarjeta":"Card details"}
