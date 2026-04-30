@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+// ── GA4 EVENT TRACKING ───────────────────────────────────────────────────────
+const track = (eventName, params = {}) => {
+  try { if(window.gtag) window.gtag("event", eventName, params); } catch(_) {}
+};
+
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  SKINR v3 — EDITABLE CONFIGURATION                                       ║
 // ║  Edit this section freely. Do not edit below the closing ═══ line.       ║
@@ -1628,6 +1633,7 @@ export default function SkinrApp() {
     setPayError("");
     setPaySuccess(false);
     setPayLoading(true);
+    track("begin_checkout", {product, currency:"USD"});
     try {
       const res = await fetch("/.netlify/functions/stripe", {
         method:"POST",
@@ -1767,6 +1773,12 @@ export default function SkinrApp() {
         if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
         if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
         LS.set("skinr2:purchasedProduct", p);
+        track("purchase", {
+          transaction_id: result.paymentIntent.id,
+          value: result.paymentIntent.amount / 100,
+          currency: "USD",
+          items: [{item_id: p, item_name: p}],
+        });
         setPaySuccess(true);
         // Send purchase confirmation email
         const purchasedEmail = emailSaved || "";
@@ -1835,6 +1847,7 @@ export default function SkinrApp() {
       const full = {...parsed, answers:ans, createdAt:Date.now(), lang};
       setProfile(full);
       LS.set(SK.profile, full);
+      track("skin_analysis_complete", {skin_type: parsed.skinType, lang});
       const intro = [{role:"ai",text:parsed.coachIntro||"Your analysis is complete. How can I help you?"}];
       setMessages(intro); saveChat(intro);
       setTimeout(()=>{ setView("results"); setShowEmail(!LS.get(SK.email)); },600);
@@ -1916,6 +1929,7 @@ export default function SkinrApp() {
         setShaveResult(full);
         setSavedShave({ ...full, answers: ans });
         LS.set(SK.shave, { ...full, answers: ans });
+        track("shave_protocol_complete", {bumps: ans.activeBumps, method: ans.method, lang});
         if (!LS.get(SK.email)) setShowEmail(true);
         return;
       } catch (e) { console.error(`Stage 2 attempt ${attempt}:`, e.message); }
@@ -2068,6 +2082,7 @@ Rules:
     if(!emailVal.trim()) return;
     LS.set(SK.email, emailVal.trim());
     setEmailSaved(emailVal.trim());
+    track("email_capture", {source: "modal"});
     setEmailDone(true);
     // Send to Formspree — sign up free at formspree.io and replace YOUR_FORM_ID
     try {
@@ -2172,7 +2187,7 @@ Rules:
     ...(has ? [{id:"checkin",   l:t.nav.checkin}]  : []),
     ...(hasShave ? [{id:"shave",l:t.nav.shave}]    : []),
     ...((has||hasShave) ? [{id:"community",l:t.nav.community}] : []),
-    ...((has||hasShave) ? [{id:"guides",   l:t.nav.guides}]    : []),
+    {id:"guides", l:t.nav.guides}, // Always visible — guides are generic, no analysis needed
   ];
 
   if(!ready) return (
@@ -2405,7 +2420,7 @@ Rules:
         <footer style={{borderTop:"1px solid var(--border)",marginTop:52,paddingTop:40,paddingBottom:32,position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:"linear-gradient(90deg,transparent,var(--gold),transparent)"}}/>
 
-          {/* ── SOCIAL PROOF ── */}
+          {/* ── REVIEWS ── */}
           <div style={{marginBottom:48}}>
             <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
               textTransform:"uppercase",marginBottom:6}}>
@@ -2413,78 +2428,29 @@ Rules:
             </div>
             <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:700,fontStyle:"italic",
               color:"var(--white)",marginBottom:24}}>
-              {lang==="fr"?"De vrais résultats, de vrais profils.":lang==="es"?"Resultados reales, perfiles reales.":"Real results. Real skin types."}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:2,background:"var(--border)"}}>
-              {[
-                {
-                  quote: lang==="fr"
-                    ? "\"J'ai essayé tout ce que les barbiers recommandaient. Rien marchait. SKINR a identifié que ma lame cartouche causait mes boutons à cause du mécanisme lift-and-cut. Switché pour un rasoir de sûreté. En deux semaines, disparu.\""
-                    : lang==="es"
-                    ? "\"Probé todo lo que los barberos recomendaban. Nada funcionó. SKINR identificó que mi maquinilla de cartucho causaba mis granos por el mecanismo lift-and-cut. Cambié a una de seguridad. En dos semanas, desaparecieron.\""
-                    : "\"I tried everything barbers recommended. Nothing worked. SKINR identified that my cartridge razor was causing my bumps through the lift-and-cut mechanism. Switched to a safety razor. Two weeks. Gone.\"",
-                  name: "Marcus T.", type: lang==="fr"?"Peau Grasse · Barbe Bouclée":lang==="es"?"Piel Grasa · Barba Rizada":"Oily · Coarse Curly Beard", week:"Week 3"
-                },
-                {
-                  quote: lang==="fr"
-                    ? "\"Mon dermatologue m'a dit d'utiliser de la crème hydratante. SKINR m'a dit laquelle, pourquoi, dans quel ordre, et quels ingrédients conflictuent avec mon rétinol. C'est une différence énorme.\""
-                    : lang==="es"
-                    ? "\"Mi dermatólogo me dijo que usara hidratante. SKINR me dijo cuál, por qué, en qué orden, y qué ingredientes conflictúan con mi retinol. La diferencia es enorme.\""
-                    : "\"My dermatologist told me to moisturise. SKINR told me which one, why, in what order, and which ingredients conflict with my retinol. That is a completely different level of information.\"",
-                  name: "James K.", type: lang==="fr"?"Peau Mixte · 36–50":lang==="es"?"Piel Mixta · 36–50":"Combination · Age 36–50", week:"Week 6"
-                },
-                {
-                  quote: lang==="fr"
-                    ? "\"Gratuit. Clinique. Honnête. J'ai essayé des applications à 30 $/mois qui donnaient des conseils moins précis. La recommandation de Proraso seule valait l'analyse.\""
-                    : lang==="es"
-                    ? "\"Gratis. Clínico. Honesto. He probado apps de $30/mes que daban consejos menos precisos. La recomendación de Proraso sola valió el análisis.\""
-                    : "\"Free. Clinical. Honest. I have tried $30/month apps that gave less precise advice. The Proraso recommendation alone was worth the analysis.\"",
-                  name: "David R.", type: lang==="fr"?"Peau Sèche · Barbe Fine":lang==="es"?"Piel Seca · Barba Fina":"Dry · Fine Straight Beard", week:"Week 2"
-                },
-              ].map((r,i)=>(
-                <div key={i} style={{background:"var(--card)",padding:"22px 20px"}}>
-                  <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",
-                    lineHeight:1.85,fontStyle:"italic",marginBottom:18}}>
-                    {r.quote}
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
-                    <div>
-                      <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,
-                        color:"var(--white)",marginBottom:2}}>{r.name}</div>
-                      <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,
-                        color:"var(--soft)",textTransform:"uppercase"}}>{r.type}</div>
-                    </div>
-                    <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,
-                      color:"var(--gold)",textTransform:"uppercase"}}>{r.week}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
-              fontStyle:"italic",marginTop:10,textAlign:"center",lineHeight:1.6}}>
-              {lang==="fr"
-                ? "Les témoignages représentent des résultats individuels. Les résultats varient selon le type de peau et la cohérence du protocole."
-                : lang==="es"
-                ? "Los testimonios representan resultados individuales. Los resultados varían según el tipo de piel y la consistencia del protocolo."
-                : "Testimonials represent individual results. Results vary by skin type and protocol consistency."}
+              {lang==="fr"?"De vrais résultats, de vrais hommes.":lang==="es"?"Resultados reales. Hombres reales.":"Real results. Real men."}
             </div>
 
-            {/* ── REVIEW SUBMISSION FORM ── */}
-            <div style={{marginTop:28,border:"1px solid var(--border)",padding:"24px 20px",background:"var(--s)"}}>
+            {/* Review submission form */}
+            <div style={{border:"1px solid var(--border)",padding:"24px 20px",background:"var(--s)"}}>
               <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
                 textTransform:"uppercase",marginBottom:6}}>
                 {lang==="fr"?"Partagez Votre Expérience":lang==="es"?"Comparte Tu Experiencia":"Share Your Experience"}
               </div>
               <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",
-                color:"var(--white)",marginBottom:16}}>
+                color:"var(--white)",marginBottom:8}}>
                 {lang==="fr"?"Comment SKINR a changé ta routine?":lang==="es"?"¿Cómo cambió SKINR tu rutina?":"How has SKINR changed your routine?"}
               </div>
-              {reviewPosted ? (
+              <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",
+                marginBottom:16,lineHeight:1.7}}>
+                {lang==="fr"?"Ton retour aide les autres hommes à prendre de meilleures décisions pour leur peau.":lang==="es"?"Tu opinión ayuda a otros hombres a tomar mejores decisiones para su piel.":"Your experience helps other men make better decisions about their skin."}
+              </div>
+              {reviewPosted?(
                 <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--gold)",fontStyle:"italic",
                   padding:"16px",border:"1px solid var(--goldb)",textAlign:"center"}}>
-                  ◆ {lang==="fr"?"Merci — nous avons bien reçu ton avis.":lang==="es"?"Gracias — hemos recibido tu reseña.":"Thank you — your review has been received."}
+                  ◆ {lang==="fr"?"Merci — on a bien reçu ton avis.":lang==="es"?"Gracias — hemos recibido tu reseña.":"Thank you — your review has been received."}
                 </div>
-              ) : (
+              ):(
                 <>
                   <input
                     style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
@@ -2492,12 +2458,11 @@ Rules:
                       marginBottom:10,outline:"none",fontStyle:"italic"}}
                     placeholder={lang==="fr"?"Ton prénom (optionnel)":lang==="es"?"Tu nombre (opcional)":"Your first name (optional)"}
                     value={reviewName} onChange={e=>setReviewName(e.target.value)}/>
-                  <textarea
-                    rows={4}
+                  <textarea rows={4}
                     style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
                       padding:"10px 14px",fontFamily:"var(--fc)",fontSize:14,color:"var(--white)",
                       resize:"vertical",outline:"none",fontStyle:"italic",marginBottom:12}}
-                    placeholder={lang==="fr"?"Décris ton expérience avec SKINR — ton type de peau, le protocole, les résultats...":lang==="es"?"Describe tu experiencia con SKINR — tu tipo de piel, el protocolo, los resultados...":"Describe your experience with SKINR — your skin type, the protocol, the results..."}
+                    placeholder={lang==="fr"?"Ton type de peau, ce que tu as essayé, et ce qui a changé...":lang==="es"?"Tu tipo de piel, lo que intentaste, y lo que cambió...":"Your skin type, what you tried, and what changed for you..."}
                     value={reviewText} onChange={e=>setReviewText(e.target.value)}/>
                   <button className="btn btn-p" style={{width:"100%"}}
                     onClick={submitReview} disabled={!reviewText.trim()}>
@@ -2505,21 +2470,23 @@ Rules:
                   </button>
                   <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
                     fontStyle:"italic",marginTop:8,textAlign:"center"}}>
-                    {lang==="fr"?"Les avis sont vérifiés avant publication. Données jamais vendues.":lang==="es"?"Las reseñas se verifican antes de publicarse. Datos nunca vendidos.":"Reviews are verified before publishing. Your data is never sold."}
+                    {lang==="fr"?"Les avis sont vérifiés avant publication. Tes données ne sont jamais vendues.":lang==="es"?"Las reseñas se verifican antes de publicarse. Tus datos nunca se venden.":"Reviews are verified before publishing. Your data is never sold."}
                   </div>
                 </>
               )}
-              {/* Show submitted reviews */}
-              {reviews.length > 0 && (
-                <div style={{marginTop:20,borderTop:"1px solid var(--border)",paddingTop:16}}>
+
+              {/* Show real user-submitted reviews only */}
+              {reviews.length>0&&(
+                <div style={{marginTop:24,borderTop:"1px solid var(--border)",paddingTop:20}}>
                   {reviews.slice(0,5).map((r,i)=>(
-                    <div key={r.id||i} style={{marginBottom:14,paddingBottom:14,
+                    <div key={r.id||i} style={{marginBottom:16,paddingBottom:16,
                       borderBottom:i<Math.min(reviews.length,5)-1?"1px solid var(--border)":"none"}}>
                       <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--cream)",
-                        fontStyle:"italic",lineHeight:1.75,marginBottom:6}}>&ldquo;{r.text}&rdquo;</div>
+                        fontStyle:"italic",lineHeight:1.8,marginBottom:8}}>&ldquo;{r.text}&rdquo;</div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:700,color:"var(--white)"}}>
-                          {r.name}{r.skinType&&<span style={{color:"var(--soft)",fontWeight:400,marginLeft:6,fontSize:11}}>· {r.skinType}</span>}
+                          {r.name}
+                          {r.skinType&&<span style={{color:"var(--soft)",fontWeight:400,marginLeft:6,fontSize:11}}>· {r.skinType}</span>}
                         </div>
                         <div style={{fontFamily:"var(--fm)",fontSize:8,color:"var(--muted)",letterSpacing:2}}>{r.date}</div>
                       </div>
@@ -3452,6 +3419,37 @@ Rules:
         <div className="guides-wrap">
           <div className="guides-h">{t.guidesTitle}</div>
           <div className="guides-s">{t.guidesSub}</div>
+
+          {/* Personalised upsell — shown only if they haven't done analysis yet */}
+          {(!has&&!hasShave)&&(
+            <div style={{border:"1px solid var(--goldb)",background:"rgba(184,151,42,0.05)",
+              padding:"18px 20px",marginBottom:24,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,
+                background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
+              <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
+                textTransform:"uppercase",marginBottom:6}}>
+                {lang==="fr"?"Envie d'un guide personnalisé?":lang==="es"?"¿Quieres una guía personalizada?":"Want something personalised?"}
+              </div>
+              <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",fontStyle:"normal",
+                lineHeight:1.8,marginBottom:14}}>
+                {lang==="fr"
+                  ?"Les guides ci-dessous sont des références générales pour tous les types de peau. Si tu veux un protocole construit spécifiquement pour ta biologie cutanée — ton type de peau exact, tes préoccupations, ton budget — l'analyse gratuite prend 60 secondes."
+                  :lang==="es"
+                  ?"Las guías de abajo son referencias generales para todos los tipos de piel. Si quieres un protocolo construido específicamente para tu biología cutánea — tu tipo de piel exacto, tus preocupaciones, tu presupuesto — el análisis gratuito toma 60 segundos."
+                  :"The guides below are general references for all skin types. If you want a protocol built specifically for your skin biology — your exact skin type, concerns, and budget — the free analysis takes 60 seconds."}
+              </div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button className="btn btn-p" style={{flex:1,minWidth:140,fontSize:12}}
+                  onClick={()=>go("home")}>
+                  ◆ {lang==="fr"?"Analyser Ma Peau — Gratuit":lang==="es"?"Analizar Mi Piel — Gratis":"Analyse My Skin — Free"}
+                </button>
+                <button className="btn btn-g" style={{flex:1,minWidth:140,fontSize:12}}
+                  onClick={startShaveQuiz}>
+                  {lang==="fr"?"Protocole Rasage — Gratuit":lang==="es"?"Protocolo Afeitado — Gratis":"Shave Protocol — Free"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Skincare Guide */}
           <div className="guide-card">
