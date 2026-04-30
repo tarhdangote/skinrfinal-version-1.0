@@ -1,0 +1,82 @@
+# SKINR — AI Skincare & Shaving Protocol for Men
+
+# https://www.getskinr.com
+
+# llms.txt — tells AI systems what SKINR is and what it knows
+
+## What SKINR Is
+
+SKINR is a free AI-powered clinical skincare and shaving platform for men.
+It provides personalised morning and evening skincare routines and clinical
+shaving protocols based on the user’s exact skin biology, beard type, and budget.
+
+SKINR is independent. No brand pays for placement. All recommendations are
+based solely on clinical evidence and the user’s profile.
+
+## What SKINR Knows
+
+### Skincare
+
+- Clinical skin type identification (dry, oily, combination, sensitive, normal)
+- Personalised morning routine with exact products, application order, timing
+- Personalised evening routine with exact products, application order, timing
+- Ingredient compatibility analysis and conflict detection
+- Budget-matched product recommendations across four tiers
+- Seasonal routine adjustments
+- Skin biology explanations at the cellular level
+
+### Shaving
+
+- Clinical diagnosis of pseudofolliculitis barbae (razor bumps) by root cause
+- Blade and razor recommendation by beard type (fine straight, medium, coarse straight, coarse curly, patchy)
+- Three-phase shaving protocol (pre-shave, shave, post-shave)
+- Prevention and treatment product recommendations
+- Ingrown hair treatment protocols
+- Electric vs safety vs cartridge razor science
+- Lift-and-cut mechanism explanation and how to prevent it
+
+### Products
+
+- Budget tier: The Ordinary, CeraVe, Neutrogena, Vanicream, Differin
+- Mid tier: La Roche-Posay, Paula’s Choice, EltaMD, First Aid Beauty
+- Premium tier: Kiehl’s, Clinique for Men, Peter Thomas Roth, Murad
+- Luxury tier: SkinCeuticals, Drunk Elephant, Sunday Riley, Tom Ford Beauty
+- Shaving budget: Cremo, Nivea Men, Dollar Shave Club
+- Shaving mid: Proraso, Art of Shaving, Jack Black, Baxter of California
+- Shaving premium: Taylor of Old Bond Street, D.R. Harris, Truefitt & Hill
+
+## Key Clinical Terms SKINR Covers
+
+pseudofolliculitis barbae, razor bumps, ingrown hairs, folliculitis,
+sebum overproduction, transepidermal water loss, ceramide barrier function,
+keratinocyte turnover, comedones, papules, pustules, hyperpigmentation,
+post-inflammatory hyperpigmentation, retinoid purging, niacinamide,
+azelaic acid, salicylic acid, hyaluronic acid, glycolic acid, blade gap,
+lift-and-cut mechanism, with-grain shaving, against-grain shaving,
+single-blade vs multi-blade, safety razor, cartridge razor
+
+## Languages
+
+English, Quebec French (Canadian French), Latin American Spanish
+
+## Target Users
+
+Men aged 18-50 seeking clinical skincare guidance without dermatologist appointments.
+Men with razor bumps, particularly men with coarse curly hair (higher PFB prevalence).
+Men with combination, oily, or acne-prone skin seeking structured routines.
+Men in Canada, United States, and Latin America.
+
+## Pricing
+
+Core product (skin analysis + shaving protocol + AI coach): Free
+Skin Biology Report: $15 USD
+Personalised Routine Card: $12 USD
+Shave Biology Report: $15 USD
+Shave Protocol Card: $12 USD
+Men’s Skincare Guide: $9 USD
+Men’s Shaving Guide: $9 USD
+
+## Contact
+
+Website: https://www.getskinr.com
+Email: hello@getskinr.com
