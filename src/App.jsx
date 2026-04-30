@@ -1,16 +1,810 @@
 import { useState, useEffect, useRef, useCallback } from “react”;
-import { SKINCARE_GUIDE } from “./guides/skincareGuide.js”;
-import { SHAVING_GUIDE } from “./guides/shavingGuide.js”;
+// – SKINCARE GUIDE (inline) –
+/**
 
-// ── GA4 EVENT TRACKING ───────────────────────────────────────────────────────
+- SKINR — The Men’s Skincare Guide
+- src/guides/skincareGuide.js
+- 
+- Professional clinical reference guide.
+- $9 product — also sold on Etsy as PDF.
+- Displayed in-app after purchase. Emailed as PDF after PDF system is live.
+  */
+
+const SKINCARE_GUIDE = {
+title: “The No-BS Men’s Skincare Guide”,
+subtitle: “A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine”,
+version: “1.0”,
+sections: [
+
+```
+{
+  id: "intro",
+  title: "Why Most Men's Skin Routines Fail",
+  content: `Most men who struggle with their skin are not using the wrong products. They are using the right products in the wrong order, at the wrong time, in the wrong amounts, or in combinations that actively cancel each other out.
+```
+
+The skincare industry is built on selling products, not educating buyers. A moisturiser that claims to do everything usually does nothing particularly well. An ingredient list that sounds clinical often contains one active ingredient at a concentration too low to do anything measurable.
+
+This guide exists to cut through that. It covers the biology of your skin, the science of what actually works, how to build a routine that functions correctly, and how to read a product label so you never get sold something useless again.
+
+Everything in this guide is based on peer-reviewed dermatological research. No brand partnerships. No sponsored content. The product recommendations that appear throughout reflect clinical evidence only.`
+},
+
+```
+{
+  id: "biology",
+  title: "The Biology You Actually Need to Know",
+  subsections: [
+    {
+      title: "The Skin Barrier",
+      content: `Your skin is not a passive covering. It is an active organ with a primary job: keep things out. The outermost layer — the stratum corneum — is made of flattened dead skin cells (corneocytes) held together by a lipid matrix of ceramides, cholesterol, and fatty acids.
+```
+
+When this barrier is intact, it keeps moisture in and irritants out. When it is damaged — by over-washing, harsh surfactants, UV exposure, or the wrong skincare ingredients — moisture escapes (transepidermal water loss increases) and irritants enter. Every skin problem you have is either caused by a damaged barrier or made worse by one.
+
+The most important thing you can do for your skin is protect this barrier. Everything else is secondary.`}, { title: "Sebum — Your Skin's Natural Oil", content:`Sebaceous glands produce sebum — an oily substance that naturally lubricates your skin and has mild antimicrobial properties. The problem is not sebum itself. The problem is the rate of production and what happens when sebum mixes with dead skin cells inside a follicle.
+
+Excess sebum + dead skin cells = blocked follicle = comedone (blackhead or whitehead). If bacteria (Cutibacterium acnes) colonise that blocked follicle = inflammatory acne.
+
+Sebum production is primarily driven by androgens — which is why oily skin and acne are most severe in the teens and twenties when testosterone is highest, and why men generally have oilier skin than women throughout their lives.`}, { title: "Cellular Turnover", content:`Your skin replaces itself approximately every 28 days. New keratinocytes form at the base of the epidermis and migrate to the surface, dying and flattening as they go. By the time they reach the surface they are dead cells — but they are still doing an important job as part of your barrier.
+
+When this turnover process slows (as it does with age, stress, and sun damage) dead cells accumulate on the surface, creating dull, uneven texture and blocking follicles. Exfoliation — both chemical and physical — speeds this process.
+
+When turnover is disrupted by certain ingredients (like retinoids, which accelerate it dramatically) you get the initial “purging” period where blocked follicles are cleared rapidly, temporarily causing what looks like a breakout. This is not your skin reacting badly — it is the system working.`}, { title: "The pH Factor", content:`Healthy skin has a slightly acidic pH of around 4.5 to 5.5. This acidity maintains the barrier, supports the skin’s natural microbiome, and keeps enzymes that break down dead skin cells functioning correctly.
+
+Many soap bars have a pH of 9 to 11 — highly alkaline. Using them on your face temporarily destroys the acid mantle, disrupts the microbiome, and triggers reactive oil production. This is why your face feels tight after washing with body soap and then oily an hour later. The oiliness is your skin compensating for barrier disruption.
+
+Proper cleansers for the face are pH-balanced, usually between 4.5 and 6.5.`
+}
+]
+},
+
+```
+{
+  id: "skin-types",
+  title: "Skin Types — Clinical Definitions",
+  subsections: [
+    {
+      title: "Dry Skin",
+      content: `Clinically defined as skin with impaired barrier function leading to increased transepidermal water loss. The skin does not lack oil — it lacks the ability to retain moisture.
+```
+
+Characteristics: tight sensation after washing, visible flaking or rough texture, fine lines appearing more prominent (dehydration makes them more visible), occasional redness.
+
+What it needs: occlusive and humectant moisturisers to trap and draw moisture, gentle non-foaming cleansers that do not strip the barrier, ceramide-based products to repair the lipid matrix.
+
+What to avoid: alcohol-based toners, foaming cleansers with sodium lauryl sulphate, exfoliating too frequently, salicylic acid as a primary treatment (it is lipid-soluble and removes oils from the skin surface).`}, { title: "Oily Skin", content:`Clinically characterised by overactive sebaceous glands producing more sebum than the skin needs. Often genetic. Androgen sensitivity plays a significant role.
+
+Characteristics: visible shine within 1-2 hours of washing, enlarged pores (stretched by excess sebum), frequent blackheads and breakouts, skin that feels thick or congested.
+
+What it needs: non-comedogenic lightweight moisturisers (oily skin still needs hydration — skipping it causes reactive oil production), niacinamide to regulate sebum, salicylic acid to clear follicles, SPF formulated for oily skin (mattifying or gel formulations).
+
+What to avoid: heavy occlusive creams, coconut oil (highly comedogenic), over-washing (triggers more oil production), alcohol-heavy toners that create a strip-then-compensate cycle.`}, { title: "Combination Skin", content:`The most common skin type in adult men. Oily in the T-zone (forehead, nose, chin) where sebaceous gland density is highest, normal to dry on the cheeks and jaw where gland density is lower.
+
+Characteristics: shine concentrated on the nose and forehead, occasional breakouts in the T-zone, cheeks that feel comfortable or slightly dry, pores visibly larger on the nose than the cheeks.
+
+What it needs: lightweight balanced moisturiser, targeted treatments (niacinamide across the whole face, salicylic acid spot treatments or a T-zone-only application), gel or lotion SPF rather than cream.
+
+The mistake most people with combination skin make: treating the entire face like oily skin (causes cheek dryness) or treating it entirely like dry skin (causes T-zone congestion).`}, { title: "Sensitive Skin", content:`Not a skin type in the traditional sense — more accurately a skin condition characterised by heightened reactivity. Can overlap with any of the above types.
+
+Characteristics: redness, stinging, or burning after applying products, frequent reactions to fragrances or active ingredients, skin that flushes easily, sometimes associated with rosacea or eczema.
+
+What it needs: minimal ingredient lists (the fewer ingredients, the fewer potential triggers), fragrance-free formulations, barrier-repairing ingredients (ceramides, niacinamide at lower concentrations), patch testing any new product on the jaw or inner arm before applying to the face.
+
+What to avoid: fragrance (the number one cause of contact dermatitis in skincare), essential oils (common sensitisers despite being “natural”), high-concentration actives without gradual introduction.`}, { title: "Acne-Prone Skin", content:`Acne is not a skin type — it is a skin condition that can affect any skin type. However, oily and combination skin are disproportionately affected due to higher sebum production.
+
+Acne has four causes working simultaneously: excess sebum, hyperkeratinisation (dead cells not shedding properly), Cutibacterium acnes bacteria, and inflammation. Effective treatment addresses all four — not just bacteria (the antibiotics mistake) or just oil (the drying mistake).
+
+Grade I (comedones only): salicylic acid, niacinamide, consistent routine.
+Grade II (papules and pustules): add benzoyl peroxide, consider retinol.
+Grade III (nodular acne): see a dermatologist. Over-the-counter products will not resolve this.
+Grade IV (cystic acne): requires prescription treatment — isotretinoin or prescription topicals. Do not delay.`
+}
+]
+},
+
+```
+{
+  id: "ingredients",
+  title: "The Ingredient Guide — What Actually Works",
+  intro: `This section covers every major skincare ingredient, what it does at a biological level, the concentration that has clinical evidence behind it, what it conflicts with, and what skin types it is appropriate for.`,
+  subsections: [
+    {
+      title: "Niacinamide (Vitamin B3)",
+      content: `What it does: Regulates sebum production by inhibiting the transfer of melanosomes (reduces hyperpigmentation), strengthens the skin barrier by stimulating ceramide synthesis, reduces inflammation, minimises pore appearance.
+```
+
+Effective concentration: 2% to 10%. 5% is the sweet spot — evidence for all benefits without irritation risk. Higher concentrations (above 10%) can cause flushing in some people.
+
+Conflicts with: Vitamin C (ascorbic acid) — they form niacin together and can cause temporary flushing. Use them at different times of day (Vitamin C in the morning, niacinamide at night) or use them 30 minutes apart. This conflict is overstated — both at typical concentrations are fine together.
+
+Best for: All skin types. Particularly valuable for oily, acne-prone, and hyperpigmentation-prone skin. Safe for sensitive skin at 2-4%.
+
+Products with good concentrations: The Ordinary Niacinamide 10% + Zinc 1% (budget), Paula’s Choice 10% Niacinamide (mid-range).`}, { title: "Retinol / Retinoids", content:`What it does: The most evidence-backed anti-ageing ingredient in existence. Accelerates cell turnover, stimulates collagen production, clears blocked follicles, reduces fine lines, evens skin tone. A derivative of Vitamin A — tretinoin (prescription) is the strongest form; retinol, retinaldehyde, and retinyl palmitate are progressively weaker over-the-counter versions.
+
+Effective concentration: 0.025% to start, increasing over months to 0.1% and then to 0.3% or higher depending on tolerance. Prescription tretinoin starts at 0.025% and goes to 0.1%.
+
+Introduction protocol: Start with 0.025% applied two nights per week for the first month. Increase to three nights, then every other night, then nightly over three months. Purging (increased breakouts) is normal in weeks 2-6 and resolves.
+
+Conflicts with: Benzoyl peroxide (deactivates retinol — do not use together), AHAs/BHAs on the same application (too irritating — alternate nights), Vitamin C (use C in the morning, retinol at night).
+
+What to avoid while using retinol: Waxing or laser treatments on the face (skin is thinner and more sensitive), excessive sun exposure without SPF (retinol increases photosensitivity).
+
+Best for: All skin types over 25. Sensitive skin should start with retinaldehyde — gentler than retinol, more effective than retinyl palmitate.`}, { title: "Salicylic Acid (BHA)", content:`What it does: A beta-hydroxy acid (BHA) that is oil-soluble — meaning it can penetrate into the sebaceous follicle and dissolve the mix of oil and dead skin cells that causes blackheads and blocked pores. Also has anti-inflammatory properties.
+
+Effective concentration: 0.5% to 2%. 2% is the maximum allowed in over-the-counter products in most countries. Higher concentrations are used in professional chemical peels.
+
+How to use: Apply after cleansing, before moisturiser. Can be used as a toner, serum, or leave-on treatment. Rinse-off formulations (cleansers) are less effective because contact time is too short.
+
+Conflicts with: Retinol (do not use on the same night — too much exfoliation, barrier damage). Benzoyl peroxide (can be used together but increases dryness — use moisturiser).
+
+Best for: Oily skin, acne-prone skin, skin with blackheads and enlarged pores, combination skin (T-zone only). Not recommended for dry or sensitive skin as primary treatment.`}, { title: "Hyaluronic Acid", content:`What it does: A humectant — it draws water from the environment and from deeper skin layers to the surface, temporarily plumping and hydrating the skin. Can hold up to 1,000 times its weight in water.
+
+Important limitation: It draws moisture from wherever it can find it. In low-humidity environments (winter, air conditioning, flights) it pulls moisture from deeper in your skin and actually increases dryness. Always apply hyaluronic acid to damp skin and immediately seal with a moisturiser.
+
+Effective concentration: 0.1% to 2%. Molecular weight matters — low-molecular-weight hyaluronic acid penetrates deeper; high-molecular-weight stays on the surface and provides immediate plumping. Products with both are most effective.
+
+Conflicts with: None significant. Pairs well with everything. Apply before moisturiser, after serums.
+
+Best for: All skin types, particularly dehydrated skin (which is different from dry skin — even oily skin can be dehydrated).`}, { title: "Vitamin C (L-Ascorbic Acid)", content:`What it does: Potent antioxidant that neutralises free radicals from UV exposure, pollution, and environmental stress. Inhibits melanin synthesis (reduces dark spots and hyperpigmentation). Stimulates collagen synthesis. Best used in the morning under SPF — the combination of Vitamin C and SPF provides significantly better UV protection than SPF alone.
+
+Effective concentration: 10% to 20%. Below 10% has limited evidence. L-Ascorbic acid is the most effective but also most unstable form — it oxidises and becomes ineffective when exposed to air and light. Store in a dark bottle, replace every 3 months.
+
+Stable alternatives: Ascorbyl glucoside, sodium ascorbyl phosphate — less effective than L-ascorbic acid but significantly more stable. Good budget option.
+
+Conflicts with: Niacinamide (see niacinamide section — conflict overstated). Benzoyl peroxide (can be used but requires separation). Retinol (use C in the morning, retinol at night).
+
+Best for: All skin types. Particularly valuable for skin with sun damage, hyperpigmentation, and dullness.`}, { title: "Ceramides", content:`What they do: Ceramides are lipids that make up approximately 50% of your skin barrier’s lipid matrix. They are the cement between the bricks of your skin cells. When ceramide levels are depleted (by ageing, UV damage, harsh cleansers, over-exfoliation) the barrier breaks down — moisture escapes, irritants enter, and skin becomes dry, reactive, and prone to eczema.
+
+Ceramide products replenish this lipid matrix directly.
+
+Effective use: In moisturisers and barrier repair creams. Look for products containing ceramides alongside cholesterol and fatty acids — the natural ratio of these three components is approximately 3:1:1 and products that replicate this ratio repair the barrier most effectively.
+
+Conflicts with: None. Ceramides are compatible with all other ingredients and are the base of any well-formulated moisturiser.
+
+Best for: Dry skin, sensitive skin, skin with eczema or rosacea, any skin type recovering from over-exfoliation or retinol introduction. CeraVe and Vanicream use this technology at very accessible price points.`}, { title: "AHAs (Glycolic and Lactic Acid)", content:`What they do: Alpha-hydroxy acids are water-soluble chemical exfoliants that break the bonds between dead skin cells, accelerating their shedding from the surface. Unlike scrubs, they do not physically abrade the skin.
+
+Glycolic acid: Smallest molecule, deepest penetration, most effective, most irritating. 5-10% is appropriate for at-home use.
+
+Lactic acid: Larger molecule, gentler, also has humectant properties. Better for sensitive and dry skin. 5-12% at home.
+
+Effective use: Apply after cleansing, before moisturiser, at night only (AHAs increase photosensitivity significantly — never skip SPF the following morning). Start with 1-2 times per week and increase based on tolerance.
+
+Conflicts with: Retinol (do not use on the same night — alternate), BHAs (can combine at low concentrations, but use caution with sensitive skin), Vitamin C (can combine in a morning routine at low concentrations — watch for irritation).
+
+Best for: Dull skin, uneven texture, hyperpigmentation, ageing skin. Not recommended for sensitive skin or active inflammatory acne.`}, { title: "Benzoyl Peroxide", content:`What it does: Kills Cutibacterium acnes bacteria directly (one of the four causes of acne). Available in concentrations from 2.5% to 10%. Critical finding from research: 2.5% is as effective as 10% at killing bacteria — but significantly less irritating and drying. There is no reason to use above 2.5%.
+
+How to use: Spot treatment on active breakouts, or thin layer across acne-prone areas. Apply after toner, before moisturiser.
+
+Important: Benzoyl peroxide bleaches fabric. Your pillow case, towels, and shirt collar will be permanently bleached. Use white linens or apply and let dry completely before contact with fabric.
+
+Conflicts with: Retinol (deactivates it — use on different nights), Vitamin C (oxidises it — use on different nights), AHAs/BHAs (excessive irritation — alternate nights or use different areas).
+
+Best for: Active inflammatory acne (papules and pustules). Does not address blackheads or non-inflammatory acne (use BHA for those).`}, { title: "SPF — The Only Non-Negotiable", content:`UV radiation is responsible for approximately 80% of visible skin ageing. It causes direct DNA damage, breaks down collagen, creates free radicals that damage cell membranes, and is the primary driver of hyperpigmentation. No anti-ageing product — not retinol, not peptides, not anything — produces results if you are not wearing SPF every morning.
+
+SPF 30 blocks approximately 97% of UVB rays. SPF 50 blocks approximately 98%. The difference is marginal — consistent daily application of SPF 30 is significantly more protective than occasional application of SPF 50.
+
+Mineral (physical) SPF: Contains zinc oxide or titanium dioxide. Sits on top of skin, reflects UV. Better for sensitive skin. Can leave white cast — improved formulations have largely eliminated this.
+
+Chemical SPF: Absorbs UV and converts it to heat. More cosmetically elegant, no white cast. Some chemical filters cause irritation in sensitive skin. Avoid oxybenzone if you have sensitive or reactive skin.
+
+Application: One full teaspoon for the face and neck. Most men apply too little. Re-apply every two hours in direct sun.
+
+For men who “do not wear sunscreen”: if you drive to work, you are getting UV through the car window. If you sit near a window, you are getting UV. Incidental daily UV exposure accumulates over years. SPF is not optional.`
+}
+]
+},
+
+```
+{
+  id: "routines",
+  title: "Building Your Routine — The Complete Protocol",
+  intro: `The order of application matters as much as the products you use. The general rule is thinnest to thickest — applying a thick cream before a thin serum prevents the serum from penetrating. The correct order ensures each ingredient reaches the depth and surface it needs to be effective.`,
+  subsections: [
+    {
+      title: "The Morning Routine",
+      content: `Step 1 — Cleanser
+```
+
+Apply to damp skin, massage for 30-45 seconds, rinse with lukewarm water. Pat dry — never rub.
+Skin type guide: Oily or acne-prone: gel cleanser with salicylic acid. Dry or sensitive: cream or milk cleanser, no SLS. Combination: balanced gel-cream cleanser.
+
+Step 2 — Toner (optional but effective)
+Apply to cotton pad or pat directly onto skin. Purpose: restore pH after cleansing, provide additional hydration, prep skin for serums.
+Skip if: your cleanser is pH-balanced and your skin feels comfortable after washing.
+
+Step 3 — Vitamin C Serum
+Apply 4-5 drops, press into skin, allow to absorb for 60 seconds.
+Why morning: Vitamin C is an antioxidant that neutralises UV-induced free radicals — it needs to be in place before sun exposure to be effective.
+
+Step 4 — Treatment Serum (niacinamide, hyaluronic acid)
+Apply after Vitamin C has absorbed. Niacinamide regulates oil and strengthens barrier throughout the day.
+
+Step 5 — Moisturiser
+Even oily skin needs moisturiser. Skipping it causes reactive sebum production. For oily skin use gel or fluid texture. For dry skin use cream. For combination, a lightweight lotion works for the whole face.
+
+Step 6 — SPF (non-negotiable)
+Apply last, generously. Wait 5 minutes before going outside. This is your morning routine’s most important step — everything before it protects your skin better if SPF is on top.
+
+Total time: 3-5 minutes.`}, { title: "The Evening Routine", content:`Step 1 — Double Cleanse (if you wore SPF)
+First cleanse: Oil cleanser or micellar water to remove SPF and sunscreen. SPF is specifically designed to resist washing off — a single cleanser often does not remove it fully.
+Second cleanse: Your regular face wash to clean the skin itself.
+If you did not wear SPF or makeup: single cleanse is sufficient.
+
+Step 2 — Exfoliant (2-3 nights per week maximum)
+AHA for texture and brightness. BHA for blocked pores and oiliness. Never both on the same night. Never with retinol on the same night.
+
+Step 3 — Treatment (retinol or prescription retinoid)
+Apply to completely dry skin — moisture increases penetration and can cause irritation. Start with a pea-sized amount for the entire face. Applying more does not increase effectiveness.
+Wait 10-20 minutes after washing before applying if you are prone to irritation.
+
+Step 4 — Niacinamide serum (on non-retinol nights)
+On nights you use retinol, skip additional actives. Let retinol work alone.
+
+Step 5 — Eye cream (optional)
+The skin around the eyes is thinner than the rest of the face and has fewer sebaceous glands. If you use retinol on the face, do not apply it to the immediate eye area until you have built tolerance.
+
+Step 6 — Moisturiser
+Apply last. At night, slightly richer formulations are appropriate — your skin repairs itself during sleep and benefits from occlusion. For dry or compromised skin, add a facial oil before moisturiser.
+
+Total time: 4-6 minutes.`}, { title: "The Starter Routine — For Men Starting From Nothing", content:`If you currently wash your face with body soap and apply nothing else, start here. Do not attempt the full routine immediately.
+
+Week 1-4: Just three steps.
+Morning: Gentle cleanser, moisturiser, SPF.
+Evening: Gentle cleanser, moisturiser.
+
+Week 5-8: Add one active.
+Morning: Add niacinamide serum between cleanser and moisturiser.
+This alone will produce visible improvement in oiliness and skin tone.
+
+Week 9-12: Add the second active.
+Evening (two nights per week): Add retinol.
+Introduce slowly. Expect mild irritation and possibly temporary purging.
+
+Week 13+: You have a complete, functional routine. Now optimise.
+
+The instinct to buy everything at once and start an elaborate routine from day one almost always results in skin reactivity, inability to identify what is causing problems, and abandonment. Build slowly. Give each addition four weeks before assessing.`}, { title: "Seasonal Adjustments", content:`Your skin changes significantly with the seasons. A routine that works perfectly in summer may be insufficient in winter.
+
+Winter adjustments:
+Barrier function degrades in cold, dry conditions. Increase moisturiser richness. Add facial oil if skin feels tight. Reduce exfoliation frequency (once per week instead of twice). Switch from gel cleanser to cream cleanser if dryness is significant.
+
+Summer adjustments:
+Heat increases sebum production. Switch to lighter moisturiser and gel SPF. Consider adding BHA if summer brings more congestion. Vitamin C becomes more important — UV exposure is higher.
+
+Post-flight:
+Cabin air is at approximately 10-20% humidity (desert levels). Apply hyaluronic acid and a rich moisturiser before boarding and during a long flight. Drink more water. Avoid alcohol on the flight.
+
+Tip: Do not dramatically change your routine with every seasonal shift. Make incremental adjustments — swap one product at a time and assess over two weeks.`
+}
+]
+},
+
+```
+{
+  id: "labels",
+  title: "How to Read a Product Label",
+  content: `Ingredients are listed in descending order of concentration — the first ingredient is present in the highest amount, the last in the smallest. Water (aqua) is almost always first.
+```
+
+Active ingredients: Listed by their International Nomenclature Cosmetic Ingredient (INCI) names. Key ones to know:
+— Niacinamide (Vitamin B3)
+— Retinol / Retinyl Palmitate / Retinaldehyde (Vitamin A derivatives)
+— Ascorbic Acid / Ascorbyl Glucoside (Vitamin C)
+— Salicylic Acid (BHA)
+— Glycolic Acid / Lactic Acid (AHAs)
+— Ceramide NP / Ceramide AP / Ceramide EOP (barrier lipids)
+— Hyaluronic Acid / Sodium Hyaluronate (humectant)
+— Zinc Oxide / Titanium Dioxide (mineral SPF)
+
+Red flags on a label:
+— Fragrance / Parfum: the single most common cause of contact dermatitis. Not necessary for any skincare function. Present entirely for marketing.
+— Denatured Alcohol (Alcohol Denat.): in the first five ingredients, it indicates a drying formulation. Small amounts as a solvent are acceptable.
+— PEG compounds in sensitive skin products: can penetrate compromised barriers.
+
+Marketing language that means nothing:
+“Dermatologist tested” — means one dermatologist looked at it. Not a clinical trial.
+“Hypoallergenic” — not a regulated term. Means nothing.
+“Natural” — not regulated. Poison ivy is natural.
+“Clinical strength” — marketing copy, not a regulatory designation.
+“Pore-minimising” — pores do not physically shrink. Products can make them appear smaller by keeping them clear.`
+},
+
+```
+{
+  id: "common-mistakes",
+  title: "The Most Common Mistakes Men Make",
+  content: `Washing the face with body soap or shower gel.
+```
+
+Body washes are formulated for a skin surface with far less sensitivity than the face. pH values are wrong, surfactants are too harsh, and the result is barrier disruption, reactive oiliness, and dryness. Use a face-specific cleanser.
+
+Over-washing.
+Washing your face more than twice daily strips the barrier and increases oil production. If your skin is oily by midday it is not because you have not washed — it is because your barrier is damaged and compensating.
+
+Skipping moisturiser because skin is oily.
+Oily skin needs hydration. Sebum is not the same as moisture. Skipping moisturiser on oily skin causes the skin to produce more sebum to compensate. Use a lightweight, non-comedogenic gel moisturiser.
+
+Using too much of everything.
+A pea-sized amount of retinol is the clinically appropriate dose for the entire face. Using more does not increase effectiveness — it increases irritation. The same applies to most actives.
+
+Expecting results in one week.
+Cell turnover takes 28 days. Most clinical trials measure results at 12 weeks. Give any new product a minimum of 6-8 weeks before assessing its effect. The one exception is moisturiser — you will feel a difference in 24-48 hours.
+
+Introducing too many new products at once.
+If you introduce five new products simultaneously and your skin reacts, you cannot identify the cause. Introduce one new product every four weeks.
+
+Applying retinol to wet skin.
+Moisture increases retinol penetration dramatically, increasing irritation. Apply retinol to dry skin — wait 10-20 minutes after washing and drying.
+
+Not wearing SPF.
+Every anti-ageing product you use is partially or completely undone by UV exposure without SPF. There is no rational argument for using retinol, Vitamin C, or niacinamide while skipping sunscreen.`
+},
+
+```
+{
+  id: "hyperpigmentation",
+  title: "Hyperpigmentation and Dark Spots",
+  content: `Hyperpigmentation — darkened patches of skin — is one of the most common and persistent skin concerns in men, particularly affecting men with deeper skin tones where the contrast between affected and unaffected skin is most visible.
+```
+
+Causes:
+Post-inflammatory hyperpigmentation (PIH): the most common type. Occurs when skin inflammation (from acne, razor bumps, cuts, or any injury) triggers melanin production as part of the healing response. The inflammation resolves but the excess melanin remains. Very common in men with Fitzpatrick skin types IV-VI (brown and dark skin tones).
+
+Sun-induced hyperpigmentation: UV exposure stimulates melanocytes to produce melanin unevenly, creating sunspots and age spots. Prevention (SPF) is dramatically more effective than treatment.
+
+Treatment hierarchy:
+
+1. SPF every morning — non-negotiable. UV exposure darkens existing hyperpigmentation and creates new spots.
+1. Niacinamide (5%): inhibits melanin transfer from melanocytes to skin cells. Gradual improvement over 8-12 weeks.
+1. Vitamin C (10-20%): inhibits melanin synthesis at the enzyme level. Use in the morning.
+1. Alpha Arbutin (2%): inhibits tyrosinase, the enzyme required for melanin production. Evidence is strong.
+1. Azelaic Acid (10-20%): effective for PIH, also treats acne. Prescription strength (20%) for significant hyperpigmentation.
+1. Kojic Acid (1-2%): derived from fungi, inhibits tyrosinase. Effective but can cause irritation.
+
+Timeline: Realistic improvement in PIH takes 3-6 months of consistent treatment. Products that claim to “fade dark spots in 7 days” are making unsubstantiated claims.`
+},
+
+```
+{
+  id: "when-to-see-derm",
+  title: "When to See a Dermatologist",
+  content: `Over-the-counter skincare handles the majority of common skin concerns in healthy adults. These situations require professional evaluation:
+```
+
+Acne that has not responded to 3 months of consistent over-the-counter treatment — particularly nodular or cystic acne (deep, painful, under-the-skin lumps). Waiting to see a dermatologist causes scarring that is far more difficult to treat than the acne itself.
+
+Any mole or skin lesion that changes in size, shape, or colour, bleeds without injury, has irregular borders, or has multiple colours within it. The ABCDE rule: Asymmetry, Border irregularity, Colour variation, Diameter greater than 6mm, Evolution (change over time). Any of these warrants immediate evaluation.
+
+Rosacea that is not controlled by gentle products. Prescription topicals (metronidazole, azelaic acid, ivermectin) and laser treatments are significantly more effective than anything available over the counter.
+
+Persistent eczema or psoriasis. These are chronic inflammatory conditions with genetic components that benefit from targeted prescription treatments — topical corticosteroids for flares, calcineurin inhibitors for maintenance.
+
+Sudden severe acne in adulthood with no previous history — this can indicate an underlying hormonal condition that warrants investigation.
+
+Skin infections that are spreading, are accompanied by fever, or are not resolving with over-the-counter treatment.
+
+SKINR provides general clinical guidance. It is not a substitute for professional medical evaluation.`
+}
+]
+};
+
+// – SHAVING GUIDE (inline) –
+/**
+
+- SKINR — The Men’s Shaving Guide
+- src/guides/shavingGuide.js
+- 
+- Professional clinical reference guide.
+- $9 product — also sold on Etsy as PDF.
+- Displayed in-app after purchase. Emailed as PDF after PDF system is live.
+  */
+
+const SHAVING_GUIDE = {
+title: “The Men’s Shaving Bible”,
+subtitle: “Blade Science, Skin Biology, and Clinical Technique for a Shave That Does Not Damage Your Skin”,
+version: “1.0”,
+sections: [
+
+```
+{
+  id: "intro",
+  title: "Why Your Shave Is Failing",
+  content: `Every man who shaves regularly is performing a surgical procedure on his face twice a week or more. A blade passes within microns of living skin, cutting through hair at the surface. Done correctly, it leaves the skin intact, smooth, and undamaged. Done incorrectly — which describes the majority of men who shave — it leaves behind microtrauma, barrier disruption, ingrown hairs, inflammation, and over time, permanent scarring.
+```
+
+The shaving industry spent decades telling men that more blades meant a better shave. This is marketing, not biology. The lift-and-cut mechanism of multi-blade cartridge razors is the primary mechanical cause of razor bumps and ingrown hairs — particularly in men with coarse or curly hair.
+
+This guide covers the dermatological science of what happens to skin during shaving, why certain razors cause damage, how beard and hair type determines your ideal technique, and the exact pre-shave, shave, and post-shave protocol that prevents and treats the most common shaving problems.
+
+Everything in this guide is based on clinical research published in peer-reviewed dermatology journals. The product recommendations throughout reflect evidence and independent assessment — no commercial partnerships.`
+},
+
+```
+{
+  id: "biology",
+  title: "What Shaving Actually Does to Your Skin",
+  subsections: [
+    {
+      title: "The Mechanics of the Cut",
+      content: `A razor blade does not simply cut hair at the skin surface. At the microscopic level, the blade compresses and then cuts through the hair shaft. The compression phase — which happens before the cut — applies mechanical force to the follicle and the surrounding skin.
+```
+
+Multi-blade cartridges are designed around a mechanism called lift-and-cut: the first blade lifts the hair above the skin surface, the second (and subsequent) blades cut it below the skin line. This produces a closer shave in the short term. It also means the cut hair retracts beneath the skin surface immediately after cutting.
+
+For men with straight hair, this is generally not a problem. For men with curly or coarse hair, the curl in the hair causes it to curl back toward the skin as it grows — and a hair that was cut below the skin surface and must now grow back up through two layers of skin has a significantly higher probability of growing sideways and becoming trapped. This is the biological mechanism behind pseudofolliculitis barbae (razor bumps).`}, { title: "Pseudofolliculitis Barbae — The Dermatological Facts", content:`Pseudofolliculitis barbae (PFB) is not a skin disease. It is a mechanical problem caused by the interaction between specific hair morphology and shaving technique.
+
+Prevalence: PFB affects approximately 45-83% of Black men who shave regularly, making it the most common shaving-related condition in this demographic. It also affects a significant proportion of men with any type of coarse or curly facial hair, regardless of ethnicity.
+
+The biology: Curly facial hair has an asymmetric distribution of a structural protein called cortex — more cortex on the inner curve of the curl than the outer. This asymmetry is what creates the curl. After shaving, as the hair begins to regrow, this asymmetry causes the hair to curve. If the cut end is below the skin surface, it curves back into the dermis rather than emerging through the follicle opening, causing a foreign body inflammatory reaction — the painful, papular “bump.”
+
+Two mechanisms create the injury:
+Transfollicular penetration: The cut hair tip, sharp from having been freshly cut, pierces back through the follicle wall as it curves. Creates a deep inflammatory papule.
+Extrafollicular penetration: The hair grows out of the follicle but curves back and penetrates the skin surface adjacent to the follicle. Creates a raised, itchy bump at the skin surface.
+
+Both are treated by the same protocol: reducing how deep the blade cuts (single blade rather than multi-blade lift-and-cut), shaving with the grain to reduce hair retraction below the skin, and chemical exfoliation to prevent the hair tip from being blocked at the skin surface.`}, { title: "The Acid Mantle and Shaving", content:`The skin’s natural pH is 4.5 to 5.5 — slightly acidic. Shaving disrupts this acid mantle through three mechanisms: the physical abrasion of the blade, the alkalinity of most traditional shaving soaps and creams, and the alcohol in most aftershaves.
+
+When the acid mantle is disrupted:
+— Antimicrobial protection is reduced (the acid environment inhibits bacterial growth)
+— Enzyme activity that supports barrier repair is impaired
+— The skin becomes temporarily more permeable to irritants
+— Trans-epidermal water loss increases
+
+Post-shave products that are alcohol-based (most traditional aftershaves) make this worse. The stinging sensation of alcohol on freshly shaved skin is not “refreshing.” It is your pain receptors responding to ethanol penetrating a compromised barrier.
+
+Restoring pH after shaving — with a witch hazel toner (naturally slightly acidic), an aloe vera gel, or a ceramide-based balm — is the first step in post-shave recovery.`}, { title: "Folliculitis vs Razor Bumps — The Clinical Difference", content:`These two conditions look similar but have different causes and different treatments.
+
+Pseudofolliculitis barbae (razor bumps): Mechanical. Caused by ingrown hairs as described above. Papules are firm, round, often with a visible hair inside or visible curved hair at the skin surface. Treatment: change shaving method, chemical exfoliation, topical retinoids.
+
+Bacterial folliculitis: Infectious. Caused by Staphylococcus aureus colonising follicles that have been damaged by shaving. Papules are softer, more pustular (filled with pus), often clustered. Can spread. Treatment: topical or oral antibiotics, rigorous hygiene of shaving equipment.
+
+Distinguishing them: Razor bumps tend to be in a clear pattern following the direction of hair growth and shaving strokes. Bacterial folliculitis is more randomly distributed and tends to spread.
+
+If you are unsure which you have, see a dermatologist. Treating bacterial folliculitis with the wrong approach (exfoliation and no antibiotics) will worsen it.`
+}
+]
+},
+
+```
+{
+  id: "razors",
+  title: "Razor Science — Every Type Explained",
+  intro: `The single most impactful change most men with shaving problems can make is switching razor type. Understanding why requires understanding the mechanical differences between them.`,
+  subsections: [
+    {
+      title: "Multi-Blade Cartridge Razors (2-5 blades)",
+      content: `Examples: Gillette Fusion (5 blades), Mach3 (3 blades), Dollar Shave Club.
+```
+
+Mechanism: Lift-and-cut. First blade lifts hair, subsequent blades cut it progressively lower. Engineered for the closest possible shave with minimum passes.
+
+Blade gap: Very small. Blades are packed closely together and recessed into the cartridge. Minimal exposure angle.
+
+Who it works for: Men with straight, medium hair who do not experience razor bumps or significant irritation. The convenience and low technique requirement make them appropriate for men whose hair morphology does not predispose them to PFB.
+
+Who should avoid them: Men with coarse or curly hair (particularly men with PFB or any history of razor bumps). The lift-and-cut mechanism is the primary mechanical cause of PFB.
+
+Common problems: Cartridge clogging reduces blade efficiency rapidly — a clogged cartridge drags and increases microtrauma. Replace cartridges more frequently than feels economical (every 5-7 shaves). Rinsing under hot running water and shaking dry significantly extends effective life.`}, { title: "Safety / Double-Edge (DE) Razors", content:`Examples: Merkur 34C (mild), Merkur 38C (moderate), Henson AL13 (adjustable), Rockwell 6S (adjustable), Muhle R41 (aggressive).
+
+Mechanism: Single blade, no lift-and-cut. The blade is exposed at an angle determined by the head geometry. You must maintain this angle actively during shaving (roughly 30 degrees from the face) — this is the technique requirement that makes safety razors less forgiving than cartridges but more effective for men with PFB.
+
+Blade gap: Varies significantly between models and is the most important specification for matching razor to beard type. Mild blade gap (Merkur 34C): appropriate for fine to medium hair and sensitive or reactive skin. Moderate blade gap: most adult men. Aggressive blade gap (Muhle R41, Merkur 37C): coarse, dense beard — used only when mild razor has been mastered.
+
+Blade types: The handle and head are reusable. The double-edge blade is replaceable and costs approximately $0.10 to $0.50 per blade. Feather blades (Japanese) are the sharpest and most aggressive. Astra (Indian) and Gillette Silver Blue are mid-range with excellent quality-to-cost ratio. Derby blades are mild. A sharper blade requires fewer passes and produces less microtrauma — provided technique is correct.
+
+Who it works for: Men with PFB, men with medium to coarse hair, men who want precise technique control, men who want significantly lower long-term cost ($20-40 razor handle used for years; blades at a fraction of cartridge cost).
+
+Technique requirement: Higher than cartridges. Requires 2-3 weeks of practice to develop consistent angle and pressure. The most common mistake is applying pressure — safety razors require the weight of the head only, no added pressure.`}, { title: "Electric Razors — Foil vs Rotary", content:`Foil shavers (Braun Series 9, Panasonic Arc series):
+Mechanism: Oscillating blades move side to side beneath a thin metal foil with holes. Hair enters the holes and is cut by the oscillating blade beneath. The foil prevents direct blade contact with skin.
+
+Who it works for: Men with active, moderate-to-severe PFB who need to continue shaving, men with very sensitive skin, men who need speed and convenience above closeness. The foil barrier means the blade never directly contacts skin — dramatically reducing irritation and lift-and-cut ingrown hair formation.
+
+Limitation: Less close than wet shaving. Hair must be dry for optimal results. Initial cost is high ($150-350 for a quality unit).
+
+Rotary shavers (Philips Norelco):
+Mechanism: Three (or four) rotating circular cutting heads that spin against a guard. Particularly effective for longer stubble and for men who do not shave daily.
+
+Who it works for: Men who maintain longer stubble rather than close-shaving, men who shave every 3-4 days. Less effective than foil for daily close shaving.
+
+Important note for PFB sufferers: Even foil shavers can exacerbate PFB if used incorrectly. For men with severe PFB, allowing stubble to grow 1-2mm before shaving (rather than shaving against completely clean skin) reduces the probability of hair being cut below the skin line.`}, { title: "Straight Razors", content:`The highest skill ceiling. A single fixed blade with no guard — every parameter (angle, pressure, direction) is entirely manual. When done correctly, produces the closest possible shave with the least number of passes and minimal microtrauma. The technique requirement is significant — mastery takes months.
+
+Not recommended as a starting point for men with PFB. The potential for error is high during the learning phase, and errors with a straight razor mean cuts and irritation during a period when the skin is most vulnerable.
+
+For experienced shavers who have resolved their PFB and want to pursue the closest wet shave, a straight razor with proper instruction is a legitimate option.
+
+Maintenance: Straight razors require stropping before every use (realigns the blade edge) and honing every 6-18 months depending on use frequency (removes metal to sharpen the edge). A poorly maintained straight razor is more damaging than a well-maintained cartridge.`}, { title: "OneBlade and Leaf Razors", content:`These occupy a middle ground: single-blade shaving with the convenience of a pivoting head (like a cartridge) and a blade replacement system.
+
+OneBlade: Uses Feather FHS blades. The pivoting head reduces technique requirement versus a traditional DE razor while maintaining single-blade mechanics. Appropriate for men transitioning from cartridges who want to reduce PFB without a steep learning curve.
+
+Leaf Razor: Takes standard DE blades but has a pivoting, cartridge-like head. Can be loaded with 1, 2, or 3 blade halves. Using a single blade provides DE-level results with significantly improved technique tolerance.
+
+Both are valid transitional tools for men with PFB moving away from multi-blade cartridges.`
+}
+]
+},
+
+```
+{
+  id: "technique",
+  title: "Clinical Shaving Technique — Phase by Phase",
+  subsections: [
+    {
+      title: "Pre-Shave — The Preparation Your Skin Needs",
+      content: `The purpose of pre-shave preparation is to:
+```
+
+1. Hydrate the hair shaft so it is softer and easier to cut (requires less blade force, reducing microtrauma)
+1. Lift the hair away from the skin surface so the blade can cut it cleanly
+1. Protect the skin surface during the blade pass
+
+Step 1 — Warm water application (60-90 seconds minimum)
+Run warm (not hot) water over the shaving area for at least 60 seconds. The goal is to hydrate the hair shaft — which absorbs water and swells, becoming significantly easier to cut. Studies show that fully hydrated facial hair requires approximately 70% less force to cut than dry hair. Less force required = less blade pressure = less microtrauma.
+
+Shower before shaving, or apply a warm damp towel for 60-90 seconds. This step is the single most underrated part of shaving technique.
+
+Step 2 — Pre-shave oil or treatment (for men with PFB or coarse hair)
+Apply a thin layer of pre-shave oil or glycerine-based treatment before the shaving cream. This adds a lubrication layer between the blade and skin and helps hair stand away from the skin surface. Not necessary for all men — if you do not experience PFB or significant irritation, this step is optional.
+
+Step 3 — Apply shaving cream, foam, or soap
+Correct application: Work product into the hair with a brush or fingers to lift hairs away from skin and coat every hair shaft. The purpose is lubrication, not foam volume. Many aerosol shaving creams produce large volumes of foam with minimal lubrication — a proper glycerine-based cream or soap applied with a brush provides dramatically better protection.
+
+Product hierarchy:
+Best: Glycerine-based shaving cream applied with a brush (Taylor of Old Bond Street, Proraso, Cremo Cream)
+Good: Quality canned shaving gel (not foam) with aloe or glycerine
+Acceptable: Canned shaving foam
+Inadequate: Soap bar, shower gel, or shampoo`}, { title: "The Shave — Blade Mechanics", content:`Direction: Always shave with the grain (in the direction the hair grows) on your first pass. The grain direction varies across the face — most commonly down on the cheeks, down on the upper lip, and down and inward on the neck. Map your own grain by running a finger across your stubble — the direction of least resistance is with the grain.
+
+For men without PFB who want a closer shave: A second pass across the grain (perpendicular to hair growth) after a first with-grain pass is acceptable. Never against the grain for men with PFB or sensitive skin.
+
+For men with PFB: With-grain only. Always. The additional closeness of across-grain or against-grain is not worth the mechanical damage for men predisposed to ingrown hairs.
+
+Pressure: The blade should glide under its own weight. Do not apply downward pressure. This is the most common technique error and the primary cause of microtrauma. The handle weight provides sufficient force for an effective cut.
+
+For safety razors: Maintain approximately 30 degrees between the blade and skin surface. The common error is holding the razor too flat (too close to the skin) or too steep (too far) — both change the effective blade gap and blade angle.
+
+Passes: Fewer passes = less inflammation. One thorough, well-prepared pass is better than three hasty passes on under-prepared skin. A second pass should only be applied with fresh lather — never dragging a blade over bare, unlubricated skin.
+
+Rinsing the blade: Rinse under running water every 2-3 strokes for multi-blade cartridges, every 1-2 strokes for DE razors. Clogged blades drag and tear rather than cut.`}, { title: "Post-Shave — The Recovery Protocol", content:`Post-shave care is not optional. Shaving reliably disrupts the skin barrier — the speed and quality of recovery determines whether you experience ongoing irritation, ingrown hairs, and dryness or whether your skin returns to baseline quickly.
+
+Step 1 — Cold water rinse (30 seconds)
+Rinse the shaved area with cold water. Cold causes vasoconstriction (narrowing of blood vessels), reducing post-shave redness and inflammation. It also closes follicle openings slightly, reducing the window during which bacteria can enter.
+
+Avoid hot water post-shave — it increases inflammation and keeps pores open.
+
+Step 2 — Pat dry
+Pat the face dry with a clean towel — do not rub. A clean towel matters: a damp, previously-used towel harbours bacteria that can colonise freshly opened follicles. Consider a dedicated small face towel changed daily.
+
+Step 3 — Witch hazel or alcohol-free toner (30 seconds)
+Witch hazel is naturally slightly acidic and has mild anti-inflammatory and astringent properties. It begins restoring the skin’s acid mantle disrupted by shaving without the additional barrier damage of ethanol.
+
+Apply to the shaved area on a cotton pad. Allow to dry completely before the next step.
+
+Avoid: Alcohol-based aftershaves applied to freshly shaved skin. The stinging sensation is barrier damage, not efficacy.
+
+Step 4 — Active treatment (for men with PFB or bumps)
+For men with active razor bumps: Apply salicylic acid (2%) to the affected area. BHA penetrates the follicle and exfoliates inside — preventing hairs from becoming blocked at the skin surface.
+
+For men with post-inflammatory hyperpigmentation from previous bumps: Apply azelaic acid (10-20%) — it simultaneously treats residual inflammation, prevents new PFB, and addresses pigmentation.
+
+Step 5 — Post-shave balm or moisturiser
+Apply a moisturiser specifically formulated for post-shave use — or any fragrance-free moisturiser that your skin tolerates. Key ingredients to look for: glycerine (humectant), aloe vera (soothing), ceramides (barrier repair), centella asiatica (anti-inflammatory).
+
+Products to avoid as post-shave care: Traditional alcohol-based aftershave splash, fragranced balms (fragrance on compromised barrier causes sensitisation over time), heavy occlusive creams that block follicles on acne-prone skin.`
+}
+]
+},
+
+```
+{
+  id: "beard-types",
+  title: "Technique by Beard Type",
+  subsections: [
+    {
+      title: "Fine, Straight Hair",
+      content: `Hair characteristics: Low cutting resistance, lies flat against skin, does not tend to curl back after cutting.
+```
+
+Razor recommendation: Most razors work. Mild to moderate safety razor, cartridge razor. No specific constraints.
+
+Key considerations: Fine hair is easily cut but fine hair follicles can still be irritated by harsh technique. Primary concern is skin sensitivity rather than ingrown hairs. Focus on pre-shave preparation quality and fragrance-free post-shave products.
+
+PFB risk: Low. The straight growth pattern makes transfollicular or extrafollicular penetration unlikely.`}, { title: "Medium Hair", content:`The most common category. Average cutting resistance, average density, slight curl potential in some individuals.
+
+Razor recommendation: All razor types appropriate. Safety razor with mild-to-moderate blade gap provides the best balance of effectiveness and technique tolerance. Cartridge razors work well if PFB is not a concern.
+
+Key considerations: Establish consistent grain-mapping so first passes always go with the grain. If across-grain passes are desired for closeness, ensure skin is well-prepared and lubricated for the second pass.
+
+PFB risk: Low to moderate depending on the degree of curl. Monitor for early signs of ingrown hairs at the neck — this is the most common site.`}, { title: "Coarse, Straight Hair", content:`Hair characteristics: High cutting resistance. Dense and thick. Creates significant blade drag if hair is not well-hydrated.
+
+Razor recommendation: Moderate to aggressive safety razor or straight razor. Multi-blade cartridges clog rapidly with dense hair and require frequent rinsing.
+
+Key considerations: Pre-shave hydration is critical — coarse hair benefits most from the 70% force-reduction of hydrated versus dry cutting. Extend warm water preparation to 90-120 seconds. Blade sharpness matters more than for fine hair — a sharp DE blade requires less force.
+
+PFB risk: Moderate. Coarse hair has more cutting resistance, increasing microtrauma if technique is imperfect. Focus on with-grain shaving and adequate lubrication.`}, { title: "Coarse, Curly Hair", content:`The highest-risk profile for PFB. Coarse hair combined with tight curl pattern means the hair, once cut below the skin surface by multi-blade lift-and-cut, has a high probability of curling back into the dermis.
+
+Razor recommendation: Single-blade safety razor (mild blade gap) or electric foil razor. These are the only two razor types that do not use lift-and-cut mechanics. Multi-blade cartridges should be avoided until PFB is fully resolved.
+
+Technique protocol (strict):
+— Never shave against the grain
+— Single pass with the grain only
+— No second passes until skin has recovered from PFB
+— Prep time: minimum 90 seconds warm water
+— Apply pre-shave oil before shaving cream
+— Use a glycerine-rich shaving cream applied with a brush
+— Post-shave: salicylic acid toner, allow to dry, then gentle moisturiser
+
+Additional consideration: Allow 48 hours between shaves during active PFB. Shaving over active inflammation damages the skin further and allows bacteria to penetrate inflamed follicles.
+
+PFB risk: High. Requires the full protocol described throughout this guide.`}, { title: "Patchy Hair", content:`Characteristics: Uneven density across the face. Areas of dense growth alongside areas of sparse or absent growth.
+
+Razor recommendation: Pivoting-head razors (cartridge or OneBlade) navigate uneven terrain better than fixed-head safety razors. If safety razor is preferred, a mild model with a pivoting head (several exist) is appropriate.
+
+Key considerations: Different blade pressure is naturally applied to dense versus sparse areas during a single stroke — be mindful of applying more force in sparse areas where skin is less protected by hair. Light, consistent pressure throughout.
+
+Common mistake: Attempting to achieve even stubble across both dense and sparse areas by shaving patchy areas multiple times. Accept the natural growth pattern or consult a barber for contouring.`
+}
+]
+},
+
+```
+{
+  id: "pfb-treatment",
+  title: "Treating Active Razor Bumps — Clinical Protocol",
+  content: `If you currently have active razor bumps, treatment comes before prevention. Continuing to shave over active PFB with the wrong technique perpetuates the cycle.
+```
+
+Phase 1 — Allow the skin to rest (3-7 days)
+If possible, allow the beard to grow for 3-7 days without shaving. This allows active inflammation to subside and allows trapped hairs to grow out of the skin naturally. If you cannot avoid shaving for professional reasons, switch to an electric foil razor immediately and do not shave over active bumps.
+
+Phase 2 — Release visible trapped hairs
+Use a sterile needle or fine-tipped tweezers to gently lift (not pull) the curved hair end that is visible at the skin surface or just beneath a thin skin layer. Do not dig or squeeze. Release the tip only — do not remove the hair from the follicle. This releases the mechanical irritant without creating a wound.
+
+Do not attempt to release hairs that are deep beneath the skin with no visible tip — this causes more damage than it resolves.
+
+Phase 3 — Chemical exfoliation
+Apply salicylic acid (2%) to affected areas once daily. This dissolves dead skin cells at the follicle opening, preventing new hairs from becoming blocked. Allow 2-3 minutes of contact before rinsing or following with other products.
+
+For severe or scarring PFB: Azelaic acid (15-20%, prescription in most countries) treats inflammation, PFB, and post-inflammatory hyperpigmentation simultaneously. See a dermatologist for a prescription.
+
+Phase 4 — Topical retinoid
+Retinoids accelerate cell turnover, preventing dead cell accumulation at follicle openings. Start with a low-concentration retinol (0.025%) three nights per week after salicylic acid. This is the most effective long-term prevention for PFB in men who have resolved acute inflammation.
+
+Timeline for improvement:
+Week 1-2: Active inflammation begins to subside
+Week 2-4: New bumps reduce in frequency with correct shaving technique
+Month 2-3: Significant improvement in texture and reduction in PIH with consistent chemical exfoliation
+Month 3-6: Full resolution possible with strict protocol adherence
+
+When to see a dermatologist: Moderate to severe PFB that has not responded to 6-8 weeks of the above protocol, any PFB with spreading pustules (bacterial folliculitis), PFB with keloid scarring.`
+},
+
+```
+{
+  id: "products",
+  title: "Products That Work — Ingredient-Led Recommendations",
+  subsections: [
+    {
+      title: "Pre-Shave Products",
+      content: `What you need: Glycerine content, emollient oils, no fragrance.
+```
+
+Budget tier:
+— Hair conditioner applied to the beard before shaving (genuinely effective and underrated) — $5
+— Simple glycerine available at pharmacies — $4
+
+Mid-range tier:
+— Cremo Original Shave Cream: glycerine-based, lubricates exceptionally well — $10
+— Proraso Pre-Shave Cream (Green): eucalyptus and menthol, antimicrobial — $12
+
+Premium tier:
+— The Art of Shaving Pre-Shave Oil: squalane-based, excellent for coarse hair — $25
+— Bulldog Sensitive Pre-Shave Face Scrub: mild exfoliation before shaving — $8
+
+What to avoid: Anything with menthol as a primary ingredient (numbs skin, masking irritation signals), fragranced oils (sensitisation risk on pre-shave use).`}, { title: "Shaving Creams and Soaps", content:`The ideal shaving product is glycerine-rich, fragrance-free or lightly fragranced, and designed to be applied to wet hair.
+
+Budget tier:
+— Cremo Original Shave Cream: the best budget shaving cream available. Uses glycerine and silica to reduce blade friction dramatically — $12
+— Nivea Men Sensitive Shave Cream: fragrance-free, effective — $8
+— Alba Botanica Very Emollient Shave Cream: glycerine-based, fragrance-free — $9
+
+Mid-range tier:
+— Proraso Sensitive (white): oat protein and green tea, designed for sensitive skin — $14
+— Proraso Green: eucalyptus and menthol (not for sensitive skin, excellent antimicrobial for normal skin) — $12
+— Jack Black Supreme Cream Shave: outstanding lubrication, Macadamia oil base — $22
+— Baxter of California Shave Cream: glycerine-based, sophisticated formula — $20
+
+Premium tier:
+— Taylor of Old Bond Street Sandalwood or Avocado: traditional British formulation, exceptional brush performance — $18-22
+— Castle Forbes Lavender: outstanding barrier protection, suitable for PFB — $35
+
+Avoid: Aerosol shaving foam (low glycerine content, produces volume not lubrication), products with alcohol high in the ingredient list.`}, { title: "Post-Shave Treatment", content:`The first priority after shaving is barrier repair. The second is anti-inflammatory treatment.
+
+Budget tier (excellent value):
+— Witch Hazel (unscented): Thayers Alcohol-Free Witch Hazel Rose Water Toner — first application post-shave, restores pH — $12
+— CeraVe Moisturizing Cream: ceramide-based barrier repair, applies to face and neck post-shave — $18
+— The Ordinary Niacinamide 10%: applied after witch hazel for ongoing sebum regulation — $7
+
+Mid-range tier:
+— Paula’s Choice Calm Nourishing Cleanser: also works as a post-shave rinse on sensitive skin — $22
+— First Aid Beauty Ultra Repair Cream: intensive barrier repair for men who experience significant post-shave dryness — $28
+
+For men with PFB (essential):
+— Stridex Maximum Strength Pads (salicylic acid 2%): applied immediately post-shave to follicle openings — $10
+— Tend Skin Solution: contains salicylic acid and isopropyl alcohol — highly effective for PFB, slightly irritating due to alcohol — use sparingly — $16
+— Bump Patrol Aftershave Treatment: fragrance-free, salicylic acid, designed specifically for PFB — $13
+— PFB Vanish + Chromabright: treats both active bumps and PIH — $28
+
+Premium tier:
+— Kiehl’s Facial Fuel Energizing Moisture Treatment: lightweight, appropriate for all skin types post-shave — $34
+— Anthony Ingrown Hair Treatment: high-concentration glycolic acid plus salicylic acid for persistent PFB — $26
+
+What to avoid: Alcohol-based aftershave splash (Old Spice, Brut) on sensitive skin. Fine for men without PFB or sensitivity but directly harmful for those who have either.`}, { title: "Blades — The Most Important and Most Neglected Variable", content:`Most men use the same blade for far too long. A blade that requires more force to cut is causing more microtrauma on every stroke. The cost of replacing blades more frequently is trivially small compared to the skin damage of using dull blades.
+
+Cartridge replacement guideline: Every 5-7 shaves for multi-blade cartridges. Rinse and shake dry after each use. Store outside the shower — constant humidity accelerates corrosion.
+
+DE blade recommendations by beard type:
+Fine hair: Feather Hi-Stainless (sharpest, most aggressive — appropriate for fine hair that offers low resistance) — $25 per 100 blades
+Medium hair: Astra Superior Platinum or Gillette Silver Blue — excellent quality and consistency — $12-15 per 100 blades
+Coarse, dense hair: Feather or Polsilver Super Iridium — handle the higher cutting resistance — $20-25 per 100 blades
+Sensitive skin / PFB: Derby Extra or Shark Super Stainless — milder edge, less aggressive for skin in recovery — $10-12 per 100 blades
+
+The one rule: Replace DE blades every 3-5 shaves. At $0.15 per blade, using each blade for 5 shaves costs approximately $11 per year. The cost of dull-blade microtrauma on skin — in ongoing inflammation, PIH, scarring — is immeasurably higher.
+
+Blade break-in: New DE blades are occasionally too sharp for their first shave — the edge is at its absolute sharpest and some men find the second shave with a given blade is smoother than the first. This varies by blade brand and individual skin type.`
+}
+]
+},
+
+```
+{
+  id: "electric",
+  title: "Electric Shaver Optimisation",
+  content: `Electric shavers require a different technique than wet shaving. The most common error is applying pressure — electric shavers should glide on the skin surface, not press into it. Pressing causes the foil or rotary guards to compress against skin, allowing blades to contact skin more directly and increasing irritation.
+```
+
+For foil shavers: Use straight, overlapping strokes rather than circular motions. Stretch the skin slightly with the non-dominant hand to create a flat surface. For the neck, tilt the head back to stretch skin. Shave against the grain — this is appropriate for foil shavers because the foil guard prevents direct blade contact with skin.
+
+For rotary shavers: Circular motions are designed into the product. Overlap passes to ensure even coverage.
+
+Pre-shave for electric: Dry shaving requires a clean, dry beard — moisture causes the foil to slip over hair rather than capturing it. Electric pre-shave lotions (Lectric Shave, Proraso) reduce skin friction and slightly dry the hair for better capture.
+
+Wet electric shaving: Most modern foil shavers are waterproof and can be used with shaving cream in the shower. This combines electric shaving’s reduced skin contact with wet shaving’s hydration benefits. Appropriate for men with sensitive skin or mild PFB who cannot achieve acceptable results with dry electric shaving alone.
+
+Maintenance: Clean the shaving head after every use. Replace foils and blades every 12-18 months — a degraded foil is perforated in patterns that can catch and pull rather than cut hairs. The replacement cost ($30-60 per head) is part of the true cost of electric shaving.`
+},
+
+```
+{
+  id: "when-to-see-derm",
+  title: "When to See a Dermatologist",
+  content: `Shaving-related conditions that require professional evaluation:
+```
+
+Moderate to severe PFB that has not responded to 6-8 weeks of the protocol in this guide. Prescription options — topical retinoids, topical antibiotics, prescription-strength azelaic acid — are significantly more effective than over-the-counter alternatives.
+
+Keloid scarring from chronic PFB. Keloids are overgrown scar tissue that extends beyond the original wound site. They require targeted treatment — corticosteroid injections, laser therapy, or surgical excision — and cannot be resolved with skincare products.
+
+Bacterial folliculitis that is spreading, recurring, or not responding to topical treatment. Oral antibiotics may be required.
+
+Any follicular condition accompanied by fever, rapidly spreading redness, or systemic symptoms. This may indicate a deeper skin infection (cellulitis) requiring urgent medical treatment.
+
+Suspected hidradenitis suppurativa (HS): A condition characterised by recurring, painful abscesses in the beard area, armpits, and groin. Often misdiagnosed as severe folliculitis. Requires dermatological management.
+
+Persistent hyperpigmentation from healed PFB that has not improved after 6 months of consistent treatment with niacinamide, Vitamin C, and azelaic acid. Prescription-strength hydroquinone or advanced laser procedures may be appropriate.
+
+SKINR provides general clinical guidance. Anything that concerns you, worsens, or does not respond to the protocols in this guide should be evaluated by a board-certified dermatologist.`
+}
+]
+};
+
+// – GA4 EVENT TRACKING —————————————————––
 const track = (eventName, params = {}) => {
 try { if(window.gtag) window.gtag(“event”, eventName, params); } catch(_) {}
 };
 
-// ╔══════════════════════════════════════════════════════════════════════════╗
-// ║  SKINR v3 — EDITABLE CONFIGURATION                                       ║
-// ║  Edit this section freely. Do not edit below the closing ═══ line.       ║
-// ╚══════════════════════════════════════════════════════════════════════════╝
+// //==========================================================================
+// //  SKINR v3 – EDITABLE CONFIGURATION                                       //
+// //  Edit this section freely. Do not edit below the closing === line.       //
+// //==========================================================================
 const CONFIG = {
 business: {
 domain:            “https://www.getskinr.com”,
@@ -18,21 +812,21 @@ affiliateTag:      “skinr07-20”,
 amazonBase:        “https://www.amazon.com”,
 formspree:         “261158684435060”,
 twitterHandle:     “@getskinr”,
-// ── SKIN ANALYSIS REPORTS ──────────────────────────────────────
+// – SKIN ANALYSIS REPORTS –––––––––––––––––––
 stripeBiologyPriceId:      “price_1TRbMlCi5YWsRAVAIq1CPgvG”,
 stripeRoutinePriceId:      “price_1TRbOsCi5YWsRAVAH72I6TS1”,
 stripeSkinComboPriceId:    “price_1TRbQgCi5YWsRAVAFDHlX0LM”,
 biologyReportPrice:        15,
 routineCardPrice:          12,
 skinComboPrice:            22,
-// ── SHAVE PROTOCOL REPORTS ─────────────────────────────────────
+// – SHAVE PROTOCOL REPORTS ———————————––
 stripeShaveBiologyPriceId: “price_1TRf10Ci5YWsRAVARhNuKC4u”,
 stripeShaveCardPriceId:    “price_1TRf3hCi5YWsRAVA4oNz5i34”,
 stripeShaveComboPriceId:   “price_1TRf5hCi5YWsRAVAmZpTERl9”,
 shaveBiologyPrice:         15,
 shaveCardPrice:            12,
 shaveComboPrice:           22,
-// ── GUIDES ────────────────────────────────────────────────────
+// – GUIDES ––––––––––––––––––––––––––
 stripeSkincareGuidePriceId:“price_1TRfOLCi5YWsRAVAezkOgVmT”,
 stripeShavingGuidePriceId: “price_1TRfPyCi5YWsRAVAwIFSPFyN”,
 stripeGuidesComboPriceId:  “price_1TRfRMCi5YWsRAVA3sIcGC6I”,
@@ -54,22 +848,22 @@ mid:     [“Proraso”,“Art of Shaving”,“Kiehl’s Men”,“Jack Black�
 premium: [“Taylor of Old Bond Street”,“D.R. Harris”,“Penhaligon’s”,“Truefitt & Hill”,“Castle Forbes”],
 luxury:  [“Geo. F. Trumper”,“Czech & Speake”,“Acqua di Parma”,“Floris”,“St. James of London”],
 },
-// Razor recommendations by skin profile — the AI uses these as a reference
+// Razor recommendations by skin profile – the AI uses these as a reference
 bladeScience: {
 cartridge_bumps:  “Multi-blade cartridges use a lift-and-cut mechanism that severs hair below the skin surface, dramatically increasing pseudofolliculitis barbae risk. Clinical recommendation: transition to single-blade immediately.”,
-safety_mild:      “The Merkur 34C and Edwin Jagger DE89 have blade gaps of approximately 0.68mm — classified as mild/medium aggressive. Ideal for sensitive or reactive skin beginning safety razor use.”,
+safety_mild:      “The Merkur 34C and Edwin Jagger DE89 have blade gaps of approximately 0.68mm – classified as mild/medium aggressive. Ideal for sensitive or reactive skin beginning safety razor use.”,
 safety_standard:  “The Parker 99R and Muhle R89 offer standard aggression with excellent blade exposure. Suitable for most skin types once technique is established.”,
 foil_electric:    “Foil electric shavers (Braun Series 9, Panasonic Arc5) use a thin foil membrane that prevents blade-to-skin contact, making them the least irritating electric option for sensitive skin.”,
 rotary_electric:  “Rotary shavers (Philips Norelco 9000 series) use circular cutting heads suited for longer, coarser stubble but can pull finer or curly hair, increasing irritation risk.”,
-oneblade:         “The Philips OneBlade and Leaf Razor use a single-blade pivoting head — the only cartridge-style razor that does not use multi-blade lift-and-cut, making it suitable for bump-prone skin.”,
+oneblade:         “The Philips OneBlade and Leaf Razor use a single-blade pivoting head – the only cartridge-style razor that does not use multi-blade lift-and-cut, making it suitable for bump-prone skin.”,
 },
 };
 
-// ╔══════════════════════════════════════════════════════════════════════════╗
-// ║  DO NOT EDIT BELOW THIS LINE                                              ║
-// ╚══════════════════════════════════════════════════════════════════════════╝
+// //==========================================================================
+// //  DO NOT EDIT BELOW THIS LINE                                              //
+// //==========================================================================
 
-// ── STORAGE — localStorage (production-safe) ────────────────────────────────
+// – STORAGE – localStorage (production-safe) ––––––––––––––––
 const LS = {
 get: (key)       => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch(*){ return null; } },
 set: (key, val)  => { try { localStorage.setItem(key, JSON.stringify(val)); } catch(*){} },
@@ -81,8 +875,8 @@ lang:“skinr2:lang”, shave:“skinr2:shave”, email:“skinr2:email”,
 chat:“skinr2:chat”,
 };
 
-// ── API — calls Netlify Function proxy (key never in browser) ───────────────
-// ── GUIDE READER COMPONENT ────────────────────────────────────────────────────
+// – API – calls Netlify Function proxy (key never in browser) —————
+// – GUIDE READER COMPONENT ––––––––––––––––––––––––––
 const GuideReader = ({ guide, lang }) => {
 const [openSection, setOpenSection] = useState(null);
 if (!guide) return null;
@@ -103,7 +897,7 @@ cursor:“pointer”,textAlign:“left”,gap:12}}>
 <div style={{fontFamily:“var(–fm)”,fontSize:8,letterSpacing:3,color:“var(–gold)”,textTransform:“uppercase”,marginBottom:3}}>Section {si+1}</div>
 <div style={{fontFamily:“var(–fh)”,fontSize:16,fontWeight:700,fontStyle:“italic”,color:“var(–white)”}}>{section.title}</div>
 </div>
-<div style={{color:“var(–gold)”,fontSize:12,flexShrink:0,transform:openSection===section.id?“rotate(180deg)”:“none”,transition:“transform .2s”}}>▼</div>
+<div style={{color:“var(–gold)”,fontSize:12,flexShrink:0,transform:openSection===section.id?“rotate(180deg)”:“none”,transition:“transform .2s”}}>v</div>
 </button>
 {openSection===section.id&&(
 <div style={{padding:“0 18px 20px”}}>
@@ -149,7 +943,7 @@ return “”;
 
 const parseJSON = (raw) => {
 try {
-// Strip markdown code blocks — Haiku sometimes wraps JSON despite instructions
+// Strip markdown code blocks – Haiku sometimes wraps JSON despite instructions
 const cleaned = raw
 .replace(/^`json\s*/i, '') .replace(/^`\s*/i, ‘’)
 .replace(/```\s*$/i, ‘’)
@@ -165,15 +959,15 @@ return null;
 }
 };
 
-// ── TRANSLATIONS ─────────────────────────────────────────────────────────────
-// ── LANGUAGE CONFIG ───────────────────────────────────────────────────────────
+// – TRANSLATIONS ———————————————————––
+// – LANGUAGE CONFIG ———————————————————–
 const LANGUAGES = [
 { code:“en”, label:“English”,        native:“English”,  dir:“ltr” },
 { code:“fr”, label:“Quebec French”,  native:“Français”, dir:“ltr” },
 { code:“es”, label:“Spanish”,        native:“Español”,  dir:“ltr” },
 ];
 
-// CAD conversion for Quebec users — shown alongside USD prices
+// CAD conversion for Quebec users – shown alongside USD prices
 const USD_TO_CAD = 1.36;
 const showPrice = (usdStr, lang) => {
 if (lang !== “fr” || !usdStr) return usdStr;
@@ -183,7 +977,7 @@ const cad = Math.round(parseFloat(m[1]) * USD_TO_CAD);
 return `${usdStr} (~$${cad} CAD)`;
 };
 
-// ── BASE TRANSLATIONS (English) ───────────────────────────────────────────────
+// – BASE TRANSLATIONS (English) ———————————————–
 // All other languages are generated from this via AI and cached in localStorage.
 // To update any string: edit it here. On next visit in a non-English language,
 // the AI will retranslate automatically.
@@ -193,33 +987,33 @@ badge:“Free. Clinical. Built for Men.”,
 heroTitle:“Your Skin. Your Shave.”, heroTitle2:“Finally, Understood.”,
 heroBody:“Most men have no idea what their skin actually needs. They grab whatever looks right, apply it in the wrong order, and wonder why nothing changes. SKINR ends that. Six honest questions. A clinical skin profile, a personalised morning and evening routine, and the exact products that work for your biology and your budget. No appointments. No guesswork. Sixty seconds.”,
 pathTitle:“Two Problems. One Platform.”,
-pathSub:“Clinical shaving science and personalised skincare — both free, both built for men.”,
+pathSub:“Clinical shaving science and personalised skincare – both free, both built for men.”,
 skinCardTitle:“Skin Analysis”,
-skinCardDesc:“Six questions. A clinical skin type profile. A personalised morning and evening routine with exact application instructions. Budget-matched product recommendations from leading brands — with the scientific reason behind every single one.”,
+skinCardDesc:“Six questions. A clinical skin type profile. A personalised morning and evening routine with exact application instructions. Budget-matched product recommendations from leading brands – with the scientific reason behind every single one.”,
 skinCardPills:[“6 Questions”,“Clinical Profile”,“Budget-Matched”,“Ingredient Science”],
 skinCardBtn:“Analyse My Skin”,
 shaveCardTitle:“Shaving Protocol”,
-shaveCardDesc:“Seven questions — blade type, beard characteristics, active bumps, shaving frequency. The exact biological reason your shave is failing identified. A clinical three-phase protocol and budget-matched products to fix it permanently.”,
+shaveCardDesc:“Seven questions – blade type, beard characteristics, active bumps, shaving frequency. The exact biological reason your shave is failing identified. A clinical three-phase protocol and budget-matched products to fix it permanently.”,
 shaveCardPills:[“7 Questions”,“Blade Science”,“Prevention + Treatment”,“Clinical Protocol”],
 shaveCardBtn:“Build My Protocol”,
-back:“← Back”, next:“Continue”, analyze:“Analyse My Skin”,
+back:”<- Back”, next:“Continue”, analyze:“Analyse My Skin”,
 analyzing:“ANALYSING”,
 loadSteps:[“Reading your profile…”,“Analysing skin chemistry…”,“Matching products to your budget…”,“Checking ingredient compatibility…”,“Finalising your protocol…”],
-q_feel:“One hour after washing — no products — how does your face feel?”,
+q_feel:“One hour after washing – no products – how does your face feel?”,
 q_breakouts:“How frequently do you experience breakouts?”,
 q_sensitivity:“How does your skin respond to new products or shaving?”,
 q_age:“What is your age range?”,
 q_concern:“What is your primary skin concern?”,
 q_budget:“What is your monthly skincare budget?”,
 opts_feel:[“Tight, dry, possibly flaking”,“Comfortable and balanced”,“Visibly oily across the entire face”,“Oily T-zone, dry cheeks”],
-opts_breakouts:[“Rarely, if ever”,“Once or twice monthly”,“Several times per week”,“Persistently — always present”],
+opts_breakouts:[“Rarely, if ever”,“Once or twice monthly”,“Several times per week”,“Persistently – always present”],
 opts_sensitivity:[“No reaction. Highly resilient.”,“Occasional mild redness”,“Frequent irritation or stinging”,“Near-constant reactivity or rosacea”],
 opts_age:[“Under 25”,“25 – 35”,“36 – 50”,“50+”],
-opts_concern:[“Dryness and rough texture”,“Excess oil and shine”,“Acne and breakouts”,“Ageing — lines and dullness”,“Redness and irritation”,“Hyperpigmentation and dark spots”],
-opts_budget:[“Budget — Under $35”,“Mid-Range — $35–$80”,“Premium — $80–$150”,“Luxury — $150+”],
+opts_concern:[“Dryness and rough texture”,“Excess oil and shine”,“Acne and breakouts”,“Ageing – lines and dullness”,“Redness and irritation”,“Hyperpigmentation and dark spots”],
+opts_budget:[“Budget – Under $35”,“Mid-Range – $35–$80”,“Premium – $80–$150”,“Luxury – $150+”],
 quizHints:[
 “Be precise. No one is watching.”,
-“Any breakout — pimples, cysts, whiteheads, blackheads.”,
+“Any breakout – pimples, cysts, whiteheads, blackheads.”,
 “Redness, burning, stinging, or itching after application.”,
 “Skin needs change significantly by decade.”,
 “Select the concern that bothers you most right now.”,
@@ -228,16 +1022,16 @@ quizHints:[
 analysisComplete:“Analysis Complete”,
 yourProtocol:“Your Daily Protocol”,
 morning:“Morning”, evening:“Evening”,
-whyThisWorks:“Why these products work together →”,
-hideScience:“Close ↑”,
-findProduct:“Find on Amazon ↗”,
-findSephora:“Find on Sephora ↗”,
+whyThisWorks:“Why these products work together ->”,
+hideScience:“Close ^”,
+findProduct:“Find on Amazon >”,
+findSephora:“Find on Sephora >”,
 ingredientWarning:“Ingredient Conflict Warning”,
 emailTitle:“Get Your Protocol as a PDF”,
 emailDesc:“We will email you your complete morning and evening routine, your product list with direct links, and weekly skin tips. One email. No spam.”,
 emailBtn:“Send My Protocol”,
 emailSkip:“No thanks”,
-emailSuccess:“Check your inbox — your protocol is on its way.”,
+emailSuccess:“Check your inbox – your protocol is on its way.”,
 emailPlaceholder:“your@email.com”,
 coachTitle:“Ask the Coach Anything.”,
 coachSub:“Your AI coach has reviewed your full profile and budget. Ask about products, ingredients, timing, or anything your protocol does not cover.”,
@@ -253,27 +1047,27 @@ submitting:“Processing…”,
 progressHistory:“Progress Log”,
 noHistory:“Your progress log will appear after your first check-in.”,
 moods:[
-{v:“excellent”,emoji:“◆”,label:“Excellent”,    desc:“Skin is clear, hydrated, performing well”},
-{v:“improving”,emoji:“▲”,label:“Improving”,    desc:“Visible positive changes this week”},
-{v:“stable”,   emoji:“■”,label:“Stable”,       desc:“No change — neither better nor worse”},
-{v:“worse”,    emoji:“▼”,label:“Declining”,    desc:“Something is irritating or breaking out”},
+{v:“excellent”,emoji:”*”,label:“Excellent”,    desc:“Skin is clear, hydrated, performing well”},
+{v:“improving”,emoji:”^”,label:“Improving”,    desc:“Visible positive changes this week”},
+{v:“stable”,   emoji:”-”,label:“Stable”,       desc:“No change – neither better nor worse”},
+{v:“worse”,    emoji:“v”,label:“Declining”,    desc:“Something is irritating or breaking out”},
 ],
 shaveTitle:“Shaving Protocol”,
-shaveSub:“A clinical 7-question analysis — blade type, beard characteristics, skin type, and active problems all analysed together. The most precise shaving tool ever built for men.”,
+shaveSub:“A clinical 7-question analysis – blade type, beard characteristics, skin type, and active problems all analysed together. The most precise shaving tool ever built for men.”,
 shaveQ1:“What is your current primary shaving method?”,
-shaveOpts1:[{v:“cartridge”,label:“Cartridge Razor (2–5 blades)”},{v:“safety”,label:“Safety / Double-Edge Razor (single blade)”},{v:“electric_foil”,label:“Electric Foil Shaver (Braun, Panasonic)”},{v:“electric_rotary”,label:“Electric Rotary Shaver (Philips Norelco)”},{v:“straight”,label:“Straight Razor”},{v:“oneblade”,label:“OneBlade / Leaf Razor (single blade pivot)”},{v:“beard”,label:“I maintain a beard — no close shaving”}],
+shaveOpts1:[{v:“cartridge”,label:“Cartridge Razor (2–5 blades)”},{v:“safety”,label:“Safety / Double-Edge Razor (single blade)”},{v:“electric_foil”,label:“Electric Foil Shaver (Braun, Panasonic)”},{v:“electric_rotary”,label:“Electric Rotary Shaver (Philips Norelco)”},{v:“straight”,label:“Straight Razor”},{v:“oneblade”,label:“OneBlade / Leaf Razor (single blade pivot)”},{v:“beard”,label:“I maintain a beard – no close shaving”}],
 shaveQ2:“How would you describe your beard hair?”,
-shaveOpts2:[{v:“fine_straight”,label:“Fine and straight — grows soft, little resistance”},{v:“medium”,label:“Medium — average thickness and density”},{v:“coarse_straight”,label:“Coarse and straight — thick, heavy stubble”},{v:“coarse_curly”,label:“Coarse and curly — tight curls, waves, or coils”},{v:“patchy”,label:“Patchy — uneven density across the face”}],
+shaveOpts2:[{v:“fine_straight”,label:“Fine and straight – grows soft, little resistance”},{v:“medium”,label:“Medium – average thickness and density”},{v:“coarse_straight”,label:“Coarse and straight – thick, heavy stubble”},{v:“coarse_curly”,label:“Coarse and curly – tight curls, waves, or coils”},{v:“patchy”,label:“Patchy – uneven density across the face”}],
 shaveQ3:“What is your primary shaving problem?”,
-shaveOpts3:[{v:“bumps”,label:“Razor Bumps & Ingrown Hairs”},{v:“redness”,label:“Redness, Burning & Irritation”},{v:“dryness”,label:“Post-Shave Dryness & Tightness”},{v:“cuts”,label:“Frequent Nicks & Cuts”},{v:“none”,label:“No significant problems — just optimising”}],
+shaveOpts3:[{v:“bumps”,label:“Razor Bumps & Ingrown Hairs”},{v:“redness”,label:“Redness, Burning & Irritation”},{v:“dryness”,label:“Post-Shave Dryness & Tightness”},{v:“cuts”,label:“Frequent Nicks & Cuts”},{v:“none”,label:“No significant problems – just optimising”}],
 shaveQ4:“Do you currently have active razor bumps on your face or neck?”,
-shaveOpts4:[{v:“none”,label:“None — no current bumps”},{v:“mild”,label:“Mild — a few occasional bumps”},{v:“moderate”,label:“Moderate — several bumps, some inflamed”},{v:“severe”,label:“Severe — widespread, painful, or causing scarring”}],
+shaveOpts4:[{v:“none”,label:“None – no current bumps”},{v:“mild”,label:“Mild – a few occasional bumps”},{v:“moderate”,label:“Moderate – several bumps, some inflamed”},{v:“severe”,label:“Severe – widespread, painful, or causing scarring”}],
 shaveQ5:“What razor or blade are you currently using?”,
 shaveOpts5:[{v:“gillette”,label:“Gillette Fusion, Mach3, or similar cartridge”},{v:“dollar_shave”,label:“Dollar Shave Club or subscription cartridge”},{v:“merkur”,label:“Merkur safety razor”},{v:“feather”,label:“Feather or Japanese safety razor”},{v:“braun”,label:“Braun electric shaver”},{v:“philips”,label:“Philips Norelco electric”},{v:“other”,label:“Different brand or not sure”},{v:“none_currently”,label:“Not currently shaving regularly”}],
 shaveQ6:“How frequently do you shave?”,
 shaveOpts6:[{v:“daily”,label:“Daily”},{v:“every_other”,label:“Every other day”},{v:“twice_week”,label:“Twice a week”},{v:“weekly”,label:“Once a week or less”}],
 shaveQ7:“What is your monthly shaving budget?”,
-shaveOpts7:[{v:“budget”,label:“Budget — Under $20/month”},{v:“mid”,label:“Mid-Range — $20–$50/month”},{v:“premium”,label:“Premium — $50–$100/month”},{v:“luxury”,label:“Luxury — $100+/month”}],
+shaveOpts7:[{v:“budget”,label:“Budget – Under $20/month”},{v:“mid”,label:“Mid-Range – $20–$50/month”},{v:“premium”,label:“Premium – $50–$100/month”},{v:“luxury”,label:“Luxury – $100+/month”}],
 analyzeShave:“Generate My Clinical Protocol”,
 shaveAnalyzing:“Analysing your shave profile…”,
 shaveResult:“Your Clinical Shaving Protocol”,
@@ -286,15 +1080,15 @@ treatmentProducts:“Active Bump Treatment”,
 shaveCritical:“Clinical Finding”,
 medDisclaimer:“This protocol provides general clinical guidance. Pseudofolliculitis barbae (razor bumps), persistent irritation, or suspected skin conditions should be evaluated by a board-certified dermatologist. This is not a substitute for professional medical advice.”,
 optionalTitle:“Unlock Your Complete Analysis”,
-optionalSub:“Two optional reports generated specifically from your results. Not generic guides — built from your exact profile.”,
+optionalSub:“Two optional reports generated specifically from your results. Not generic guides – built from your exact profile.”,
 biologyTitle:“Know Your Skin Biology”,
-biologyDesc:“The complete cellular explanation of why your skin behaves exactly the way it does. The biological mechanism of every ingredient in your protocol. Your long-term skin trajectory and what happens at the dermal level when you follow — or ignore — the protocol.”,
+biologyDesc:“The complete cellular explanation of why your skin behaves exactly the way it does. The biological mechanism of every ingredient in your protocol. Your long-term skin trajectory and what happens at the dermal level when you follow – or ignore – the protocol.”,
 routineCardTitle:“Personalized Daily Routine Card”,
-routineCardDesc:“Your exact products, in your exact order, with your exact application instructions — formatted as a print-ready card for your bathroom wall. Generated from your specific analysis.”,
-comboTitle:“Both Reports — Best Value”,
-unlockBtn:“Unlock — $10”,
-comboBtn:“Get Both — $15”,
-alreadyUnlocked:“◆ Reports Unlocked”,
+routineCardDesc:“Your exact products, in your exact order, with your exact application instructions – formatted as a print-ready card for your bathroom wall. Generated from your specific analysis.”,
+comboTitle:“Both Reports – Best Value”,
+unlockBtn:“Unlock – $10”,
+comboBtn:“Get Both – $15”,
+alreadyUnlocked:”* Reports Unlocked”,
 nav:{home:“Home”,analysis:“Analysis”,coach:“Coach”,checkin:“Progress”,shave:“Shave”,guides:“Guides”,community:“Community”},
 // Community
 communityTitle:“The SKINR Community”,
@@ -303,19 +1097,19 @@ communityPost:“Share My Progress”,
 communityFeed:“Progress Feed”,
 communityEmpty:“No updates yet. Be the first to share your progress.”,
 communityShareTitle:“Share Your Update”,
-communityShareSub:“Anonymous by default. Your skin type and update are visible — your name is not.”,
+communityShareSub:“Anonymous by default. Your skin type and update are visible – your name is not.”,
 communitySharePlaceholder:“What has changed since you started your protocol? What is working? What are you struggling with?”,
 communityShareBtn:“Post My Update”,
 communityCancel:“Cancel”,
 communityPosted:“Your update has been shared.”,
-communityLike:“◆ Helpful”,
+communityLike:”* Helpful”,
 skinTypeLabel:“Skin Type”,
 weekLabel:“Week”,
 discordTitle:“Join the Conversation”,
-discordSub:“For real-time discussion, questions, and before/after sharing — join the SKINR Discord community.”,
+discordSub:“For real-time discussion, questions, and before/after sharing – join the SKINR Discord community.”,
 discordBtn:“Join SKINR Discord”,
 guidesTitle:“The SKINR Guides”,
-guidesSub:“The complete written reference for everything the quiz covers — and everything it cannot fit in 60 seconds.”,
+guidesSub:“The complete written reference for everything the quiz covers – and everything it cannot fit in 60 seconds.”,
 skincareGuideTitle:“The No-BS Men’s Skincare Guide”,
 skincareGuideDesc:“Your skin type protocol in full. Product scorecards. Ingredient conflict cheat sheet. Seasonal adjustments. Printable routine cards.”,
 shavingGuideTitle:“The Shaving Bible”,
@@ -333,14 +1127,14 @@ newShave:“New Shave Analysis”,
 disclaimer:“Amazon affiliate links support this free service at no extra cost to you. All recommendations are based solely on your skin profile and budget.”,
 of:”/”,
 translating:“Setting up your language…”,
-// Founder story — translatable
+// Founder story – translatable
 storyLabel:“The Story Behind SKINR”,
 storyTitle:“Why I Built This”,
-storyP1:“As a man who shaves every day, I had no idea what my blade was actually doing to my skin. Every morning — the same routine, the same razor, the same result. Razor bumps. Redness. Irritation that stayed for days. I went to barbers who made it worse. I changed products constantly — one after another, hoping something would work, never understanding why nothing did.”,
-storyP2:“The answer, it turned out, was not in a better product. It was in understanding my skin. Once I learned my skin type, why my specific blade was causing bumps, which ingredients actually work for my biology, and how to build a routine in the right order — everything changed. Fewer bumps. Less redness. Better skin. And for the first time, genuine confidence about how I looked.”,
-storyP3:“That is why SKINR exists. A single platform where every man — regardless of age, skin type, or budget — can understand his skin biology, make informed decisions about what goes on his face, and build a routine that actually works. Not someone else’s routine. His.”,
+storyP1:“As a man who shaves every day, I had no idea what my blade was actually doing to my skin. Every morning – the same routine, the same razor, the same result. Razor bumps. Redness. Irritation that stayed for days. I went to barbers who made it worse. I changed products constantly – one after another, hoping something would work, never understanding why nothing did.”,
+storyP2:“The answer, it turned out, was not in a better product. It was in understanding my skin. Once I learned my skin type, why my specific blade was causing bumps, which ingredients actually work for my biology, and how to build a routine in the right order – everything changed. Fewer bumps. Less redness. Better skin. And for the first time, genuine confidence about how I looked.”,
+storyP3:“That is why SKINR exists. A single platform where every man – regardless of age, skin type, or budget – can understand his skin biology, make informed decisions about what goes on his face, and build a routine that actually works. Not someone else’s routine. His.”,
 missionLabel:“Our Mission”,
-missionText:“To be the one-stop platform where every man discovers his skin biology, makes the right decisions, and takes care of his skin — at every age.”,
+missionText:“To be the one-stop platform where every man discovers his skin biology, makes the right decisions, and takes care of his skin – at every age.”,
 copyright:“All rights reserved.”,
 skinScore:“Skin Score”,
 consistencyRating:“Consistency Rating”,
@@ -369,50 +1163,50 @@ comingSoon:“Coming Soon”,
 currencyNote:“Prices in USD. Approx. CAD shown.”,
 };
 
-// ── STATIC TRANSLATIONS ───────────────────────────────────────────────────────
-// Pre-translated permanently — zero API calls, instant switching.
+// – STATIC TRANSLATIONS —————————————————––
+// Pre-translated permanently – zero API calls, instant switching.
 // FR = Quebec French (Canadian). ES = Latin American Spanish.
 // To add a string: add to BASE_T, then add the translation in FR_T and ES_T.
-// Only translates ~20 essential visible strings — small enough to complete
+// Only translates ~20 essential visible strings – small enough to complete
 // reliably within Netlify function timeout. Quiz protocols are already
 // generated in the user’s language by Claude so quiz options can stay in English.
 
 const SUPPORTED_LANGS = [“en”, “fr”, “es”];
 
-// ── QUÉBEC FRENCH (fr) ────────────────────────────────────────────────────────
+// – QUÉBEC FRENCH (fr) ––––––––––––––––––––––––––––
 const FR_T = {
 appName:“SKINR”,
 badge:“Gratuit. Clinique. Fait pour les Hommes.”,
 heroTitle:“Ta Peau. Ton Rasage.”, heroTitle2:“Enfin Compris.”,
 heroBody:“La plupart des gars ont aucune idée de ce que leur peau a vraiment besoin. Ils prennent ce qui a l’air correct, l’appliquent dans le mauvais ordre, puis se demandent pourquoi rien change. SKINR règle ça. Six questions honnêtes. Un profil cutané clinique, une routine personnalisée matin et soir, et les produits exacts qui marchent pour ta biologie et ton budget. Sans rendez-vous. Sans devinettes. En soixante secondes.”,
 pathTitle:“Deux Problèmes. Une Plateforme.”,
-pathSub:“Science clinique du rasage et soins personnalisés — les deux gratuits, les deux faits pour les hommes.”,
+pathSub:“Science clinique du rasage et soins personnalisés – les deux gratuits, les deux faits pour les hommes.”,
 skinCardTitle:“Analyse de Peau”,
-skinCardDesc:“Six questions. Un profil cutané clinique. Une routine personnalisée matin et soir avec instructions précises. Recommandations de produits adaptées à ton budget — avec la raison scientifique derrière chacun.”,
+skinCardDesc:“Six questions. Un profil cutané clinique. Une routine personnalisée matin et soir avec instructions précises. Recommandations de produits adaptées à ton budget – avec la raison scientifique derrière chacun.”,
 skinCardPills:[“6 Questions”,“Profil Clinique”,“Adapté au Budget”,“Science des Ingrédients”],
 skinCardBtn:“Analyser Ma Peau”,
 shaveCardTitle:“Protocole de Rasage”,
-shaveCardDesc:“Sept questions — type de lame, caractéristiques de la barbe, boutons actifs, fréquence de rasage. La raison biologique exacte de l’échec de ton rasage identifiée. Un protocole clinique en trois phases et des produits adaptés à ton budget pour corriger ça de façon permanente.”,
+shaveCardDesc:“Sept questions – type de lame, caractéristiques de la barbe, boutons actifs, fréquence de rasage. La raison biologique exacte de l’échec de ton rasage identifiée. Un protocole clinique en trois phases et des produits adaptés à ton budget pour corriger ça de façon permanente.”,
 shaveCardPills:[“7 Questions”,“Science des Lames”,“Prévention + Traitement”,“Protocole Clinique”],
 shaveCardBtn:“Construire Mon Protocole”,
-back:“← Retour”, next:“Continuer”, analyze:“Analyser Ma Peau”,
+back:”<- Retour”, next:“Continuer”, analyze:“Analyser Ma Peau”,
 analyzing:“ANALYSE EN COURS”,
 loadSteps:[“Lecture de ton profil…”,“Analyse de la chimie cutanée…”,“Correspondance produits-budget…”,“Vérification de la compatibilité…”,“Finalisation du protocole…”],
-q_feel:“Une heure après le lavage — sans produits — comment ton visage se sent?”,
+q_feel:“Une heure après le lavage – sans produits – comment ton visage se sent?”,
 q_breakouts:“À quelle fréquence t’as des boutons?”,
 q_sensitivity:“Comment ta peau réagit aux nouveaux produits ou au rasage?”,
 q_age:“Dans quelle tranche d’âge t’es?”,
 q_concern:“C’est quoi ta principale préoccupation cutanée?”,
 q_budget:“C’est quoi ton budget mensuel pour les soins de la peau?”,
 opts_feel:[“Tendue, sèche, qui squame peut-être”,“Confortable et équilibrée”,“Visiblement grasse sur tout le visage”,“Grasse en zone T, sèche sur les joues”],
-opts_breakouts:[“Rarement, si jamais”,“Une ou deux fois par mois”,“Plusieurs fois par semaine”,“En permanence — toujours là”],
+opts_breakouts:[“Rarement, si jamais”,“Une ou deux fois par mois”,“Plusieurs fois par semaine”,“En permanence – toujours là”],
 opts_sensitivity:[“Aucune réaction. Très résistante.”,“Légère rougeur occasionnelle”,“Irritation fréquente ou picotements”,“Réactivité quasi-constante ou rosacée”],
 opts_age:[“Moins de 25”,“25 – 35”,“36 – 50”,“50+”],
-opts_concern:[“Sécheresse et texture rugueuse”,“Excès de sébum et brillance”,“Acné et boutons”,“Vieillissement — rides et teint terne”,“Rougeurs et irritation”,“Hyperpigmentation et taches”],
-opts_budget:[“Budget — Moins de 35 $”,“Milieu de gamme — 35 $–80 $”,“Premium — 80 $–150 $”,“Luxe — 150 $+”],
+opts_concern:[“Sécheresse et texture rugueuse”,“Excès de sébum et brillance”,“Acné et boutons”,“Vieillissement – rides et teint terne”,“Rougeurs et irritation”,“Hyperpigmentation et taches”],
+opts_budget:[“Budget – Moins de 35 $”,“Milieu de gamme – 35 $–80 $”,“Premium – 80 $–150 $”,“Luxe – 150 $+”],
 quizHints:[
 “Sois précis. Personne te regarde.”,
-“Tout bouton — papules, kystes, points blancs, points noirs.”,
+“Tout bouton – papules, kystes, points blancs, points noirs.”,
 “Rougeurs, brûlures, picotements ou démangeaisons après application.”,
 “Les besoins cutanés changent significativement par décennie.”,
 “Choisir la préoccupation qui te dérange le plus en ce moment.”,
@@ -421,16 +1215,16 @@ quizHints:[
 analysisComplete:“Analyse Terminée”,
 yourProtocol:“Ton Protocole Quotidien”,
 morning:“Routine du Matin”, evening:“Routine du Soir”,
-whyThisWorks:“Pourquoi ces produits fonctionnent ensemble →”,
-hideScience:“Fermer ↑”,
-findProduct:“Trouver sur Amazon ↗”,
-findSephora:“Trouver sur Sephora ↗”,
-ingredientWarning:“Avertissement — Conflit d’Ingrédients”,
+whyThisWorks:“Pourquoi ces produits fonctionnent ensemble ->”,
+hideScience:“Fermer ^”,
+findProduct:“Trouver sur Amazon >”,
+findSephora:“Trouver sur Sephora >”,
+ingredientWarning:“Avertissement – Conflit d’Ingrédients”,
 emailTitle:“Recevoir Ton Protocole en PDF”,
 emailDesc:“On t’envoie ta routine complète matin et soir, ta liste de produits avec liens directs, et des conseils cutanés hebdomadaires. Un seul courriel. Zéro spam.”,
 emailBtn:“Envoyer Mon Protocole”,
 emailSkip:“Non merci”,
-emailSuccess:“Vérifie tes courriels — ton protocole s’en vient.”,
+emailSuccess:“Vérifie tes courriels – ton protocole s’en vient.”,
 emailPlaceholder:“ton@courriel.com”,
 coachTitle:“Pose n’importe quelle question au Coach.”,
 coachSub:“Ton coach IA a passé en revue ton profil complet et ton budget. Pose des questions sur les produits, les ingrédients, le timing, ou tout ce que le protocole couvre pas.”,
@@ -446,27 +1240,27 @@ submitting:“Traitement…”,
 progressHistory:“Journal de Progrès”,
 noHistory:“Ton journal apparaîtra après ton premier suivi.”,
 moods:[
-{v:“excellent”,emoji:“◆”,label:“Excellent”,    desc:“Peau claire, hydratée, performante”},
-{v:“improving”,emoji:“▲”,label:“En Amélioration”,desc:“Changements positifs visibles cette semaine”},
-{v:“stable”,   emoji:“■”,label:“Stable”,       desc:“Pas de changement — ni mieux ni pire”},
-{v:“worse”,    emoji:“▼”,label:“En Déclin”,    desc:“Quelque chose irrite ou provoque des boutons”},
+{v:“excellent”,emoji:”*”,label:“Excellent”,    desc:“Peau claire, hydratée, performante”},
+{v:“improving”,emoji:”^”,label:“En Amélioration”,desc:“Changements positifs visibles cette semaine”},
+{v:“stable”,   emoji:”-”,label:“Stable”,       desc:“Pas de changement – ni mieux ni pire”},
+{v:“worse”,    emoji:“v”,label:“En Déclin”,    desc:“Quelque chose irrite ou provoque des boutons”},
 ],
 shaveTitle:“Protocole de Rasage”,
-shaveSub:“Une analyse clinique en 7 questions — type de lame, caractéristiques de la barbe, type de peau, et problèmes actifs analysés ensemble. L’outil de rasage le plus précis jamais construit pour les hommes.”,
+shaveSub:“Une analyse clinique en 7 questions – type de lame, caractéristiques de la barbe, type de peau, et problèmes actifs analysés ensemble. L’outil de rasage le plus précis jamais construit pour les hommes.”,
 shaveQ1:“C’est quoi ta méthode de rasage principale en ce moment?”,
-shaveOpts1:[{v:“cartridge”,label:“Rasoir cartouche (2–5 lames)”},{v:“safety”,label:“Rasoir de sûreté / double-tranchant (lame unique)”},{v:“electric_foil”,label:“Rasoir électrique à grille (Braun, Panasonic)”},{v:“electric_rotary”,label:“Rasoir électrique rotatif (Philips Norelco)”},{v:“straight”,label:“Rasoir droit”},{v:“oneblade”,label:“OneBlade / Leaf Razor (pivot lame unique)”},{v:“beard”,label:“J’entretiens une barbe — pas de rasage de près”}],
+shaveOpts1:[{v:“cartridge”,label:“Rasoir cartouche (2–5 lames)”},{v:“safety”,label:“Rasoir de sûreté / double-tranchant (lame unique)”},{v:“electric_foil”,label:“Rasoir électrique à grille (Braun, Panasonic)”},{v:“electric_rotary”,label:“Rasoir électrique rotatif (Philips Norelco)”},{v:“straight”,label:“Rasoir droit”},{v:“oneblade”,label:“OneBlade / Leaf Razor (pivot lame unique)”},{v:“beard”,label:“J’entretiens une barbe – pas de rasage de près”}],
 shaveQ2:“Comment tu décrirais ta barbe?”,
-shaveOpts2:[{v:“fine_straight”,label:“Fine et droite — pousse douce, peu de résistance”},{v:“medium”,label:“Moyenne — épaisseur et densité normales”},{v:“coarse_straight”,label:“Épaisse et droite — chaume lourd et dense”},{v:“coarse_curly”,label:“Épaisse et bouclée — boucles serrées, vagues ou coils”},{v:“patchy”,label:“Inégale — densité variable sur le visage”}],
+shaveOpts2:[{v:“fine_straight”,label:“Fine et droite – pousse douce, peu de résistance”},{v:“medium”,label:“Moyenne – épaisseur et densité normales”},{v:“coarse_straight”,label:“Épaisse et droite – chaume lourd et dense”},{v:“coarse_curly”,label:“Épaisse et bouclée – boucles serrées, vagues ou coils”},{v:“patchy”,label:“Inégale – densité variable sur le visage”}],
 shaveQ3:“C’est quoi ton principal problème de rasage?”,
-shaveOpts3:[{v:“bumps”,label:“Boutons de rasoir et poils incarnés”},{v:“redness”,label:“Rougeurs, brûlures et irritation”},{v:“dryness”,label:“Sécheresse et tiraillement post-rasage”},{v:“cuts”,label:“Coupures et entailles fréquentes”},{v:“none”,label:“Aucun problème majeur — juste optimiser”}],
+shaveOpts3:[{v:“bumps”,label:“Boutons de rasoir et poils incarnés”},{v:“redness”,label:“Rougeurs, brûlures et irritation”},{v:“dryness”,label:“Sécheresse et tiraillement post-rasage”},{v:“cuts”,label:“Coupures et entailles fréquentes”},{v:“none”,label:“Aucun problème majeur – juste optimiser”}],
 shaveQ4:“T’as présentement des boutons de rasoir actifs sur le visage ou le cou?”,
-shaveOpts4:[{v:“none”,label:“Aucun — pas de boutons en ce moment”},{v:“mild”,label:“Légers — quelques boutons occasionnels”},{v:“moderate”,label:“Modérés — plusieurs boutons, certains enflammés”},{v:“severe”,label:“Sévères — répandus, douloureux, ou causant des cicatrices”}],
+shaveOpts4:[{v:“none”,label:“Aucun – pas de boutons en ce moment”},{v:“mild”,label:“Légers – quelques boutons occasionnels”},{v:“moderate”,label:“Modérés – plusieurs boutons, certains enflammés”},{v:“severe”,label:“Sévères – répandus, douloureux, ou causant des cicatrices”}],
 shaveQ5:“Quel rasoir ou quelle lame t’utilises en ce moment?”,
 shaveOpts5:[{v:“gillette”,label:“Gillette Fusion, Mach3, ou cartouche similaire”},{v:“dollar_shave”,label:“Dollar Shave Club ou abonnement cartouche”},{v:“merkur”,label:“Rasoir de sûreté Merkur”},{v:“feather”,label:“Lame Feather ou rasoir japonais”},{v:“braun”,label:“Rasoir électrique Braun”},{v:“philips”,label:“Rasoir électrique Philips Norelco”},{v:“other”,label:“Autre marque ou pas sûr”},{v:“none_currently”,label:“Je rase pas régulièrement en ce moment”}],
 shaveQ6:“À quelle fréquence tu te rases?”,
 shaveOpts6:[{v:“daily”,label:“Tous les jours”},{v:“every_other”,label:“Un jour sur deux”},{v:“twice_week”,label:“Deux fois par semaine”},{v:“weekly”,label:“Une fois par semaine ou moins”}],
 shaveQ7:“C’est quoi ton budget mensuel pour le rasage?”,
-shaveOpts7:[{v:“budget”,label:“Budget — Moins de 20 $/mois”},{v:“mid”,label:“Milieu de gamme — 20 $–50 $/mois”},{v:“premium”,label:“Premium — 50 $–100 $/mois”},{v:“luxury”,label:“Luxe — 100 $+/mois”}],
+shaveOpts7:[{v:“budget”,label:“Budget – Moins de 20 $/mois”},{v:“mid”,label:“Milieu de gamme – 20 $–50 $/mois”},{v:“premium”,label:“Premium – 50 $–100 $/mois”},{v:“luxury”,label:“Luxe – 100 $+/mois”}],
 analyzeShave:“Générer Mon Protocole Clinique”,
 shaveAnalyzing:“Analyse de ton profil de rasage…”,
 shaveResult:“Ton Protocole de Rasage Clinique”,
@@ -479,15 +1273,15 @@ treatmentProducts:“Traitement des Boutons Actifs”,
 shaveCritical:“Constat Clinique”,
 medDisclaimer:“Ce protocole fournit des orientations cliniques générales. La pseudofolliculite de la barbe (boutons de rasoir), l’irritation persistante ou les affections cutanées suspectées devraient être évaluées par un dermatologue certifié. Ce n’est pas un substitut aux conseils médicaux professionnels.”,
 optionalTitle:“Déverrouille Ton Analyse Complète”,
-optionalSub:“Deux rapports optionnels générés spécifiquement à partir de tes résultats. Pas des guides génériques — construits à partir de ton profil exact.”,
+optionalSub:“Deux rapports optionnels générés spécifiquement à partir de tes résultats. Pas des guides génériques – construits à partir de ton profil exact.”,
 biologyTitle:“Connais la Biologie de Ta Peau”,
 biologyDesc:“L’explication cellulaire complète de pourquoi ta peau se comporte exactement comme elle le fait. Le mécanisme biologique de chaque ingrédient dans ton protocole. Ta trajectoire cutanée à long terme.”,
 routineCardTitle:“Carte de Routine Quotidienne Personnalisée”,
-routineCardDesc:“Tes produits exacts, dans ton ordre exact, avec tes instructions d’application exactes — formaté comme une carte prête à imprimer pour le mur de ta salle de bain.”,
-comboTitle:“Les Deux Rapports — Meilleure Valeur”,
-unlockBtn:“Déverrouiller — 10 $”,
-comboBtn:“Obtenir les Deux — 15 $”,
-alreadyUnlocked:“◆ Rapports Déverrouillés”,
+routineCardDesc:“Tes produits exacts, dans ton ordre exact, avec tes instructions d’application exactes – formaté comme une carte prête à imprimer pour le mur de ta salle de bain.”,
+comboTitle:“Les Deux Rapports – Meilleure Valeur”,
+unlockBtn:“Déverrouiller – 10 $”,
+comboBtn:“Obtenir les Deux – 15 $”,
+alreadyUnlocked:”* Rapports Déverrouillés”,
 nav:{home:“Accueil”,analysis:“Analyse”,coach:“Coach”,checkin:“Progrès”,shave:“Rasage”,guides:“Guides”,community:“Communauté”},
 communityTitle:“La Communauté SKINR”,
 communitySub:“De vrais gars. De vrais résultats. De vrais types de peau. Partagez vos progrès et lisez ce qui marche vraiment pour les hommes avec votre profil exact.”,
@@ -495,19 +1289,19 @@ communityPost:“Partager Mes Progrès”,
 communityFeed:“Fil des Progrès”,
 communityEmpty:“Aucune mise à jour pour l’instant. Soyez le premier à partager vos progrès.”,
 communityShareTitle:“Partager Votre Mise à Jour”,
-communityShareSub:“Anonyme par défaut. Votre type de peau et mise à jour sont visibles — pas votre nom.”,
+communityShareSub:“Anonyme par défaut. Votre type de peau et mise à jour sont visibles – pas votre nom.”,
 communitySharePlaceholder:“Qu’est-ce qui a changé depuis le début de votre protocole? Qu’est-ce qui marche? Qu’est-ce qui est difficile?”,
 communityShareBtn:“Publier Ma Mise à Jour”,
 communityCancel:“Annuler”,
 communityPosted:“Ta mise à jour a été partagée.”,
-communityLike:“◆ Utile”,
+communityLike:”* Utile”,
 skinTypeLabel:“Type de Peau”,
 weekLabel:“Semaine”,
 discordTitle:“Rejoins la Conversation”,
-discordSub:“Pour des discussions en temps réel, questions, et partage avant/après — rejoins la communauté Discord SKINR.”,
+discordSub:“Pour des discussions en temps réel, questions, et partage avant/après – rejoins la communauté Discord SKINR.”,
 discordBtn:“Rejoindre SKINR Discord”,
 guidesTitle:“Les Guides SKINR”,
-guidesSub:“La référence écrite complète pour tout ce que le quiz couvre — et tout ce qu’il peut pas couvrir en 60 secondes.”,
+guidesSub:“La référence écrite complète pour tout ce que le quiz couvre – et tout ce qu’il peut pas couvrir en 60 secondes.”,
 skincareGuideTitle:“Le Guide de Soins Sans Bullshit pour Hommes”,
 skincareGuideDesc:“Ton protocole cutané complet. Fiches de notation de produits. Antisèche des conflits d’ingrédients. Ajustements saisonniers. Cartes de routine imprimables.”,
 shavingGuideTitle:“La Bible du Rasage”,
@@ -527,11 +1321,11 @@ of:”/”,
 translating:“Configuration de ta langue…”,
 storyLabel:“L’Histoire Derrière SKINR”,
 storyTitle:“Pourquoi J’ai Créé Ça”,
-storyP1:“En tant qu’gars qui se rase tous les jours, j’avais aucune idée de ce que ma lame faisait vraiment à ma peau. Chaque matin — la même routine, le même rasoir, le même résultat. Des boutons de rasoir. Des rougeurs. Une irritation qui durait des jours. J’allais chez des barbiers qui empiraient les choses. Je changeais de produits constamment — l’un après l’autre, en espérant que quelque chose marche, sans jamais comprendre pourquoi rien fonctionnait.”,
-storyP2:“La réponse, il s’est avéré, était pas dans un meilleur produit. C’était dans la compréhension de ma peau. Une fois que j’ai appris mon type de peau, pourquoi ma lame spécifique causait des boutons, quels ingrédients marchent vraiment pour ma biologie, et comment construire une routine dans le bon ordre — tout a changé. Moins de boutons. Moins de rougeurs. Meilleure peau. Et pour la première fois, une vraie confiance en mon apparence.”,
-storyP3:“C’est pourquoi SKINR existe. Une seule plateforme où chaque homme — peu importe son âge, son type de peau ou son budget — peut comprendre sa biologie cutanée, prendre les bonnes décisions sur ce qu’il met sur son visage, et construire une routine qui marche vraiment. Pas la routine de quelqu’un d’autre. La sienne.”,
+storyP1:“En tant qu’gars qui se rase tous les jours, j’avais aucune idée de ce que ma lame faisait vraiment à ma peau. Chaque matin – la même routine, le même rasoir, le même résultat. Des boutons de rasoir. Des rougeurs. Une irritation qui durait des jours. J’allais chez des barbiers qui empiraient les choses. Je changeais de produits constamment – l’un après l’autre, en espérant que quelque chose marche, sans jamais comprendre pourquoi rien fonctionnait.”,
+storyP2:“La réponse, il s’est avéré, était pas dans un meilleur produit. C’était dans la compréhension de ma peau. Une fois que j’ai appris mon type de peau, pourquoi ma lame spécifique causait des boutons, quels ingrédients marchent vraiment pour ma biologie, et comment construire une routine dans le bon ordre – tout a changé. Moins de boutons. Moins de rougeurs. Meilleure peau. Et pour la première fois, une vraie confiance en mon apparence.”,
+storyP3:“C’est pourquoi SKINR existe. Une seule plateforme où chaque homme – peu importe son âge, son type de peau ou son budget – peut comprendre sa biologie cutanée, prendre les bonnes décisions sur ce qu’il met sur son visage, et construire une routine qui marche vraiment. Pas la routine de quelqu’un d’autre. La sienne.”,
 missionLabel:“Notre Mission”,
-missionText:“Être la plateforme unique où chaque homme découvre sa biologie cutanée, prend les bonnes décisions et prend soin de sa peau — à tout âge.”,
+missionText:“Être la plateforme unique où chaque homme découvre sa biologie cutanée, prend les bonnes décisions et prend soin de sa peau – à tout âge.”,
 copyright:“Tous droits réservés.”,
 skinScore:“Score de Peau”,
 consistencyRating:“Indice de Régularité”,
@@ -559,40 +1353,40 @@ comingSoon:“Bientôt Disponible”,
 currencyNote:“Prix en USD. Équivalent CAD affiché.”,
 };
 
-// ── LATIN AMERICAN SPANISH (es) ───────────────────────────────────────────────
+// – LATIN AMERICAN SPANISH (es) ———————————————–
 const ES_T = {
 appName:“SKINR”,
 badge:“Gratis. Clínico. Hecho para Hombres.”,
 heroTitle:“Tu Piel. Tu Afeitado.”, heroTitle2:“Por Fin, Comprendidos.”,
 heroBody:“La mayoría de los hombres no tienen idea de lo que su piel realmente necesita. Agarran lo que parece correcto, lo aplican en el orden equivocado, y se preguntan por qué nada cambia. SKINR acaba con eso. Seis preguntas honestas. Un perfil clínico de piel, una rutina personalizada de mañana y noche, y los productos exactos que funcionan para tu biología y tu presupuesto. Sin citas. Sin adivinanzas. En sesenta segundos.”,
 pathTitle:“Dos Problemas. Una Plataforma.”,
-pathSub:“Ciencia clínica del afeitado y cuidado personalizado — ambos gratis, ambos hechos para hombres.”,
+pathSub:“Ciencia clínica del afeitado y cuidado personalizado – ambos gratis, ambos hechos para hombres.”,
 skinCardTitle:“Análisis de Piel”,
-skinCardDesc:“Seis preguntas. Un perfil clínico de tipo de piel. Una rutina personalizada de mañana y noche con instrucciones precisas de aplicación. Recomendaciones de productos adaptadas a tu presupuesto — con la razón científica detrás de cada una.”,
+skinCardDesc:“Seis preguntas. Un perfil clínico de tipo de piel. Una rutina personalizada de mañana y noche con instrucciones precisas de aplicación. Recomendaciones de productos adaptadas a tu presupuesto – con la razón científica detrás de cada una.”,
 skinCardPills:[“6 Preguntas”,“Perfil Clínico”,“Según Presupuesto”,“Ciencia de Ingredientes”],
 skinCardBtn:“Analizar Mi Piel”,
 shaveCardTitle:“Protocolo de Afeitado”,
-shaveCardDesc:“Siete preguntas — tipo de hoja, características de la barba, granos activos, frecuencia de afeitado. La razón biológica exacta del fallo de tu afeitado identificada. Un protocolo clínico de tres fases y productos adaptados a tu presupuesto para corregirlo permanentemente.”,
+shaveCardDesc:“Siete preguntas – tipo de hoja, características de la barba, granos activos, frecuencia de afeitado. La razón biológica exacta del fallo de tu afeitado identificada. Un protocolo clínico de tres fases y productos adaptados a tu presupuesto para corregirlo permanentemente.”,
 shaveCardPills:[“7 Preguntas”,“Ciencia de Hojas”,“Prevención + Tratamiento”,“Protocolo Clínico”],
 shaveCardBtn:“Crear Mi Protocolo”,
-back:“← Atrás”, next:“Continuar”, analyze:“Analizar Mi Piel”,
+back:”<- Atrás”, next:“Continuar”, analyze:“Analizar Mi Piel”,
 analyzing:“ANALIZANDO”,
 loadSteps:[“Leyendo tu perfil…”,“Analizando la química cutánea…”,“Combinando productos con el presupuesto…”,“Verificando compatibilidad de ingredientes…”,“Finalizando tu protocolo…”],
-q_feel:“Una hora después de lavarte — sin productos — ¿cómo se siente tu cara?”,
+q_feel:“Una hora después de lavarte – sin productos – ¿cómo se siente tu cara?”,
 q_breakouts:”¿Con qué frecuencia tienes granos?”,
 q_sensitivity:”¿Cómo responde tu piel a productos nuevos o al afeitado?”,
 q_age:”¿Cuál es tu rango de edad?”,
 q_concern:”¿Cuál es tu principal preocupación de piel?”,
 q_budget:”¿Cuál es tu presupuesto mensual para el cuidado de la piel?”,
 opts_feel:[“Tensa, seca, posiblemente descamando”,“Cómoda y equilibrada”,“Visiblemente grasa en toda la cara”,“Grasa en zona T, seca en mejillas”],
-opts_breakouts:[“Raramente, si acaso”,“Una o dos veces al mes”,“Varias veces a la semana”,“Persistentemente — siempre presente”],
+opts_breakouts:[“Raramente, si acaso”,“Una o dos veces al mes”,“Varias veces a la semana”,“Persistentemente – siempre presente”],
 opts_sensitivity:[“Sin reacción. Muy resistente.”,“Leve rojez ocasional”,“Irritación frecuente o picazón”,“Reactividad casi constante o rosácea”],
 opts_age:[“Menos de 25”,“25 – 35”,“36 – 50”,“50+”],
-opts_concern:[“Sequedad y textura áspera”,“Exceso de grasa y brillos”,“Acné y granos”,“Envejecimiento — líneas y opacidad”,“Rojez e irritación”,“Hiperpigmentación y manchas”],
-opts_budget:[“Económico — Menos de $35”,“Gama Media — $35–$80”,“Premium — $80–$150”,“Lujo — $150+”],
+opts_concern:[“Sequedad y textura áspera”,“Exceso de grasa y brillos”,“Acné y granos”,“Envejecimiento – líneas y opacidad”,“Rojez e irritación”,“Hiperpigmentación y manchas”],
+opts_budget:[“Económico – Menos de $35”,“Gama Media – $35–$80”,“Premium – $80–$150”,“Lujo – $150+”],
 quizHints:[
 “Sé preciso. Nadie te está viendo.”,
-“Cualquier grano — pápulas, quistes, puntos blancos, puntos negros.”,
+“Cualquier grano – pápulas, quistes, puntos blancos, puntos negros.”,
 “Rojez, ardor, picazón o comezón después de aplicar.”,
 “Las necesidades de la piel cambian significativamente por década.”,
 “Selecciona la preocupación que más te molesta en este momento.”,
@@ -601,16 +1395,16 @@ quizHints:[
 analysisComplete:“Análisis Completo”,
 yourProtocol:“Tu Protocolo Diario”,
 morning:“Rutina de Mañana”, evening:“Rutina de Noche”,
-whyThisWorks:“Por qué estos productos funcionan juntos →”,
-hideScience:“Cerrar ↑”,
-findProduct:“Buscar en Amazon ↗”,
-findSephora:“Buscar en Sephora ↗”,
-ingredientWarning:“Advertencia — Conflicto de Ingredientes”,
+whyThisWorks:“Por qué estos productos funcionan juntos ->”,
+hideScience:“Cerrar ^”,
+findProduct:“Buscar en Amazon >”,
+findSephora:“Buscar en Sephora >”,
+ingredientWarning:“Advertencia – Conflicto de Ingredientes”,
 emailTitle:“Recibe Tu Protocolo en PDF”,
 emailDesc:“Te enviaremos tu rutina completa de mañana y noche, tu lista de productos con enlaces directos, y consejos de piel semanales. Un solo correo. Cero spam.”,
 emailBtn:“Enviar Mi Protocolo”,
 emailSkip:“No gracias”,
-emailSuccess:“Revisa tu correo — tu protocolo está en camino.”,
+emailSuccess:“Revisa tu correo – tu protocolo está en camino.”,
 emailPlaceholder:“tu@correo.com”,
 coachTitle:“Pregunta Cualquier Cosa al Coach.”,
 coachSub:“Tu coach de IA ha revisado tu perfil completo y tu presupuesto. Pregunta sobre productos, ingredientes, tiempos o cualquier cosa que el protocolo no cubra.”,
@@ -626,27 +1420,27 @@ submitting:“Procesando…”,
 progressHistory:“Registro de Progreso”,
 noHistory:“Tu registro aparecerá después de tu primer seguimiento.”,
 moods:[
-{v:“excellent”,emoji:“◆”,label:“Excelente”,    desc:“Piel clara, hidratada, funcionando bien”},
-{v:“improving”,emoji:“▲”,label:“Mejorando”,    desc:“Cambios positivos visibles esta semana”},
-{v:“stable”,   emoji:“■”,label:“Estable”,      desc:“Sin cambio — ni mejor ni peor”},
-{v:“worse”,    emoji:“▼”,label:“Declinando”,   desc:“Algo irrita o está causando granos”},
+{v:“excellent”,emoji:”*”,label:“Excelente”,    desc:“Piel clara, hidratada, funcionando bien”},
+{v:“improving”,emoji:”^”,label:“Mejorando”,    desc:“Cambios positivos visibles esta semana”},
+{v:“stable”,   emoji:”-”,label:“Estable”,      desc:“Sin cambio – ni mejor ni peor”},
+{v:“worse”,    emoji:“v”,label:“Declinando”,   desc:“Algo irrita o está causando granos”},
 ],
 shaveTitle:“Protocolo de Afeitado”,
-shaveSub:“Un análisis clínico de 7 preguntas — tipo de hoja, características de la barba, tipo de piel y problemas activos analizados juntos. La herramienta de afeitado más precisa jamás construida para hombres.”,
+shaveSub:“Un análisis clínico de 7 preguntas – tipo de hoja, características de la barba, tipo de piel y problemas activos analizados juntos. La herramienta de afeitado más precisa jamás construida para hombres.”,
 shaveQ1:”¿Cuál es tu método de afeitado principal actualmente?”,
-shaveOpts1:[{v:“cartridge”,label:“Maquinilla de cartucho (2–5 hojas)”},{v:“safety”,label:“Maquinilla de seguridad / doble filo (hoja única)”},{v:“electric_foil”,label:“Afeitadora eléctrica de lámina (Braun, Panasonic)”},{v:“electric_rotary”,label:“Afeitadora eléctrica rotatoria (Philips Norelco)”},{v:“straight”,label:“Navaja de afeitar”},{v:“oneblade”,label:“OneBlade / Leaf Razor (pivote hoja única)”},{v:“beard”,label:“Mantengo barba — sin afeitado al ras”}],
+shaveOpts1:[{v:“cartridge”,label:“Maquinilla de cartucho (2–5 hojas)”},{v:“safety”,label:“Maquinilla de seguridad / doble filo (hoja única)”},{v:“electric_foil”,label:“Afeitadora eléctrica de lámina (Braun, Panasonic)”},{v:“electric_rotary”,label:“Afeitadora eléctrica rotatoria (Philips Norelco)”},{v:“straight”,label:“Navaja de afeitar”},{v:“oneblade”,label:“OneBlade / Leaf Razor (pivote hoja única)”},{v:“beard”,label:“Mantengo barba – sin afeitado al ras”}],
 shaveQ2:”¿Cómo describirías tu barba?”,
-shaveOpts2:[{v:“fine_straight”,label:“Fina y recta — crece suave, poca resistencia”},{v:“medium”,label:“Media — grosor y densidad promedio”},{v:“coarse_straight”,label:“Gruesa y recta — barba densa y pesada”},{v:“coarse_curly”,label:“Gruesa y rizada — rizos apretados, ondas o coils”},{v:“patchy”,label:“Irregular — densidad variable en la cara”}],
+shaveOpts2:[{v:“fine_straight”,label:“Fina y recta – crece suave, poca resistencia”},{v:“medium”,label:“Media – grosor y densidad promedio”},{v:“coarse_straight”,label:“Gruesa y recta – barba densa y pesada”},{v:“coarse_curly”,label:“Gruesa y rizada – rizos apretados, ondas o coils”},{v:“patchy”,label:“Irregular – densidad variable en la cara”}],
 shaveQ3:”¿Cuál es tu principal problema al afeitarte?”,
-shaveOpts3:[{v:“bumps”,label:“Granos de afeitar y pelos encarnados”},{v:“redness”,label:“Rojez, ardor e irritación”},{v:“dryness”,label:“Sequedad y tirante post-afeitado”},{v:“cuts”,label:“Cortes y heridas frecuentes”},{v:“none”,label:“Sin problemas significativos — solo optimizar”}],
+shaveOpts3:[{v:“bumps”,label:“Granos de afeitar y pelos encarnados”},{v:“redness”,label:“Rojez, ardor e irritación”},{v:“dryness”,label:“Sequedad y tirante post-afeitado”},{v:“cuts”,label:“Cortes y heridas frecuentes”},{v:“none”,label:“Sin problemas significativos – solo optimizar”}],
 shaveQ4:”¿Tienes actualmente granos de afeitar activos en la cara o el cuello?”,
-shaveOpts4:[{v:“none”,label:“Ninguno — sin granos en este momento”},{v:“mild”,label:“Leves — algunos granos ocasionales”},{v:“moderate”,label:“Moderados — varios granos, algunos inflamados”},{v:“severe”,label:“Severos — generalizados, dolorosos o causando cicatrices”}],
+shaveOpts4:[{v:“none”,label:“Ninguno – sin granos en este momento”},{v:“mild”,label:“Leves – algunos granos ocasionales”},{v:“moderate”,label:“Moderados – varios granos, algunos inflamados”},{v:“severe”,label:“Severos – generalizados, dolorosos o causando cicatrices”}],
 shaveQ5:”¿Qué maquinilla o hoja estás usando actualmente?”,
 shaveOpts5:[{v:“gillette”,label:“Gillette Fusion, Mach3 o cartucho similar”},{v:“dollar_shave”,label:“Dollar Shave Club o cartucho por suscripción”},{v:“merkur”,label:“Maquinilla de seguridad Merkur”},{v:“feather”,label:“Hoja Feather o maquinilla japonesa”},{v:“braun”,label:“Afeitadora eléctrica Braun”},{v:“philips”,label:“Philips Norelco eléctrica”},{v:“other”,label:“Otra marca o no estoy seguro”},{v:“none_currently”,label:“No me afeito regularmente en este momento”}],
 shaveQ6:”¿Con qué frecuencia te afeitas?”,
 shaveOpts6:[{v:“daily”,label:“Todos los días”},{v:“every_other”,label:“Un día de por medio”},{v:“twice_week”,label:“Dos veces a la semana”},{v:“weekly”,label:“Una vez a la semana o menos”}],
 shaveQ7:”¿Cuál es tu presupuesto mensual para el afeitado?”,
-shaveOpts7:[{v:“budget”,label:“Económico — Menos de $20/mes”},{v:“mid”,label:“Gama Media — $20–$50/mes”},{v:“premium”,label:“Premium — $50–$100/mes”},{v:“luxury”,label:“Lujo — $100+/mes”}],
+shaveOpts7:[{v:“budget”,label:“Económico – Menos de $20/mes”},{v:“mid”,label:“Gama Media – $20–$50/mes”},{v:“premium”,label:“Premium – $50–$100/mes”},{v:“luxury”,label:“Lujo – $100+/mes”}],
 analyzeShave:“Generar Mi Protocolo Clínico”,
 shaveAnalyzing:“Analizando tu perfil de afeitado…”,
 shaveResult:“Tu Protocolo Clínico de Afeitado”,
@@ -659,15 +1453,15 @@ treatmentProducts:“Tratamiento de Granos Activos”,
 shaveCritical:“Hallazgo Clínico”,
 medDisclaimer:“Este protocolo proporciona orientación clínica general. La pseudofoliculitis de la barba (granos de afeitar), irritación persistente o condiciones cutáneas sospechadas deben ser evaluadas por un dermatólogo certificado. Esto no es sustituto del consejo médico profesional.”,
 optionalTitle:“Desbloquea Tu Análisis Completo”,
-optionalSub:“Dos informes opcionales generados específicamente de tus resultados. No guías genéricas — construidos desde tu perfil exacto.”,
+optionalSub:“Dos informes opcionales generados específicamente de tus resultados. No guías genéricas – construidos desde tu perfil exacto.”,
 biologyTitle:“Conoce la Biología de Tu Piel”,
 biologyDesc:“La explicación celular completa de por qué tu piel se comporta exactamente como lo hace. El mecanismo biológico de cada ingrediente en tu protocolo. Tu trayectoria cutánea a largo plazo.”,
 routineCardTitle:“Tarjeta de Rutina Diaria Personalizada”,
-routineCardDesc:“Tus productos exactos, en tu orden exacto, con tus instrucciones exactas de aplicación — formateado como una tarjeta lista para imprimir para la pared de tu baño.”,
-comboTitle:“Ambos Informes — Mejor Valor”,
-unlockBtn:“Desbloquear — $10”,
-comboBtn:“Obtener Ambos — $15”,
-alreadyUnlocked:“◆ Informes Desbloqueados”,
+routineCardDesc:“Tus productos exactos, en tu orden exacto, con tus instrucciones exactas de aplicación – formateado como una tarjeta lista para imprimir para la pared de tu baño.”,
+comboTitle:“Ambos Informes – Mejor Valor”,
+unlockBtn:“Desbloquear – $10”,
+comboBtn:“Obtener Ambos – $15”,
+alreadyUnlocked:”* Informes Desbloqueados”,
 nav:{home:“Inicio”,analysis:“Análisis”,coach:“Coach”,checkin:“Progreso”,shave:“Afeitado”,guides:“Guías”,community:“Comunidad”},
 communityTitle:“La Comunidad SKINR”,
 communitySub:“Hombres reales. Resultados reales. Tipos de piel reales. Comparte tu progreso y lee lo que realmente funciona para hombres con tu perfil exacto.”,
@@ -675,19 +1469,19 @@ communityPost:“Compartir Mi Progreso”,
 communityFeed:“Hilo de Progreso”,
 communityEmpty:“Sin actualizaciones aún. Sé el primero en compartir tu progreso.”,
 communityShareTitle:“Compartir Tu Actualización”,
-communityShareSub:“Anónimo por defecto. Tu tipo de piel y actualización son visibles — tu nombre no.”,
+communityShareSub:“Anónimo por defecto. Tu tipo de piel y actualización son visibles – tu nombre no.”,
 communitySharePlaceholder:”¿Qué ha cambiado desde que empezaste tu protocolo? ¿Qué funciona? ¿Con qué luchas?”,
 communityShareBtn:“Publicar Mi Actualización”,
 communityCancel:“Cancelar”,
 communityPosted:“Tu actualización ha sido compartida.”,
-communityLike:“◆ Útil”,
+communityLike:”* Útil”,
 skinTypeLabel:“Tipo de Piel”,
 weekLabel:“Semana”,
 discordTitle:“Únete a la Conversación”,
-discordSub:“Para discusión en tiempo real, preguntas, y compartir antes/después — únete a la comunidad Discord de SKINR.”,
+discordSub:“Para discusión en tiempo real, preguntas, y compartir antes/después – únete a la comunidad Discord de SKINR.”,
 discordBtn:“Unirse a SKINR Discord”,
 guidesTitle:“Las Guías SKINR”,
-guidesSub:“La referencia escrita completa para todo lo que cubre el quiz — y todo lo que no puede cubrir en 60 segundos.”,
+guidesSub:“La referencia escrita completa para todo lo que cubre el quiz – y todo lo que no puede cubrir en 60 segundos.”,
 skincareGuideTitle:“La Guía Sin Rodeos de Cuidado de Piel para Hombres”,
 skincareGuideDesc:“Tu protocolo cutáneo completo. Fichas de puntuación de productos. Hoja de trucos de conflictos de ingredientes. Ajustes estacionales. Tarjetas de rutina imprimibles.”,
 shavingGuideTitle:“La Biblia del Afeitado”,
@@ -707,11 +1501,11 @@ of:”/”,
 translating:“Configurando tu idioma…”,
 storyLabel:“La Historia Detrás de SKINR”,
 storyTitle:“Por Qué Lo Construí”,
-storyP1:“Como hombre que se afeita todos los días, no tenía idea de lo que mi hoja estaba haciendo realmente a mi piel. Cada mañana — la misma rutina, la misma maquinilla, el mismo resultado. Granos de afeitar. Rojez. Irritación que duraba días. Iba a barberías que lo empeoraban. Cambiaba de productos constantemente — uno tras otro, esperando que algo funcionara, sin entender nunca por qué nada lo hacía.”,
-storyP2:“La respuesta, resultó, no estaba en un mejor producto. Estaba en entender mi piel. Una vez que aprendí mi tipo de piel, por qué mi hoja específica causaba granos, qué ingredientes funcionan para mi biología, y cómo construir una rutina en el orden correcto — todo cambió. Menos granos. Menos rojez. Mejor piel. Y por primera vez, verdadera confianza en mi apariencia.”,
-storyP3:“Por eso existe SKINR. Una sola plataforma donde cada hombre — sin importar su edad, tipo de piel o presupuesto — puede entender su biología cutánea, tomar las decisiones correctas sobre lo que pone en su cara, y construir una rutina que realmente funcione. No la rutina de otra persona. La suya.”,
+storyP1:“Como hombre que se afeita todos los días, no tenía idea de lo que mi hoja estaba haciendo realmente a mi piel. Cada mañana – la misma rutina, la misma maquinilla, el mismo resultado. Granos de afeitar. Rojez. Irritación que duraba días. Iba a barberías que lo empeoraban. Cambiaba de productos constantemente – uno tras otro, esperando que algo funcionara, sin entender nunca por qué nada lo hacía.”,
+storyP2:“La respuesta, resultó, no estaba en un mejor producto. Estaba en entender mi piel. Una vez que aprendí mi tipo de piel, por qué mi hoja específica causaba granos, qué ingredientes funcionan para mi biología, y cómo construir una rutina en el orden correcto – todo cambió. Menos granos. Menos rojez. Mejor piel. Y por primera vez, verdadera confianza en mi apariencia.”,
+storyP3:“Por eso existe SKINR. Una sola plataforma donde cada hombre – sin importar su edad, tipo de piel o presupuesto – puede entender su biología cutánea, tomar las decisiones correctas sobre lo que pone en su cara, y construir una rutina que realmente funcione. No la rutina de otra persona. La suya.”,
 missionLabel:“Nuestra Misión”,
-missionText:“Ser la plataforma única donde cada hombre descubre su biología cutánea, toma las decisiones correctas y cuida su piel — a cualquier edad.”,
+missionText:“Ser la plataforma única donde cada hombre descubre su biología cutánea, toma las decisiones correctas y cuida su piel – a cualquier edad.”,
 copyright:“Todos los derechos reservados.”,
 skinScore:“Puntuación de Piel”,
 consistencyRating:“Índice de Consistencia”,
@@ -739,20 +1533,20 @@ comingSoon:“Próximamente”,
 currencyNote:“Precios en USD.”,
 };
 
-// ── GET TRANSLATION — instant, zero API calls ─────────────────────────────────
+// – GET TRANSLATION – instant, zero API calls ———————————
 const getT = (langCode) => {
 if (langCode === “fr”) return {…BASE_T, …FR_T};
 if (langCode === “es”) return {…BASE_T, …ES_T};
 return BASE_T;
 };
 
-// Detect browser language on first visit — returns “en”, “fr”, or “es” only
+// Detect browser language on first visit – returns “en”, “fr”, or “es” only
 const detectBrowserLang = () => {
 const browser = (navigator.language || navigator.languages?.[0] || “en”).slice(0,2).toLowerCase();
 return SUPPORTED_LANGS.includes(browser) ? browser : “en”;
 };
 
-// ── SKIN QUIZ QUESTIONS ───────────────────────────────────────────────────────
+// – SKIN QUIZ QUESTIONS —————————————————––
 const getSkinQs = (t, lang) => [
 { id:“feel”,      q:t.q_feel,      opts:t.opts_feel.map((o,i)=>({v:[“dry”,“normal”,“oily”,“combo”][i],label:o}))      },
 { id:“breakouts”, q:t.q_breakouts, opts:t.opts_breakouts.map((o,i)=>({v:[“never”,“sometimes”,“often”,“always”][i],label:o})) },
@@ -762,23 +1556,23 @@ const getSkinQs = (t, lang) => [
 { id:“budget”,    q:t.q_budget,    opts:t.opts_budget.map((o,i)=>({v:[“budget”,“mid”,“premium”,“luxury”][i],label:o})) },
 ];
 
-// ── AI PROMPTS ────────────────────────────────────────────────────────────────
+// – AI PROMPTS ––––––––––––––––––––––––––––––––
 const buildSkinPrompt = (answers, lang) => {
 const ln = (LANGUAGES.find(l=>l.code===lang)?.label || “English”);
 const tier = answers.budget || “mid”;
 const brands = CONFIG.skinBrandsByTier[tier]?.join(”, “) || “The Ordinary, CeraVe”;
-return `You are a dermatologist. Respond ONLY in ${ln}. Return ONLY valid compact JSON — no markdown, no extra whitespace.
+return `You are a dermatologist. Respond ONLY in ${ln}. Return ONLY valid compact JSON – no markdown, no extra whitespace.
 
 Patient: feel=${answers.feel}, breakouts=${answers.breakouts}, sensitivity=${answers.sensitivity}, age=${answers.age}, concern=${answers.concern}, budget=${tier}
 Brands: ${brands}
 
-Return this JSON (keep all string values short — max 20 words each):
+Return this JSON (keep all string values short – max 20 words each):
 {“skinType”:“2-3 word type”,“code”:“TYPE-CODE”,“headline”:“one clinical sentence”,“summary”:“two sentences why and what needed”,“morning”:[{“step”:1,“product”:“exact name”,“brand”:“brand”,“category”:“cleanser|toner|serum|moisturizer|spf|treatment”,“estimatedPrice”:”$X”,“keyIngredient”:“ingredient”,“instruction”:“exact instruction”,“why”:“clinical reason”,“clinicalMechanism”:“mechanism”,“knownRating”:“X/5 Amazon”,“amazonSearch”:“search term”}],“evening”:[same structure max 3 products no SPF],“ingredientConflicts”:[],“avoid”:“ingredient to avoid and why”,“timeToResults”:“week 2 week 4 week 12”,“proTip”:“non-obvious insight”,“coachIntro”:“two sentence welcome”,“skinBiologyTeaser”:“two sentences biology teaser”}
 
 Rules: morning 3-4 products ending with SPF, evening 2-3 products no SPF, all on Amazon within ${tier} budget using brands: ${brands}.`;
 };
 
-// ── SHAVE PROMPT 1: Diagnosis + Blade (~500 output tokens, always completes) ──
+// – SHAVE PROMPT 1: Diagnosis + Blade (~500 output tokens, always completes) –
 const buildShavePrompt1 = (answers, skinProfile, lang) => {
 const ln = LANGUAGES.find(l => l.code === lang)?.label || “English”;
 const tier = answers.budget || “mid”;
@@ -788,7 +1582,7 @@ const bumps = answers.activeBumps || “none”;
 return `Shaving dermatologist. Language: ${ln}. CRITICAL: Return ONLY compact single-line JSON with NO whitespace, no newlines, no markdown, no code fences. Start with { end with }. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin}. Brands:${brands}. Fill this schema with real clinical values (keep strings under 15 words): {"clinicalFinding":"","severityAssessment":"","criticalRule":"","bladeRecommendation":{"recommendedType":"","specificModel":"","whyThisRazor":"","bladeGap":"","techniqueAdjustment":"","transitionNote":"","recommendedBlades":[{"name":"","estimatedPrice":"","why":"","rating":"","amazonSearch":""}]}}`;
 };
 
-// ── SHAVE PROMPT 2: Protocol + Products (~900 output tokens, loads lazily) ────
+// – SHAVE PROMPT 2: Protocol + Products (~900 output tokens, loads lazily) ––
 const buildShavePrompt2 = (answers, diagnosis, lang) => {
 const ln = LANGUAGES.find(l => l.code === lang)?.label || “English”;
 const tier = answers.budget || “mid”;
@@ -806,7 +1600,7 @@ const ln = (LANGUAGES.find(l=>l.code===lang)?.label || “English”);
 return `Respond ONLY in ${ln}. You are a clinical skincare coach reviewing a check-in. Patient skin type: ${profile?.skinType || "unknown"} Current status reported: ${mood} Protocol they are following: ${profile?.headline || "standard protocol"} Recent history: ${history?.slice(0,3).map(h=>h.mood).join(", ") || "first check-in"} Return ONE sentence of precise, actionable clinical advice specific to this status and skin type. No generic advice.`;
 };
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// – HELPERS —————————————————————––
 const getAffLink = (search) =>
 `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${CONFIG.business.affiliateTag}&linkCode=ur2`;
 
@@ -819,7 +1613,7 @@ if(checkins.length >= 7) s += 10;
 return Math.min(s, 100);
 };
 
-// ── CSS ───────────────────────────────────────────────────────────────────────
+// – CSS ———————————————————————–
 const CSS = `
 @import url(‘https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap’);
 
@@ -855,7 +1649,7 @@ text-transform:uppercase;cursor:pointer;border:none;background:none;}
 .logo:focus-visible{outline:2px solid var(–gold);outline-offset:3px;}
 .logo-m{width:17px;height:17px;border:1px solid var(–gold);display:flex;align-items:center;
 justify-content:center;font-size:7px;color:var(–gold);}
-.logo-m::after{content:‘◆’;}
+.logo-m::after{content:’*’;}
 .nav-c{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex:1;justify-content:center;}
 .nav-c::-webkit-scrollbar{display:none;}
 .ntab{background:none;border:none;border-bottom:2px solid transparent;padding:0 12px;
@@ -900,7 +1694,7 @@ padding:8px 16px;font-family:var(–fc);font-size:14px;font-weight:700;z-index:9
 /* HERO */
 .hero{padding:52px 0 44px;border-bottom:1px solid var(–border);}
 .hero-badge{display:inline-flex;align-items:center;gap:9px;font-family:var(–fc);font-size:13px;letter-spacing:4px;color:var(–soft);text-transform:uppercase;margin-bottom:24px;font-style:italic;}
-.hero-badge::before{content:‘◆’;color:var(–gold);font-size:8px;}
+.hero-badge::before{content:’*’;color:var(–gold);font-size:8px;}
 .hero-h{font-family:var(–fh);font-size:clamp(34px,6vw,60px);font-weight:900;line-height:.95;letter-spacing:-1px;font-style:italic;}
 .hero-h2{font-family:var(–fh);font-size:clamp(34px,6vw,60px);font-weight:900;line-height:.95;letter-spacing:-1px;color:var(–gold);margin-bottom:16px;}
 .hero-rule{width:44px;height:1px;background:var(–gold);margin:18px 0;}
@@ -932,7 +1726,7 @@ font-family:var(–fc);font-size:10px;letter-spacing:1px;font-style:italic;trans
 .p-btn{display:inline-flex;align-items:center;gap:9px;background:none;border:1px solid var(–border2);
 color:var(–soft);padding:13px 18px;font-family:var(–fc);font-size:13px;letter-spacing:2px;
 text-transform:uppercase;font-style:italic;cursor:pointer;transition:all .3s;width:100%;justify-content:space-between;}
-.p-btn::after{content:‘→’;font-family:var(–fh);font-size:16px;font-style:normal;transition:transform .3s;}
+.p-btn::after{content:’->’;font-family:var(–fh);font-size:16px;font-style:normal;transition:transform .3s;}
 .path-card:hover .p-btn{background:var(–gold);border-color:var(–gold);color:#060606;}
 .path-card:hover .p-btn::after{transform:translateX(4px);}
 
@@ -1003,7 +1797,7 @@ width:100%;background:transparent;color:var(–white);}
 .opt-m{width:15px;height:15px;border:1px solid var(–border2);flex-shrink:0;
 display:flex;align-items:center;justify-content:center;transition:all .25s;}
 .opt.sel .opt-m{border-color:var(–gold);background:var(–gold);}
-.opt.sel .opt-m::after{content:‘◆’;font-size:6px;color:#060606;}
+.opt.sel .opt-m::after{content:’*’;font-size:6px;color:#060606;}
 .opt-lbl{font-family:var(–fc);font-size:15px;color:var(–soft);transition:color .25s;font-style:italic;}
 .opt.sel .opt-lbl{color:var(–white);}
 .q-foot{display:flex;align-items:center;justify-content:space-between;}
@@ -1110,7 +1904,7 @@ color:var(–red);margin-bottom:5px;font-style:italic;}
 .coach-status{display:inline-flex;align-items:center;gap:7px;font-family:var(–fc);
 font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(–soft);
 font-style:italic;margin-bottom:7px;}
-.coach-status::before{content:‘◆’;font-size:7px;color:var(–green);animation:pulse-g 2s infinite;}
+.coach-status::before{content:’*’;font-size:7px;color:var(–green);animation:pulse-g 2s infinite;}
 @keyframes pulse-g{0%,100%{opacity:.4}50%{opacity:1}}
 .coach-h{font-family:var(–fh);font-size:24px;font-weight:900;font-style:italic;margin-bottom:5px;}
 .coach-s{font-family:var(–fc);font-size:14px;color:var(–soft);font-style:italic;}
@@ -1320,7 +2114,7 @@ border-top-color:var(–gold);border-radius:50%;animation:rs 1.5s linear infinit
 @keyframes rs{to{transform:rotate(360deg)}}
 .t-loading-text{font-family:var(–fc);font-size:13px;color:var(–soft);font-style:italic;letter-spacing:2px;}
 
-/* HAMBURGER MENU — hidden by default on desktop, shown on mobile */
+/* HAMBURGER MENU – hidden by default on desktop, shown on mobile */
 .hamburger-btn{display:none;flex-direction:column;justify-content:center;
 align-items:center;gap:5px;width:40px;height:40px;background:none;
 border:1px solid var(–border);cursor:pointer;padding:0;flex-shrink:0;
@@ -1336,7 +2130,7 @@ transition:all .3s;transform-origin:center;}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
 @media(forced-colors:active){.btn-p{background:Highlight;color:HighlightText;}.opt.sel{border-color:Highlight;}}
 
-/* Mobile breakpoint — hamburger:flex comes AFTER display:none above so it wins */
+/* Mobile breakpoint – hamburger:flex comes AFTER display:none above so it wins */
 @media(max-width:640px){
 .path-grid{grid-template-columns:1fr;}
 .mood-grid{grid-template-columns:1fr;}
@@ -1371,15 +2165,15 @@ z-index:499;animation:fadeIn .2s ease;}
 /* OLIVE color override for success/positive states */
 :root{–green:#5C6B3A;–green-light:rgba(92,107,58,0.15);}
 
-/* ── READABILITY UPGRADES ─────────────────────────────────────────────────────
+/* – READABILITY UPGRADES —————————————————–
 Three tiers:
-Critical (16px)  — clinical finding, critical rule, product instructions
-Reading  (15px)  — step instructions, summaries, week one, timeline
-Support  (14px)  — why, clinical mechanism, severity, supporting text
-Minimum  (13px)  — labels, badges, mood descriptions (nothing below this)
-Cormorant Garamond reads optically smaller than its point size — all sizes
+Critical (16px)  – clinical finding, critical rule, product instructions
+Reading  (15px)  – step instructions, summaries, week one, timeline
+Support  (14px)  – why, clinical mechanism, severity, supporting text
+Minimum  (13px)  – labels, badges, mood descriptions (nothing below this)
+Cormorant Garamond reads optically smaller than its point size – all sizes
 set 1-2px larger than equivalent sans-serif for equivalent perceived weight.
-────────────────────────────────────────────────────────────────────────────── */
+—————————————————————————— */
 
 /* Body text */
 .hero-body{font-size:17px;line-height:1.95;color:var(–cream);font-style:normal;}
@@ -1392,19 +2186,19 @@ set 1-2px larger than equivalent sans-serif for equivalent perceived weight.
 .opt.sel .opt-lbl{color:var(–white);}
 .opt{min-height:52px;padding:14px 16px;}
 
-/* ── SKIN ANALYSIS RESULTS ──────────────────────────────────── */
+/* – SKIN ANALYSIS RESULTS ———————————— */
 /* Profile banner */
 .p-hl{font-size:17px;color:var(–gold);line-height:1.5;margin-bottom:10px;}
 .p-sum{font-size:16px;line-height:1.9;color:var(–cream);font-style:normal;}
 
-/* Product cards — skin routine */
+/* Product cards – skin routine */
 .step-name{font-size:16px;}
 .step-instruction{font-size:16px;line-height:1.8;color:var(–white);font-style:normal;}
 .step-why{font-size:15px;line-height:1.8;color:var(–cream);font-style:normal;}
 .sci-text{font-size:15px;line-height:1.85;color:var(–cream);font-style:normal;}
 
-/* ── SHAVE PROTOCOL RESULTS ─────────────────────────────────── */
-/* Top findings — most critical text, largest size */
+/* – SHAVE PROTOCOL RESULTS ———————————– */
+/* Top findings – most critical text, largest size */
 .shave-finding-text{font-size:16px;line-height:1.85;color:var(–white);font-style:normal;}
 .shave-severity-text{font-size:15px;line-height:1.8;color:var(–cream);font-style:normal;}
 .crit-text{font-size:16px;line-height:1.85;color:var(–white);font-style:normal;}
@@ -1422,7 +2216,7 @@ set 1-2px larger than equivalent sans-serif for equivalent perceived weight.
 .step-instruction{font-size:16px;line-height:1.8;color:var(–white);font-style:normal;}
 .step-why{font-size:15px;line-height:1.8;color:var(–cream);font-style:normal;}
 
-/* ── SHARED ACROSS BOTH PROTOCOLS ───────────────────────────── */
+/* – SHARED ACROSS BOTH PROTOCOLS —————————– */
 /* Chat and community */
 .msg.ai .msg-bubble{font-size:15px;line-height:1.8;color:var(–white);}
 .post-text{font-size:15px;line-height:1.85;color:var(–cream);font-style:normal;}
@@ -1446,12 +2240,12 @@ textarea:focus-visible,select:focus-visible{
 outline:2px solid var(–gold);outline-offset:3px;border-radius:2px;}
 `;
 
-// ── SEO INJECTION ─────────────────────────────────────────────────────────────
+// – SEO INJECTION ———————————————————––
 const injectSEO = (lang) => {
 const titles = {
-en:“SKINR — AI Skincare & Shaving Protocol for Men | getskinr.com”,
-fr:“SKINR — Intelligence Cutanée et Rasage IA pour Hommes | getskinr.com”,
-es:“SKINR — Análisis de Piel y Afeitado IA para Hombres | getskinr.com”,
+en:“SKINR – AI Skincare & Shaving Protocol for Men | getskinr.com”,
+fr:“SKINR – Intelligence Cutanée et Rasage IA pour Hommes | getskinr.com”,
+es:“SKINR – Análisis de Piel y Afeitado IA para Hombres | getskinr.com”,
 };
 const descs = {
 en:“SKINR is the only free AI-powered skincare and shaving platform built exclusively for men. Answer 6 questions. Get a clinical skin profile, budget-matched product recommendations from multiple brands, and a personalised shaving protocol. Free. No appointments.”,
@@ -1494,7 +2288,7 @@ document.head.appendChild(s);
 };
 ld({”@context”:“https://schema.org”,”@type”:“SoftwareApplication”,“name”:“SKINR”,“applicationCategory”:“HealthApplication”,“operatingSystem”:“Web”,“description”:descs.en,“url”:“https://www.getskinr.com”,“inLanguage”:[“en”,“fr”,“es”],“isAccessibleForFree”:true,“offers”:{”@type”:“Offer”,“price”:“0”,“priceCurrency”:“USD”},“featureList”:[“AI clinical skin analysis”,“Budget-matched product recommendations”,“Multi-brand product catalog”,“AI shaving protocol”,“Personalised daily routine”,“AI coaching”,“Progress tracking”],“audience”:{”@type”:“Audience”,“audienceType”:“Men aged 18–65”}});
 ld({”@context”:“https://schema.org”,”@type”:“FAQPage”,“mainEntity”:[
-{”@type”:“Question”,“name”:“What skincare products do men actually need?”,“acceptedAnswer”:{”@type”:“Answer”,“text”:“Men need a cleanser, a moisturiser, and SPF 30+. The specific products depend on your skin type. SKINR’s free analysis at getskinr.com recommends exact products from brands matched to your budget — from The Ordinary and CeraVe for budget tiers to Kiehl’s and SkinCeuticals for premium budgets.”}},
+{”@type”:“Question”,“name”:“What skincare products do men actually need?”,“acceptedAnswer”:{”@type”:“Answer”,“text”:“Men need a cleanser, a moisturiser, and SPF 30+. The specific products depend on your skin type. SKINR’s free analysis at getskinr.com recommends exact products from brands matched to your budget – from The Ordinary and CeraVe for budget tiers to Kiehl’s and SkinCeuticals for premium budgets.”}},
 {”@type”:“Question”,“name”:“How do I get rid of razor bumps?”,“acceptedAnswer”:{”@type”:“Answer”,“text”:“Razor bumps are caused by curled hairs re-entering the skin. The most effective interventions are switching to a single-blade safety razor, applying adequate lubrication before shaving, and shaving with the grain only. SKINR’s shaving protocol at getskinr.com provides a personalised clinical protocol based on your specific method and skin type.”}},
 {”@type”:“Question”,“name”:“What is the best skincare routine for oily skin men?”,“acceptedAnswer”:{”@type”:“Answer”,“text”:“For oily skin, men need a salicylic acid cleanser, a lightweight serum to regulate sebum (such as niacinamide or NAG), a lightweight oil-free moisturiser, and a non-comedogenic SPF. SKINR at getskinr.com provides a personalised oily skin protocol with exact products matched to your budget.”}},
 {”@type”:“Question”,“name”:“Is SKINR free?”,“acceptedAnswer”:{”@type”:“Answer”,“text”:“Yes. The skin analysis, shaving protocol, product recommendations, and AI coach are all completely free at getskinr.com. Available in English, French, and Spanish.”}},
@@ -1503,7 +2297,7 @@ ld({”@context”:“https://schema.org”,”@type”:“FAQPage”,“mainEnt
 ld({”@context”:“https://schema.org”,”@type”:“Organization”,“name”:“SKINR”,“url”:“https://www.getskinr.com”,“description”:“AI-powered skincare and shaving protocol platform for men.”});
 };
 
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+// – MAIN COMPONENT ————————————————————
 export default function SkinrApp() {
 const [lang, setLang]         = useState(“en”);
 const [t, setT]               = useState(BASE_T);
@@ -1598,10 +2392,10 @@ const shaveQs = [
 {id:“budget”,      q:t.shaveQ7, opts:t.shaveOpts7},
 ];
 
-// ── CORE NAVIGATION & LANGUAGE (defined before useEffects that call them) ──
+// – CORE NAVIGATION & LANGUAGE (defined before useEffects that call them) –
 const go = (v) => { setAnim(true); setTimeout(()=>{setView(v);setAnim(false);},220); };
 
-// Language switching is now instant — no API calls, no spinner
+// Language switching is now instant – no API calls, no spinner
 const switchLang = (l) => {
 setLang(l);
 LS.set(SK.lang, l);
@@ -1630,7 +2424,7 @@ setCommunityPosts(LS.get(“skinr2:community”)||[]);
 setPostLikes(LS.get(“skinr2:likes”)||{});
 setReviews(LS.get(“skinr2:reviews”)||[]);
 setLang(initialLang);
-// Instant — static pre-translated files, zero API calls, zero delay
+// Instant – static pre-translated files, zero API calls, zero delay
 setT(getT(initialLang));
 if(initialLang !== “en”){
 document.documentElement.dir = LANGUAGES.find(x=>x.code===initialLang)?.dir || “ltr”;
@@ -1647,8 +2441,8 @@ return()=>clearInterval(iv);
 },[view,lang]);
 useEffect(()=>{chatRef.current?.scrollTo({top:chatRef.current.scrollHeight,behavior:“smooth”});},[messages]);
 
-// Load Stripe.js once on mount — non-blocking, only when needed
-// Publishable key is hardcoded — safe by design, Stripe built it to be public
+// Load Stripe.js once on mount – non-blocking, only when needed
+// Publishable key is hardcoded – safe by design, Stripe built it to be public
 const STRIPE_PK = “pk_live_51RNjveCi5YWsRAVAPPi9HGHutU3PY6bxnE1r5ty317sVlilm5eRH07ivsLnuddSNc9ydpNqQv280yfuwPuvBBtbt00t0MNZPwi”;
 useEffect(()=>{
 if(window.Stripe){ setStripeLoaded(true); setStripeObj(window.Stripe(STRIPE_PK)); return; }
@@ -1662,7 +2456,7 @@ setStripeObj(window.Stripe(STRIPE_PK));
 document.head.appendChild(script);
 },[]);
 
-// Open payment modal — fetch clientSecret from our Netlify function
+// Open payment modal – fetch clientSecret from our Netlify function
 const openPayment = async (product) => {
 setPayModal(product);
 setPayError(””);
@@ -1688,7 +2482,7 @@ setPayError(e.message);
 setPayLoading(false);
 };
 
-// Payment Request Button state — handles Apple Pay + Google Pay
+// Payment Request Button state – handles Apple Pay + Google Pay
 const [paymentRequest, setPaymentRequest] = useState(null);
 const [prButtonAvailable, setPrButtonAvailable] = useState(false);
 
@@ -1697,7 +2491,7 @@ useEffect(()=>{
 if(!clientSecret || !stripeObj || !payModal) return;
 
 ```
-// ── PAYMENT REQUEST BUTTON (Apple Pay / Google Pay) ──
+// -- PAYMENT REQUEST BUTTON (Apple Pay / Google Pay) --
 const AMOUNTS = {
   "biology":1500,"routine":1200,"skin-combo":2200,
   "shave-biology":1500,"shave-card":1200,"shave-combo":2200,
@@ -1748,7 +2542,7 @@ pr.on("paymentmethod", async (ev) => {
     setPayError(confirmError.message);
   } else {
     ev.complete("success");
-    // Unlock purchased product — Apple Pay path
+    // Unlock purchased product -- Apple Pay path
     const p = payModal;
     if(p==="biology"    || p==="skin-combo") { setBiologyUnlocked(true);     LS.set("skinr2:biologyUnlocked",true); }
     if(p==="routine"    || p==="skin-combo") { setRoutineUnlocked(true);     LS.set("skinr2:routineUnlocked",true); }
@@ -1763,7 +2557,7 @@ pr.on("paymentmethod", async (ev) => {
   }
 });
 
-// ── CARD ELEMENT ──
+// -- CARD ELEMENT --
 const container = document.getElementById("skinr-card-element");
 if(!container || container.children.length > 0) return;
 const elements = stripeObj.elements();
@@ -1788,7 +2582,7 @@ return ()=>{
 
 },[clientSecret, stripeObj, payModal]); // eslint-disable-line
 
-// Confirm payment — card data goes directly to Stripe, never to our server
+// Confirm payment – card data goes directly to Stripe, never to our server
 const confirmPayment = async () => {
 if(!stripeObj || !cardElement || !clientSecret) return;
 setPayLoading(true);
@@ -1850,7 +2644,7 @@ const toggleSci = (id) => setExpanded(p=>{const n=new Set(p);n.has(id)?n.delete(
 const has = !!profile;
 const hasShave = !!savedShave;
 
-// ── SKIN QUIZ ──
+// – SKIN QUIZ –
 const startSkinQuiz = () => {
 setAnswers({}); setCurrentQ(0); setSelected(null); setPrevStack([]); go(“quiz”);
 };
@@ -1896,14 +2690,14 @@ setView(“home”);
 }
 };
 
-// ── SHAVE QUIZ ──
+// – SHAVE QUIZ –
 const startShaveQuiz = () => {
 setShaveStep(0); setShaveAns({}); setShaveSel(null);
 setShaveResult(null); setShavePrev([]); setShaveError(false);
 go(“shave”);
 };
 
-// On mount — if savedShave exists, populate shaveResult so returning users
+// On mount – if savedShave exists, populate shaveResult so returning users
 // see their protocol immediately without regenerating
 useEffect(() => {
 if (savedShave && !shaveResult) {
@@ -1931,14 +2725,14 @@ setShaveLoad(false);
 }
 };
 const runShaveAnalysis = async (ans) => {
-// ── STAGE 1: Diagnosis + Blade (fast, ~3-5 seconds) ──────────────────────
+// – STAGE 1: Diagnosis + Blade (fast, ~3-5 seconds) –––––––––––
 let diagnosis = null;
 for (let attempt = 1; attempt <= 3; attempt++) {
 try {
 console.log(`Shave stage 1, attempt ${attempt}/3`);
 const raw = await callAI([{ role: “user”, content: buildShavePrompt1(ans, profile, lang) }], “”, 800);
-console.log(`Stage 1 attempt ${attempt} → length=${raw.length}`);
-if (!raw || raw.length < 30) { console.warn(“Stage 1 empty — retry”); continue; }
+console.log(`Stage 1 attempt ${attempt} -> length=${raw.length}`);
+if (!raw || raw.length < 30) { console.warn(“Stage 1 empty – retry”); continue; }
 const parsed = parseJSON(raw);
 if (!parsed?.clinicalFinding) { console.warn(“Stage 1 parse failed:”, raw.slice(0, 100)); continue; }
 diagnosis = parsed;
@@ -1948,21 +2742,21 @@ break;
 
 ```
 if (!diagnosis) {
-  console.error("Stage 1 failed — all attempts exhausted");
+  console.error("Stage 1 failed -- all attempts exhausted");
   setShaveError(true);
   return;
 }
 
-// Show partial results immediately — user can read while stage 2 loads
+// Show partial results immediately -- user can read while stage 2 loads
 setShaveResult(diagnosis);
 
-// ── STAGE 2: Protocol + Products (loads progressively while user reads) ──
+// -- STAGE 2: Protocol + Products (loads progressively while user reads) --
 for (let attempt = 1; attempt <= 3; attempt++) {
   try {
     console.log(`Shave stage 2, attempt ${attempt}/3`);
     const raw = await callAI([{ role: "user", content: buildShavePrompt2(ans, diagnosis.clinicalFinding, lang) }], "", 1200);
-    console.log(`Stage 2 attempt ${attempt} → length=${raw.length}`);
-    if (!raw || raw.length < 30) { console.warn("Stage 2 empty — retry"); continue; }
+    console.log(`Stage 2 attempt ${attempt} -> length=${raw.length}`);
+    if (!raw || raw.length < 30) { console.warn("Stage 2 empty -- retry"); continue; }
     const parsed = parseJSON(raw);
     if (!parsed?.preShave) { console.warn("Stage 2 parse failed:", raw.slice(0, 100)); continue; }
     // Merge stage 2 into the already-displayed stage 1 result
@@ -1975,8 +2769,8 @@ for (let attempt = 1; attempt <= 3; attempt++) {
     return;
   } catch (e) { console.error(`Stage 2 attempt ${attempt}:`, e.message); }
 }
-// Stage 2 failed but stage 1 succeeded — save partial result, still useful
-console.warn("Stage 2 failed — saving partial result from stage 1");
+// Stage 2 failed but stage 1 succeeded -- save partial result, still useful
+console.warn("Stage 2 failed -- saving partial result from stage 1");
 setSavedShave({ ...diagnosis, answers: ans });
 LS.set(SK.shave, { ...diagnosis, answers: ans });
 if (!LS.get(SK.email)) setShowEmail(true);
@@ -1984,7 +2778,7 @@ if (!LS.get(SK.email)) setShowEmail(true);
 
 };
 
-// ── COACH ──
+// – COACH –
 const sendMsg = async () => {
 const text = inputVal.trim(); if(!text||coachLoad) return;
 setInputVal(””); const upd=[…messages,{role:“user”,text}]; setMessages(upd); setCoachLoad(true);
@@ -1997,7 +2791,7 @@ const f=[…upd,{role:“ai”,text:r}]; setMessages(f); saveChat(f);
 setCoachLoad(false);
 };
 
-// ── CHECKIN ──
+// – CHECKIN –
 const submitCheckin = async () => {
 if(!checkinMood||ciLoad) return; setCiLoad(true);
 try {
@@ -2011,12 +2805,12 @@ const upd=[entry,…checkins].slice(0,20); setCheckins(upd); LS.set(SK.checkins,
 setCiLoad(false);
 };
 
-// ── BIOLOGY REPORT GENERATION ──
+// – BIOLOGY REPORT GENERATION –
 const generateBioReport = async () => {
 if(!profile||bioLoad) return;
 setBioLoad(true);
 const ln=(LANGUAGES.find(l=>l.code===lang)?.label || “English”);
-const prompt = `You are a dermatologist and cell biologist. Write a complete, detailed skin biology report for this man in ${ln}. This is a paid report — it must be comprehensive, precise, and genuinely educational.
+const prompt = `You are a dermatologist and cell biologist. Write a complete, detailed skin biology report for this man in ${ln}. This is a paid report – it must be comprehensive, precise, and genuinely educational.
 
 Patient profile: ${JSON.stringify(profile)}
 Skin type: ${profile.skinType}
@@ -2024,14 +2818,14 @@ Answers: ${JSON.stringify(profile.answers)}
 
 Write in flowing prose (no bullet points). Cover:
 
-1. WHAT YOUR SKIN TYPE MEANS AT A CELLULAR LEVEL — explain the sebaceous gland activity, keratinocyte behaviour, and barrier function specific to this skin type
-1. WHY YOUR SKIN BEHAVES THIS WAY — genetic and environmental factors that determine this skin type
-1. THE MECHANISM OF ACTION OF YOUR RECOMMENDED INGREDIENTS — for each key ingredient in their protocol, explain precisely how it works at a molecular level
-1. YOUR LONG-TERM SKIN TRAJECTORY — what happens to this skin type over time, how it changes by decade, what to expect
-1. WHAT HAPPENS IF YOU FOLLOW THE PROTOCOL — specific physiological changes in the first 4 weeks, 3 months, and 6 months
-1. WHAT HAPPENS IF YOU DON’T — specific long-term consequences of neglecting this skin type
-1. SEASONAL ADJUSTMENTS — specific protocol changes for winter and summer
-1. THE FIVE INGREDIENTS YOU MUST NEVER USE — specific to this skin type and why at a chemical level
+1. WHAT YOUR SKIN TYPE MEANS AT A CELLULAR LEVEL – explain the sebaceous gland activity, keratinocyte behaviour, and barrier function specific to this skin type
+1. WHY YOUR SKIN BEHAVES THIS WAY – genetic and environmental factors that determine this skin type
+1. THE MECHANISM OF ACTION OF YOUR RECOMMENDED INGREDIENTS – for each key ingredient in their protocol, explain precisely how it works at a molecular level
+1. YOUR LONG-TERM SKIN TRAJECTORY – what happens to this skin type over time, how it changes by decade, what to expect
+1. WHAT HAPPENS IF YOU FOLLOW THE PROTOCOL – specific physiological changes in the first 4 weeks, 3 months, and 6 months
+1. WHAT HAPPENS IF YOU DON’T – specific long-term consequences of neglecting this skin type
+1. SEASONAL ADJUSTMENTS – specific protocol changes for winter and summer
+1. THE FIVE INGREDIENTS YOU MUST NEVER USE – specific to this skin type and why at a chemical level
 
 Write at the level of a highly educated non-specialist. Precise but accessible. Approximately 800-1000 words total.`;
 try {
@@ -2056,12 +2850,12 @@ source:“SKINR Biology Report Delivery”,
 setBioLoad(false);
 };
 
-// ── ROUTINE CARD GENERATION ──
+// – ROUTINE CARD GENERATION –
 const generateRoutineCard = async () => {
 if(!profile||cardLoad) return;
 setCardLoad(true);
 const ln=(LANGUAGES.find(l=>l.code===lang)?.label || “English”);
-const prompt = `You are a clinical dermatologist creating a premium personalised routine card in ${ln}. Return ONLY valid JSON — no markdown.
+const prompt = `You are a clinical dermatologist creating a premium personalised routine card in ${ln}. Return ONLY valid JSON – no markdown.
 
 Patient: skinType=${profile.skinType}, concern=${profile.answers?.concern||“general”}, age=${profile.answers?.age||“adult”}, sensitivity=${profile.answers?.sensitivity||“normal”}, budget=${profile.answers?.budget||“mid”}
 Morning products: ${profile.morning?.map(p=>p.product+” (”+p.brand+”)”).join(”, “)||“from profile”}
@@ -2077,17 +2871,17 @@ Return this exact JSON:
 “brand”: “brand name”,
 “instruction”: “Precise how-to: amount, technique, direction. E.g. Wet face. Dispense 2 pumps. Massage 45 seconds in circular motions. Rinse with cool water.”,
 “timing”: “e.g. 30 seconds”,
-“why”: “Clinical reason this step matters for this specific skin type — one sentence”
+“why”: “Clinical reason this step matters for this specific skin type – one sentence”
 }
 ],
 “evening”: [same structure, 2-3 steps, no SPF],
 “goldenRules”: [
-“Most important rule specific to this skin type — max 12 words”,
+“Most important rule specific to this skin type – max 12 words”,
 “Second rule”,
 “Third rule”
 ],
-“weeklyAdd”: “One weekly treatment specifically for this skin type — product and method”,
-“rememberLine”: “The single most powerful thing to remember about this skin — one sentence”
+“weeklyAdd”: “One weekly treatment specifically for this skin type – product and method”,
+“rememberLine”: “The single most powerful thing to remember about this skin – one sentence”
 }
 
 Rules:
@@ -2096,7 +2890,7 @@ Rules:
 - Evening: 2-3 steps. Never include SPF. Last step is always moisturiser.
 - instruction must be specific: exact ml/drops/pumps, exact technique, exact duration
 - why must explain the clinical mechanism for THIS skin type specifically
-- goldenRules must be personalised — not generic advice any person could give`;
+- goldenRules must be personalised – not generic advice any person could give`;
   try {
   const raw = await callAI([{role:“user”,content:prompt}], “”, 2000);
   const parsed = parseJSON(raw);
@@ -2122,14 +2916,14 @@ Rules:
   setCardLoad(false);
   };
   
-  // ── EMAIL CAPTURE ──
+  // – EMAIL CAPTURE –
   const submitEmail = async () => {
   if(!emailVal.trim()) return;
   LS.set(SK.email, emailVal.trim());
   setEmailSaved(emailVal.trim());
   track(“email_capture”, {source: “modal”});
   setEmailDone(true);
-  // Send to Formspree — sign up free at formspree.io and replace YOUR_FORM_ID
+  // Send to Formspree – sign up free at formspree.io and replace YOUR_FORM_ID
   try {
   await fetch(“https://formspree.io/f/261158684435060”, {
   method: “POST”,
@@ -2142,11 +2936,11 @@ Rules:
   _subject: “New SKINR Protocol Request”,
   }),
   });
-  } catch(e) { /* Formspree will retry — do not show error to user */ }
+  } catch(e) { /* Formspree will retry – do not show error to user */ }
   setTimeout(()=>{ setShowEmail(false); setEmailDone(false); }, 2500);
   };
   
-  // ── COMMUNITY ──
+  // – COMMUNITY –
   const submitPost = () => {
   if(!shareText.trim()) return;
   const skinW = profile?.checkins?.length || checkins.length;
@@ -2192,7 +2986,7 @@ Rules:
   setTimeout(()=>setReviewPosted(false), 4000);
   };
   
-  // ── PRODUCT CATEGORY ICON ──
+  // – PRODUCT CATEGORY ICON –
   // Shows a category-specific SVG icon when no product image is available
   const ProductIcon = ({category}) => {
   const icons = {
@@ -2221,9 +3015,9 @@ Rules:
   const skinProg = ((currentQ+(selected?1:0))/skinQs.length)*100;
   const shaveProg = ((shaveStep+(shaveSel?1:0))/shaveQs.length)*100;
   
-  // Nav items — only show sections relevant to the user’s progress
+  // Nav items – only show sections relevant to the user’s progress
   // Home and Guides always visible. Others appear after completing analysis.
-  // NAV_ITEMS — shown in desktop tab bar and mobile dropdown
+  // NAV_ITEMS – shown in desktop tab bar and mobile dropdown
   // HOME is placed next to the logo separately in JSX
   // GUIDES only shows after at least one protocol is completed
   const NAV_ITEMS = [
@@ -2232,7 +3026,7 @@ Rules:
   …(has ? [{id:“checkin”,   l:t.nav.checkin}]  : []),
   …(hasShave ? [{id:“shave”,l:t.nav.shave}]    : []),
   …((has||hasShave) ? [{id:“community”,l:t.nav.community}] : []),
-  {id:“guides”, l:t.nav.guides}, // Always visible — guides are generic, no analysis needed
+  {id:“guides”, l:t.nav.guides}, // Always visible – guides are generic, no analysis needed
   ];
   
   if(!ready) return (
@@ -2255,9 +3049,9 @@ Rules:
   {/* NAV */}
   <nav className="nav" role="navigation" aria-label="Main navigation">
   
-    {/* Left — logo + HOME immediately after */}
+    {/* Left -- logo + HOME immediately after */}
     <div style={{display:"flex",alignItems:"stretch",flexShrink:0}}>
-      <button className="logo" onClick={()=>{go("home");setMenuOpen(false);}} aria-label="SKINR — Home">
+      <button className="logo" onClick={()=>{go("home");setMenuOpen(false);}} aria-label="SKINR -- Home">
         <div className="logo-m" aria-hidden="true"/>{t.appName}
       </button>
       <button className={`ntab${view==="home"?" active":""}`}
@@ -2267,7 +3061,7 @@ Rules:
       </button>
     </div>
   
-    {/* Centre — remaining nav tabs (desktop only) */}
+    {/* Centre -- remaining nav tabs (desktop only) */}
     <div className="nav-c" role="menubar">
       {NAV_ITEMS.map(tb=>(
         <button key={tb.id}
@@ -2279,10 +3073,10 @@ Rules:
       ))}
     </div>
   
-    {/* Right — hamburger (mobile) + language */}
+    {/* Right -- hamburger (mobile) + language */}
     <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
   
-      {/* Hamburger — mobile only */}
+      {/* Hamburger -- mobile only */}
       <div ref={menuRef} style={{position:"relative"}}>
         <button className="hamburger-btn"
           onClick={()=>setMenuOpen(p=>!p)}
@@ -2294,20 +3088,20 @@ Rules:
         </button>
         {menuOpen&&(
           <>
-            {/* Dimmed overlay — tap to close */}
+            {/* Dimmed overlay -- tap to close */}
             <div className="mobile-menu-overlay" onClick={()=>setMenuOpen(false)}/>
             <div className="mobile-menu" role="menu">
               <button role="menuitem"
                 className={`mobile-menu-item${view==="home"?" active":""}`}
                 onClick={()=>{go("home");setMenuOpen(false);}}>
-                <span style={{color:"var(--gold)",fontSize:8,opacity:view==="home"?1:0}}>◆</span>
+                <span style={{color:"var(--gold)",fontSize:8,opacity:view==="home"?1:0}}>*</span>
                 {t.nav.home}
               </button>
               {NAV_ITEMS.map(tb=>(
                 <button key={tb.id} role="menuitem"
                   className={`mobile-menu-item${view===tb.id?" active":""}`}
                   onClick={()=>{go(tb.id);setMenuOpen(false);}}>
-                  <span style={{color:"var(--gold)",fontSize:8,opacity:view===tb.id?1:0}}>◆</span>
+                  <span style={{color:"var(--gold)",fontSize:8,opacity:view===tb.id?1:0}}>*</span>
                   {tb.l}
                 </button>
               ))}
@@ -2327,7 +3121,7 @@ Rules:
             cursor:"pointer",display:"flex",alignItems:"center",gap:6,
             transition:"all .25s",textTransform:"uppercase",whiteSpace:"nowrap"}}>
           {LANGUAGES.find(l=>l.code===lang)?.native||"EN"}
-          <span style={{fontSize:7,opacity:.6}}>{langOpen?"▲":"▼"}</span>
+          <span style={{fontSize:7,opacity:.6}}>{langOpen?"^":"v"}</span>
         </button>
         {langOpen&&(
           <div style={{position:"absolute",top:"calc(100% + 4px)",right:0,
@@ -2342,7 +3136,7 @@ Rules:
                   cursor:"pointer",textAlign:"left",fontStyle:"italic",
                   display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
                 <span>{l.native}</span>
-                {lang===l.code&&<span style={{color:"var(--gold)",fontSize:8}}>◆</span>}
+                {lang===l.code&&<span style={{color:"var(--gold)",fontSize:8}}>*</span>}
               </button>
             ))}
           </div>
@@ -2353,7 +3147,7 @@ Rules:
   
   <div id="main-content" style={{width:"100%",display:"contents"}}>
   
-  {/* ── HOME ── */}
+  {/* -- HOME -- */}
   {view==="home"&&<div className="wrap fade-in">
     <div className="hero">
       <div className="hero-badge">{t.badge}</div>
@@ -2368,7 +3162,7 @@ Rules:
         border:"1px solid var(--border)",borderLeft:"3px solid var(--gold)",
         padding:"14px 18px",marginTop:28,background:"rgba(184,151,42,0.04)"
       }}>
-        <div style={{color:"var(--gold)",fontSize:14,flexShrink:0,marginTop:1}}>◆</div>
+        <div style={{color:"var(--gold)",fontSize:14,flexShrink:0,marginTop:1}}>*</div>
         <div>
           <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
             color:"var(--gold)",textTransform:"uppercase",marginBottom:5}}>
@@ -2391,26 +3185,26 @@ Rules:
       <div className="path-title">{t.pathTitle}</div>
       <div className="path-sub">{t.pathSub}</div>
       <div className="path-grid">
-        {/* SHAVE CARD — moved to position I (all men shave) */}
+        {/* SHAVE CARD -- moved to position I (all men shave) */}
         <div className="path-card" onClick={startShaveQuiz} tabIndex={0} role="button"
           onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&startShaveQuiz()}
           aria-label={`Start shave protocol: ${t.shaveCardTitle}`}>
           <div className="p-inner">
             <div className="p-num">I</div>
-            <div className="p-tag">◆ {t.shaveCardTitle}</div>
+            <div className="p-tag">* {t.shaveCardTitle}</div>
             <div className="p-title">{t.shaveCardTitle}</div>
             <div className="p-desc">{t.shaveCardDesc}</div>
             <div className="p-pills">{t.shaveCardPills.map(p=><span key={p} className="p-pill">{p}</span>)}</div>
             <button className="p-btn">{t.shaveCardBtn}</button>
           </div>
         </div>
-        {/* SKIN ANALYSIS CARD — position II */}
+        {/* SKIN ANALYSIS CARD -- position II */}
         <div className="path-card" onClick={startSkinQuiz} tabIndex={0} role="button"
           onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&startSkinQuiz()}
           aria-label={`Start skin analysis: ${t.skinCardTitle}`}>
           <div className="p-inner">
             <div className="p-num">II</div>
-            <div className="p-tag">◆ {t.skinCardTitle}</div>
+            <div className="p-tag">* {t.skinCardTitle}</div>
             <div className="p-title">{t.skinCardTitle}</div>
             <div className="p-desc">{t.skinCardDesc}</div>
             <div className="p-pills">{t.skinCardPills.map(p=><span key={p} className="p-pill">{p}</span>)}</div>
@@ -2465,11 +3259,11 @@ Rules:
       </div>}
     </div>}
   
-    {/* ── FOUNDER STORY FOOTER ── */}
+    {/* -- FOUNDER STORY FOOTER -- */}
     <footer style={{borderTop:"1px solid var(--border)",marginTop:52,paddingTop:40,paddingBottom:32,position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:"1px",background:"linear-gradient(90deg,transparent,var(--gold),transparent)"}}/>
   
-      {/* ── REVIEWS ── */}
+      {/* -- REVIEWS -- */}
       <div style={{marginBottom:48}}>
         <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",
           textTransform:"uppercase",marginBottom:6}}>
@@ -2497,7 +3291,7 @@ Rules:
           {reviewPosted?(
             <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--gold)",fontStyle:"italic",
               padding:"16px",border:"1px solid var(--goldb)",textAlign:"center"}}>
-              ◆ {lang==="fr"?"Merci — on a bien reçu ton avis.":lang==="es"?"Gracias — hemos recibido tu reseña.":"Thank you — your review has been received."}
+              * {lang==="fr"?"Merci -- on a bien reçu ton avis.":lang==="es"?"Gracias -- hemos recibido tu reseña.":"Thank you -- your review has been received."}
             </div>
           ):(
             <>
@@ -2567,9 +3361,9 @@ Rules:
       {/* Footer bar */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:14,borderTop:"1px solid var(--border)",paddingTop:20}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:14,height:14,border:"1px solid var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"var(--gold)"}}>◆</div>
+          <div style={{width:14,height:14,border:"1px solid var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"var(--gold)"}}>*</div>
           <span style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:900,letterSpacing:3,color:"var(--white)",textTransform:"uppercase"}}>SKINR</span>
-          <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic"}}>— getskinr.com</span>
+          <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic"}}>-- getskinr.com</span>
         </div>
         <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"right",lineHeight:1.7}}>
           <div>Free. Clinical. Built for Men.</div>
@@ -2595,7 +3389,7 @@ Rules:
   
   </div>}
   
-  {/* ── SKIN QUIZ ── */}
+  {/* -- SKIN QUIZ -- */}
   {view==="quiz"&&<div className="wrap" style={{opacity:anim?0:1,transition:"opacity .22s"}}>
     <div className="quiz-wrap">
       <div className="quiz-hdr">
@@ -2626,7 +3420,7 @@ Rules:
     </div>
   </div>}
   
-  {/* ── ANALYZING ── */}
+  {/* -- ANALYZING -- */}
   {view==="analyzing"&&<div className="wrap fade-in"><div className="load-wrap">
     <svg className="load-svg" width="72" height="72" viewBox="0 0 72 72">
       <circle cx="36" cy="36" r="32" fill="none" stroke="#1A1A1A" strokeWidth="1"/>
@@ -2637,10 +3431,10 @@ Rules:
     <div className="load-line"/>
   </div></div>}
   
-  {/* ── RESULTS ── */}
+  {/* -- RESULTS -- */}
   {view==="results"&&profile&&<div className="wrap fade-in">
     <div className="res-wrap">
-      {/* Language mismatch — results were generated in a different language */}
+      {/* Language mismatch -- results were generated in a different language */}
       {profile.lang && profile.lang !== lang && (
         <div style={{
           border:"2px solid var(--gold)",background:"var(--gold3)",
@@ -2660,13 +3454,13 @@ Rules:
           </div>
           <button className="btn btn-p" onClick={startSkinQuiz}
             style={{width:"100%",fontSize:13}}>
-            Retake in {LANGUAGES.find(l=>l.code===lang)?.native} — 60 seconds
+            Retake in {LANGUAGES.find(l=>l.code===lang)?.native} -- 60 seconds
           </button>
         </div>
       )}
   
       <div className="prof-banner">
-        <div className="p-code">{t.analysisComplete} — {profile.code}</div>
+        <div className="p-code">{t.analysisComplete} -- {profile.code}</div>
         <div className="p-type">{profile.skinType}</div>
         <div className="p-hl">{profile.headline}</div>
         <div className="p-sum">{profile.summary}</div>
@@ -2681,7 +3475,7 @@ Rules:
       )}
   
       {/* Morning */}
-      <div className="period-hdr"><span className="sec-mark">◆</span> {t.morning}</div>
+      <div className="period-hdr"><span className="sec-mark">*</span> {t.morning}</div>
       {profile.morning?.map((step,i)=>{
         const key=`m${i}`;
         return(
@@ -2727,7 +3521,7 @@ Rules:
       );})}
   
       {/* Evening */}
-      <div className="period-hdr" style={{marginTop:20}}><span className="sec-mark">◆</span> {t.evening}</div>
+      <div className="period-hdr" style={{marginTop:20}}><span className="sec-mark">*</span> {t.evening}</div>
       {profile.evening?.map((step,i)=>{
         const key=`e${i}`;
         return(
@@ -2779,7 +3573,7 @@ Rules:
         {profile.timeToResults&&<div className="ins-box tip"><div className="ins-lbl">{t.expectedTimeline}</div><div className="ins-text">{profile.timeToResults}</div></div>}
       </div>
   
-      {/* Optional reports panel — shown after skin analysis too */}
+      {/* Optional reports panel -- shown after skin analysis too */}
       {profile&&(
         <div style={{border:"1px solid var(--goldb)",marginTop:20,position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
@@ -2808,7 +3602,7 @@ Rules:
               ):(
                 <button className="btn btn-p" style={{width:"100%",fontSize:11}}
                   onClick={()=>openPayment("biology")}>
-                  {t.unlockBtn} — ${CONFIG.business.biologyReportPrice}
+                  {t.unlockBtn} -- ${CONFIG.business.biologyReportPrice}
                 </button>
               )}
             </div>
@@ -2822,7 +3616,7 @@ Rules:
                     <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,fontStyle:"italic",marginBottom:12,color:"var(--gold)"}}>{cardReport.title}</div>
                     {cardReport.morning?.length>0&&(
                       <div style={{marginBottom:14}}>
-                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>☀ Morning</div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}> Morning</div>
                         {cardReport.morning.map((s,i)=>(
                           <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<cardReport.morning.length-1?"1px solid var(--border)":"none"}}>
                             <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
@@ -2840,7 +3634,7 @@ Rules:
                     )}
                     {cardReport.evening?.length>0&&(
                       <div style={{marginBottom:14}}>
-                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>☽ Evening</div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}> Evening</div>
                         {cardReport.evening.map((s,i)=>(
                           <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:i<cardReport.evening.length-1?"1px solid var(--border)":"none"}}>
                             <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
@@ -2860,7 +3654,7 @@ Rules:
                       <div style={{borderTop:"1px solid var(--border)",paddingTop:10,marginTop:4}}>
                         <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>Golden Rules</div>
                         {cardReport.goldenRules.map((r,i)=>(
-                          <div key={i} style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic",marginBottom:4}}>◆ {r}</div>
+                          <div key={i} style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"italic",marginBottom:4}}>* {r}</div>
                         ))}
                       </div>
                     )}
@@ -2874,7 +3668,7 @@ Rules:
               ):(
                 <button className="btn btn-p" style={{width:"100%",fontSize:11}}
                   onClick={()=>openPayment("routine")}>
-                  {t.unlockBtn} — ${CONFIG.business.routineCardPrice}
+                  {t.unlockBtn} -- ${CONFIG.business.routineCardPrice}
                 </button>
               )}
             </div>
@@ -2887,10 +3681,10 @@ Rules:
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <button className="btn btn-p" style={{width:"100%",fontSize:12}}
                   onClick={()=>openPayment("skin-combo")}>
-                  ◆ {t.comboBtn} — ${CONFIG.business.skinComboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
+                  * {t.comboBtn} -- ${CONFIG.business.skinComboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
                 </button>
                 <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center"}}>
-                  {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe — card data never stored on our servers"}
+                  {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe -- card data never stored on our servers"}
                 </div>
               </div>
             )}
@@ -2905,7 +3699,7 @@ Rules:
           <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:8}}>{lang==="fr"?"Allez Plus Loin":lang==="es"?"Ve Más Lejos":"Take It Further."}</div>
           <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",marginBottom:16,lineHeight:1.7}}>{t.skincareGuideDesc}</div>
           <a href={CONFIG.business.skincareGuide} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
-            <button className="btn btn-p" style={{width:"100%"}}>{t.guideBuyBtn} — {t.guidePrice}</button>
+            <button className="btn btn-p" style={{width:"100%"}}>{t.guideBuyBtn} -- {t.guidePrice}</button>
           </a>
         </div>
       )}
@@ -2914,7 +3708,7 @@ Rules:
     </div>
   </div>}
   
-  {/* ── COACH ── */}
+  {/* -- COACH -- */}
   {view==="coach"&&<div className="wrap fade-in">
     <div className="coach-top">
       <div className="coach-status">{t.coachOnline}</div>
@@ -2923,7 +3717,7 @@ Rules:
     </div>
     <div className="sug-row">{t.suggestions.map(s=><button key={s} className="sug-btn" onClick={()=>setInputVal(s)}>{s}</button>)}</div>
     <div className="chat-win" ref={chatRef}>
-      {messages.length===0&&<div className="empty"><div className="empty-mark">◆</div><div className="empty-text">Complete your skin analysis to unlock the coach.</div></div>}
+      {messages.length===0&&<div className="empty"><div className="empty-mark">*</div><div className="empty-text">Complete your skin analysis to unlock the coach.</div></div>}
       {messages.map((m,i)=>(
         <div key={i} className={`msg ${m.role}`}>
           <div className="msg-role">{m.role==="ai"?t.coachLabel:t.youLabel}</div>
@@ -2936,17 +3730,17 @@ Rules:
       <textarea className="chat-in" rows={2} placeholder={t.inputPlaceholder} value={inputVal}
         onChange={e=>setInputVal(e.target.value)}
         onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}}}/>
-      <button className="chat-send" onClick={sendMsg} disabled={!inputVal.trim()||coachLoad}>→</button>
+      <button className="chat-send" onClick={sendMsg} disabled={!inputVal.trim()||coachLoad}>-></button>
     </div>
   </div>}
   
-  {/* ── CHECKIN ── */}
+  {/* -- CHECKIN -- */}
   {view==="checkin"&&<div className="wrap fade-in">
     <div className="ci-wrap">
-      <div><div className="streak-b">◆ {checkins.length} sessions</div></div>
+      <div><div className="streak-b">* {checkins.length} sessions</div></div>
       <div className="ci-h">{t.checkinTitle}</div>
       <div className="ci-s">{t.checkinSub}</div>
-      <div className="sec-h"><span className="sec-mark">◆</span> {t.todayStatus}</div>
+      <div className="sec-h"><span className="sec-mark">*</span> {t.todayStatus}</div>
       <div className="mood-grid" role="radiogroup">
         {t.moods.map(m=>(
           <button key={m.v} className={`mood-opt${checkinMood===m.v?" sel":""}`}
@@ -2965,20 +3759,20 @@ Rules:
       {checkins.length>0&&(
         <button className="btn btn-g" style={{width:"100%",marginBottom:24}}
           onClick={()=>{go("community");setShowShare(true);}}>
-          ◆ Share My Progress with the Community
+          * Share My Progress with the Community
         </button>
       )}
       {checkins.length>0&&<>
-        <div className="sec-h"><span className="sec-mark">◆</span> {t.progressHistory}</div>
+        <div className="sec-h"><span className="sec-mark">*</span> {t.progressHistory}</div>
         <div className="hist-list">{checkins.map((c,i)=>(
           <div className="hist-item" key={i}><div className="hist-date">{c.date}</div><div className="hist-text">{c.advice}</div></div>
         ))}</div>
       </>}
-      {checkins.length===0&&<div className="empty"><div className="empty-mark">◆</div><div className="empty-text">{t.noHistory}</div></div>}
+      {checkins.length===0&&<div className="empty"><div className="empty-mark">*</div><div className="empty-text">{t.noHistory}</div></div>}
     </div>
   </div>}
   
-  {/* ── SHAVE ── */}
+  {/* -- SHAVE -- */}
   {view==="shave"&&<div className="wrap fade-in">
     <div className="shave-wrap">
       <div className="hero-badge" style={{marginBottom:14}}>{t.shaveTitle}</div>
@@ -3022,7 +3816,7 @@ Rules:
         <div className="load-line"/>
       </div>}
   
-      {/* Error state — shown when all 3 attempts fail */}
+      {/* Error state -- shown when all 3 attempts fail */}
       {shaveError&&!shaveLoad&&!shaveResult&&(
         <div style={{textAlign:"center",padding:"48px 0"}}>
           <div style={{fontFamily:"var(--fh)",fontSize:22,fontStyle:"italic",marginBottom:12,color:"var(--white)"}}>
@@ -3030,7 +3824,7 @@ Rules:
           </div>
           <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--soft)",fontStyle:"italic",marginBottom:24,lineHeight:1.8}}>
             The server took too long to respond. This happens occasionally.<br/>
-            Your answers are saved — click below to try again.
+            Your answers are saved -- click below to try again.
           </div>
           <button className="btn btn-p" style={{width:"100%",maxWidth:320}}
             onClick={()=>{
@@ -3038,7 +3832,7 @@ Rules:
               setShaveLoad(true);
               runShaveAnalysis(shaveAns).then(()=>setShaveLoad(false));
             }}>
-            ◆ Try Again
+            * Try Again
           </button>
           <button className="btn btn-g" style={{width:"100%",maxWidth:320,marginTop:10}}
             onClick={()=>{setShaveError(false);setShaveStep(0);setShaveAns({});setShaveSel(null);}}>
@@ -3047,7 +3841,7 @@ Rules:
         </div>
       )}
   
-      {/* Results — shown as soon as stage 1 completes */}
+      {/* Results -- shown as soon as stage 1 completes */}
       {shaveResult&&<>
   
         {/* Stage 2 still loading indicator */}
@@ -3063,7 +3857,7 @@ Rules:
           </div>
         )}
   
-        {/* ── CLINICAL FINDING ── */}
+        {/* -- CLINICAL FINDING -- */}
         {shaveResult.clinicalFinding&&(
           <div className="shave-finding">
             <div className="shave-finding-lbl">{t.shaveCritical}</div>
@@ -3071,7 +3865,7 @@ Rules:
           </div>
         )}
   
-        {/* ── SEVERITY ASSESSMENT ── */}
+        {/* -- SEVERITY ASSESSMENT -- */}
         {shaveResult.severityAssessment&&(
           <div className="shave-severity">
             <div className="shave-severity-lbl">{t.clinicalAssessmentLabel}</div>
@@ -3079,7 +3873,7 @@ Rules:
           </div>
         )}
   
-        {/* ── CRITICAL RULE ── */}
+        {/* -- CRITICAL RULE -- */}
         {shaveResult.criticalRule&&(
           <div className="crit-box">
             <div className="crit-lbl">{t.criticalRuleLabel}</div>
@@ -3087,14 +3881,14 @@ Rules:
           </div>
         )}
   
-        {/* ── BLADE & RAZOR RECOMMENDATION ── */}
+        {/* -- BLADE & RAZOR RECOMMENDATION -- */}
         {shaveResult.bladeRecommendation&&(()=>{
           const br = shaveResult.bladeRecommendation;
           return(
           <div style={{border:"1px solid var(--goldb)",position:"relative",overflow:"hidden",marginBottom:12}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
             <div style={{padding:"18px 18px 0"}}>
-              <div className="sec-h"><span className="sec-mark">◆</span> {t.bladeSection}</div>
+              <div className="sec-h"><span className="sec-mark">*</span> {t.bladeSection}</div>
             </div>
             <div style={{padding:"0 18px 18px"}}>
               {/* Recommended razor */}
@@ -3140,7 +3934,7 @@ Rules:
           </div>
         );})()}
   
-        {/* ── THREE PHASES ── */}
+        {/* -- THREE PHASES -- */}
         {[
           {key:"preShave",      cls:"pre",    label:t.preShave,    steps:shaveResult.preShave},
           {key:"shaveProtocol", cls:"during", label:t.duringShave, steps:shaveResult.shaveProtocol},
@@ -3164,13 +3958,13 @@ Rules:
           </div>
         ))}
   
-        {/* ── PREVENTION PRODUCTS ── */}
+        {/* -- PREVENTION PRODUCTS -- */}
         {shaveResult.preventionProducts?.length>0&&<>
-          <div className="sec-h" style={{marginTop:20}}><span className="sec-mark">◆</span> {t.preventionProducts}</div>
+          <div className="sec-h" style={{marginTop:20}}><span className="sec-mark">*</span> {t.preventionProducts}</div>
           {shaveResult.preventionProducts.map((p,i)=>(
             <div className="shave-prod-card" key={i}>
               <div className={`prod-priority ${p.priority||"recommended"}`}>
-                ◆ {(p.priority||"recommended").toUpperCase()}
+                * {(p.priority||"recommended").toUpperCase()}
               </div>
               <div className="step-top">
                 <div className="step-name">{p.name}</div>
@@ -3200,10 +3994,10 @@ Rules:
           ))}
         </>}
   
-        {/* ── ACTIVE BUMP TREATMENT (only if bumps present) ── */}
+        {/* -- ACTIVE BUMP TREATMENT (only if bumps present) -- */}
         {shaveResult.treatmentProducts?.length>0&&<>
           <div className="sec-h" style={{marginTop:16}}>
-            <span style={{color:"var(--red)"}}>◆</span>
+            <span style={{color:"var(--red)"}}>*</span>
             <span style={{color:"var(--red)"}}> {t.treatmentProducts}</span>
             <div style={{flex:1,height:1,background:"rgba(168,48,48,0.3)"}}/>
           </div>
@@ -3249,7 +4043,7 @@ Rules:
           ))}
         </>}
   
-        {/* ── WEEK ONE / TIMELINE / DOCTOR ── */}
+        {/* -- WEEK ONE / TIMELINE / DOCTOR -- */}
         {shaveResult.weekOneProtocol&&(
           <div className="ins-box tip" style={{marginTop:12}}>
             <div className="ins-lbl">{t.weekOneLabel}</div>
@@ -3269,7 +4063,7 @@ Rules:
           </div>
         )}
   
-        {/* ── SHAVE OPTIONAL REPORTS ── */}
+        {/* -- SHAVE OPTIONAL REPORTS -- */}
         {shaveResult.skinBiologyTeaser&&(
           <div style={{border:"1px solid var(--goldb)",marginTop:20,position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
@@ -3289,7 +4083,7 @@ Rules:
                   {lang==="fr"?"Rapport Biologie du Rasage":lang==="es"?"Informe Biología del Afeitado":"Shave Biology Report"}
                 </div>
                 <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>
-                  {lang==="fr"?"Pourquoi ton type de barbe spécifique cause ces problèmes — au niveau cellulaire.":lang==="es"?"Por qué tu tipo específico de barba causa estos problemas — a nivel celular.":"The cellular reason your specific beard type and skin cause this exact problem."}
+                  {lang==="fr"?"Pourquoi ton type de barbe spécifique cause ces problèmes -- au niveau cellulaire.":lang==="es"?"Por qué tu tipo específico de barba causa estos problemas -- a nivel celular.":"The cellular reason your specific beard type and skin cause this exact problem."}
                 </div>
                 {shaveBioUnlocked?(
                   bioReport?(
@@ -3301,7 +4095,7 @@ Rules:
                   )
                 ):(
                   <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-biology")}>
-                    {lang==="fr"?`Déverrouiller — $${CONFIG.business.shaveBiologyPrice}`:lang==="es"?`Desbloquear — $${CONFIG.business.shaveBiologyPrice}`:`Unlock — $${CONFIG.business.shaveBiologyPrice}`}
+                    {lang==="fr"?`Déverrouiller -- $${CONFIG.business.shaveBiologyPrice}`:lang==="es"?`Desbloquear -- $${CONFIG.business.shaveBiologyPrice}`:`Unlock -- $${CONFIG.business.shaveBiologyPrice}`}
                   </button>
                 )}
               </div>
@@ -3311,12 +4105,12 @@ Rules:
                   {lang==="fr"?"Carte de Protocole de Rasage":lang==="es"?"Tarjeta de Protocolo de Afeitado":"Shave Protocol Card"}
                 </div>
                 <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65,marginBottom:12}}>
-                  {lang==="fr"?"Tes étapes exactes de rasage — pré, pendant, post — formatées pour le mur de ta salle de bain.":lang==="es"?"Tus pasos exactos de afeitado — pre, durante, post — formateados para la pared de tu baño.":"Your exact shaving steps — pre, during, post — formatted as a printable bathroom card."}
+                  {lang==="fr"?"Tes étapes exactes de rasage -- pré, pendant, post -- formatées pour le mur de ta salle de bain.":lang==="es"?"Tus pasos exactos de afeitado -- pre, durante, post -- formateados para la pared de tu baño.":"Your exact shaving steps -- pre, during, post -- formatted as a printable bathroom card."}
                 </div>
                 {shaveCardUnlocked?(
                   cardReport?(
                     <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85}}>
-                      {cardReport.preShave?.map((s,i)=><div key={i} style={{marginBottom:6}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.title}</strong> — {s.instruction}</div>)}
+                      {cardReport.preShave?.map((s,i)=><div key={i} style={{marginBottom:6}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.title}</strong> -- {s.instruction}</div>)}
                     </div>
                   ):(
                     <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>
@@ -3325,7 +4119,7 @@ Rules:
                   )
                 ):(
                   <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-card")}>
-                    {lang==="fr"?`Déverrouiller — $${CONFIG.business.shaveCardPrice}`:lang==="es"?`Desbloquear — $${CONFIG.business.shaveCardPrice}`:`Unlock — $${CONFIG.business.shaveCardPrice}`}
+                    {lang==="fr"?`Déverrouiller -- $${CONFIG.business.shaveCardPrice}`:lang==="es"?`Desbloquear -- $${CONFIG.business.shaveCardPrice}`:`Unlock -- $${CONFIG.business.shaveCardPrice}`}
                   </button>
                 )}
               </div>
@@ -3334,19 +4128,19 @@ Rules:
             {!shaveBioUnlocked||!shaveCardUnlocked?(
               <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
                 <button className="btn btn-p" style={{width:"100%",fontSize:12}} onClick={()=>openPayment("shave-combo")}>
-                  ◆ {lang==="fr"?`Les Deux — $${CONFIG.business.shaveComboPrice} (meilleure valeur)`:lang==="es"?`Ambos — $${CONFIG.business.shaveComboPrice} (mejor valor)`:`Both — $${CONFIG.business.shaveComboPrice} (best value)`}
+                  * {lang==="fr"?`Les Deux -- $${CONFIG.business.shaveComboPrice} (meilleure valeur)`:lang==="es"?`Ambos -- $${CONFIG.business.shaveComboPrice} (mejor valor)`:`Both -- $${CONFIG.business.shaveComboPrice} (best value)`}
                 </button>
                 <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center",marginTop:8}}>
                   {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe"}
                 </div>
               </div>
             ):(
-              <div style={{padding:"14px 18px",textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>◆ {t.alreadyUnlocked}</div>
+              <div style={{padding:"14px 18px",textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>* {t.alreadyUnlocked}</div>
             )}
           </div>
         )}
   
-        {/* ── MEDICAL DISCLAIMER ── */}
+        {/* -- MEDICAL DISCLAIMER -- */}
         <div className="med-disclaimer" style={{marginTop:16}}>
           <div className="med-disclaimer-lbl">{t.medDisclaimerLabel}</div>
           <div className="med-disclaimer-text">{t.medDisclaimer}</div>
@@ -3358,7 +4152,7 @@ Rules:
     </div>
   </div>}
   
-  {/* ── COMMUNITY ── */}
+  {/* -- COMMUNITY -- */}
   {view==="community"&&<div className="wrap fade-in">
     <div className="comm-wrap">
       <div className="hero-badge" style={{marginBottom:14}}>{t.nav.community}</div>
@@ -3369,10 +4163,10 @@ Rules:
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,flexWrap:"wrap"}}>
         {(has||hasShave)&&(
           <button className="btn btn-p" onClick={()=>setShowShare(p=>!p)}>
-            {showShare?"Cancel":"◆ "+t.communityPost}
+            {showShare?"Cancel":"* "+t.communityPost}
           </button>
         )}
-        {sharePosted&&<div className="comm-posted">◆ {t.communityPosted}</div>}
+        {sharePosted&&<div className="comm-posted">* {t.communityPosted}</div>}
       </div>
   
       {/* Share form */}
@@ -3387,7 +4181,7 @@ Rules:
           {/* Profile badge in share */}
           {profile&&(
             <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-              <div className="post-type">◆ {profile.skinType}</div>
+              <div className="post-type">* {profile.skinType}</div>
               {checkins.length>0&&<div className="post-week">{t.weekLabel} {checkins.length}</div>}
             </div>
           )}
@@ -3408,11 +4202,11 @@ Rules:
       )}
   
       {/* Feed */}
-      <div className="sec-h"><span className="sec-mark">◆</span> {t.communityFeed}</div>
+      <div className="sec-h"><span className="sec-mark">*</span> {t.communityFeed}</div>
   
       {communityPosts.length===0?(
         <div className="empty">
-          <div className="empty-mark">◆</div>
+          <div className="empty-mark">*</div>
           <div className="empty-text">{t.communityEmpty}</div>
           <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--muted)",
             fontStyle:"italic",marginTop:8}}>
@@ -3424,7 +4218,7 @@ Rules:
           {communityPosts.map(post=>(
             <div className="post-card" key={post.id}>
               <div className="post-meta">
-                <div className="post-type">◆ {post.skinType}</div>
+                <div className="post-type">* {post.skinType}</div>
                 {post.shaveType&&<div className="post-type" style={{borderColor:"var(--amber)",color:"var(--amber)"}}>
                   {post.shaveType}
                 </div>}
@@ -3463,13 +4257,13 @@ Rules:
     </div>
   </div>}
   
-  {/* ── GUIDES ── */}
+  {/* -- GUIDES -- */}
   {view==="guides"&&<div className="wrap fade-in">
     <div className="guides-wrap">
       <div className="guides-h">{t.guidesTitle}</div>
       <div className="guides-s">{t.guidesSub}</div>
   
-      {/* Personalised upsell — shown only if they haven't done analysis yet */}
+      {/* Personalised upsell -- shown only if they haven't done analysis yet */}
       {(!has&&!hasShave)&&(
         <div style={{border:"1px solid var(--goldb)",background:"rgba(184,151,42,0.05)",
           padding:"18px 20px",marginBottom:24,position:"relative",overflow:"hidden"}}>
@@ -3482,19 +4276,19 @@ Rules:
           <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",fontStyle:"normal",
             lineHeight:1.8,marginBottom:14}}>
             {lang==="fr"
-              ?"Les guides ci-dessous sont des références générales pour tous les types de peau. Si tu veux un protocole construit spécifiquement pour ta biologie cutanée — ton type de peau exact, tes préoccupations, ton budget — l'analyse gratuite prend 60 secondes."
+              ?"Les guides ci-dessous sont des références générales pour tous les types de peau. Si tu veux un protocole construit spécifiquement pour ta biologie cutanée -- ton type de peau exact, tes préoccupations, ton budget -- l'analyse gratuite prend 60 secondes."
               :lang==="es"
-              ?"Las guías de abajo son referencias generales para todos los tipos de piel. Si quieres un protocolo construido específicamente para tu biología cutánea — tu tipo de piel exacto, tus preocupaciones, tu presupuesto — el análisis gratuito toma 60 segundos."
-              :"The guides below are general references for all skin types. If you want a protocol built specifically for your skin biology — your exact skin type, concerns, and budget — the free analysis takes 60 seconds."}
+              ?"Las guías de abajo son referencias generales para todos los tipos de piel. Si quieres un protocolo construido específicamente para tu biología cutánea -- tu tipo de piel exacto, tus preocupaciones, tu presupuesto -- el análisis gratuito toma 60 segundos."
+              :"The guides below are general references for all skin types. If you want a protocol built specifically for your skin biology -- your exact skin type, concerns, and budget -- the free analysis takes 60 seconds."}
           </div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <button className="btn btn-p" style={{flex:1,minWidth:140,fontSize:12}}
               onClick={()=>go("home")}>
-              ◆ {lang==="fr"?"Analyser Ma Peau — Gratuit":lang==="es"?"Analizar Mi Piel — Gratis":"Analyse My Skin — Free"}
+              * {lang==="fr"?"Analyser Ma Peau -- Gratuit":lang==="es"?"Analizar Mi Piel -- Gratis":"Analyse My Skin -- Free"}
             </button>
             <button className="btn btn-g" style={{flex:1,minWidth:140,fontSize:12}}
               onClick={startShaveQuiz}>
-              {lang==="fr"?"Protocole Rasage — Gratuit":lang==="es"?"Protocolo Afeitado — Gratis":"Shave Protocol — Free"}
+              {lang==="fr"?"Protocole Rasage -- Gratuit":lang==="es"?"Protocolo Afeitado -- Gratis":"Shave Protocol -- Free"}
             </button>
           </div>
         </div>
@@ -3511,13 +4305,13 @@ Rules:
         {skincareGuideUnlocked?(
           <div>
             <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--green)",fontStyle:"italic",padding:"10px 0 4px"}}>
-              ◆ {lang==="fr"?"Guide déverrouillé — défiler pour lire":lang==="es"?"Guía desbloqueada — desplaza para leer":"Guide Unlocked — scroll to read"}
+              * {lang==="fr"?"Guide déverrouillé -- défiler pour lire":lang==="es"?"Guía desbloqueada -- desplaza para leer":"Guide Unlocked -- scroll to read"}
             </div>
             <GuideReader guide={SKINCARE_GUIDE} lang={lang}/>
           </div>
         ):(
           <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("skincare-guide")}>
-            {t.guideBuyBtn} — ${CONFIG.business.skincareGuidePrice}
+            {t.guideBuyBtn} -- ${CONFIG.business.skincareGuidePrice}
           </button>
         )}
       </div>
@@ -3533,13 +4327,13 @@ Rules:
         {shavingGuideUnlocked?(
           <div>
             <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--green)",fontStyle:"italic",padding:"10px 0 4px"}}>
-              ◆ {lang==="fr"?"Guide déverrouillé — défiler pour lire":lang==="es"?"Guía desbloqueada — desplaza para leer":"Guide Unlocked — scroll to read"}
+              * {lang==="fr"?"Guide déverrouillé -- défiler pour lire":lang==="es"?"Guía desbloqueada -- desplaza para leer":"Guide Unlocked -- scroll to read"}
             </div>
             <GuideReader guide={SHAVING_GUIDE} lang={lang}/>
           </div>
         ):(
           <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("shaving-guide")}>
-            {t.guideBuyBtn} — ${CONFIG.business.shavingGuidePrice}
+            {t.guideBuyBtn} -- ${CONFIG.business.shavingGuidePrice}
           </button>
         )}
       </div>
@@ -3552,34 +4346,34 @@ Rules:
             {lang==="fr"?"Meilleure Valeur":lang==="es"?"Mejor Valor":"Best Value"}
           </div>
           <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",marginBottom:6}}>
-            {lang==="fr"?"Les Deux Guides — $15":lang==="es"?"Ambas Guías — $15":"Both Guides — $15"}
+            {lang==="fr"?"Les Deux Guides -- $15":lang==="es"?"Ambas Guías -- $15":"Both Guides -- $15"}
           </div>
           <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",marginBottom:14,lineHeight:1.65}}>
             {lang==="fr"?"La référence complète pour les soins de la peau et le rasage. Économise $3 en achetant les deux.":lang==="es"?"La referencia completa para cuidado de piel y afeitado. Ahorra $3 comprando ambas.":"The complete reference for skincare and shaving together. Save $3 buying both."}
           </div>
           <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("guides-combo")}>
-            ◆ {lang==="fr"?"Obtenir les Deux — $15":lang==="es"?"Obtener Ambas — $15":"Get Both — $15"}
+            * {lang==="fr"?"Obtenir les Deux -- $15":lang==="es"?"Obtener Ambas -- $15":"Get Both -- $15"}
           </button>
           <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center",marginTop:8}}>
-            {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe — instant access after payment"}
+            {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe -- instant access after payment"}
           </div>
         </div>
       )}
   
-      {/* What is inside — teaser */}
+      {/* What is inside -- teaser */}
       <div style={{borderTop:"1px solid var(--border)",paddingTop:20,marginTop:8}}>
         <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:12}}>
           {lang==="fr"?"Ce Que Vous Obtenez":lang==="es"?"Lo Que Obtienes":"What Is Inside"}
         </div>
         {[
-          {label:lang==="fr"?"Guide Soins":lang==="es"?"Guía Cuidado":"Skincare Guide", items:lang==="fr"?["Tous les types de peau expliqués","Chaque ingrédient — mécanisme et conflits","Construire une routine de zéro","Ajustements saisonniers","Comment lire une étiquette de produit"]:lang==="es"?["Todos los tipos de piel explicados","Cada ingrediente — mecanismo y conflictos","Construir una rutina desde cero","Ajustes estacionales","Cómo leer una etiqueta de producto"]:["Every skin type explained in detail","Every major ingredient — mechanism and conflicts","Building a routine from scratch","Seasonal adjustments for winter and summer","How to read a product label"]},
-          {label:lang==="fr"?"Guide Rasage":lang==="es"?"Guía Afeitado":"Shaving Guide", items:lang==="fr"?["Science complète des lames — chaque type de rasoir","Technique pour chaque type de barbe","Chimie pré-rasage et post-rasage","Prévenir et traiter les boutons de rasoir","Guide des ingrédients des produits de rasage"]:lang==="es"?["Ciencia completa de hojas — cada tipo de maquinilla","Técnica para cada tipo de barba","Química pre y post afeitado","Prevenir y tratar granos de afeitar","Guía de ingredientes de productos de afeitado"]:["Complete blade science — every razor type explained","Technique for every beard type","Pre-shave and post-shave chemistry","How to prevent and treat razor bumps","Product ingredient guide for shaving"]},
+          {label:lang==="fr"?"Guide Soins":lang==="es"?"Guía Cuidado":"Skincare Guide", items:lang==="fr"?["Tous les types de peau expliqués","Chaque ingrédient -- mécanisme et conflits","Construire une routine de zéro","Ajustements saisonniers","Comment lire une étiquette de produit"]:lang==="es"?["Todos los tipos de piel explicados","Cada ingrediente -- mecanismo y conflictos","Construir una rutina desde cero","Ajustes estacionales","Cómo leer una etiqueta de producto"]:["Every skin type explained in detail","Every major ingredient -- mechanism and conflicts","Building a routine from scratch","Seasonal adjustments for winter and summer","How to read a product label"]},
+          {label:lang==="fr"?"Guide Rasage":lang==="es"?"Guía Afeitado":"Shaving Guide", items:lang==="fr"?["Science complète des lames -- chaque type de rasoir","Technique pour chaque type de barbe","Chimie pré-rasage et post-rasage","Prévenir et traiter les boutons de rasoir","Guide des ingrédients des produits de rasage"]:lang==="es"?["Ciencia completa de hojas -- cada tipo de maquinilla","Técnica para cada tipo de barba","Química pre y post afeitado","Prevenir y tratar granos de afeitar","Guía de ingredientes de productos de afeitado"]:["Complete blade science -- every razor type explained","Technique for every beard type","Pre-shave and post-shave chemistry","How to prevent and treat razor bumps","Product ingredient guide for shaving"]},
         ].map((section,si)=>(
           <div key={si} style={{marginBottom:16}}>
             <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,fontStyle:"italic",color:"var(--gold)",marginBottom:8}}>{section.label}</div>
             {section.items.map((item,ii)=>(
               <div key={ii} style={{display:"flex",gap:8,marginBottom:5}}>
-                <span style={{color:"var(--gold)",flexShrink:0,fontSize:10}}>◆</span>
+                <span style={{color:"var(--gold)",flexShrink:0,fontSize:10}}>*</span>
                 <span style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.6}}>{item}</span>
               </div>
             ))}
@@ -3616,7 +4410,7 @@ Rules:
   </>
   ):(
   <div className="modal-success">
-  <div className="modal-success-icon">◆</div>
+  <div className="modal-success-icon">*</div>
   <div className="modal-success-h">{lang===“fr”?“Parfait”:lang===“es”?“Perfecto”:“Perfect.”}</div>
   <div className="modal-success-s">{t.emailSuccess}</div>
   </div>
@@ -3626,14 +4420,14 @@ Rules:
   
     </div>}
   
-  {/* ── STRIPE PAYMENT MODAL ── */}
+  {/* – STRIPE PAYMENT MODAL – */}
   {payModal&&(
   <div className="modal-ov" role="dialog" aria-modal="true">
   <div className=“modal” onClick={e=>e.stopPropagation()}>
   <div className="modal-inner">
   {paySuccess?(
   <div style={{textAlign:“center”,padding:“20px 0”}}>
-  <div style={{fontSize:32,marginBottom:12}}>◆</div>
+  <div style={{fontSize:32,marginBottom:12}}>*</div>
   <div style={{fontFamily:“var(–fh)”,fontSize:20,fontWeight:700,fontStyle:“italic”,color:“var(–gold)”,marginBottom:8}}>
   {lang===“fr”?“Paiement Confirmé!”:lang===“es”?”¡Pago Confirmado!”:“Payment Confirmed!”}
   </div>
@@ -3673,68 +4467,68 @@ Rules:
   </div>
   
   ```
-            {/* Context box — accurate description per product, no false claims */}
+            {/* Context box -- accurate description per product, no false claims */}
             {(() => {
               const isGuide = payModal==="skincare-guide"||payModal==="shaving-guide"||payModal==="guides-combo";
               const isSkinPersonalised = payModal==="biology"||payModal==="routine"||payModal==="skin-combo";
               const isShavePersonalised = payModal==="shave-biology"||payModal==="shave-card"||payModal==="shave-combo";
   
-              // Guides — no personalisation claim, just what they get
+              // Guides -- no personalisation claim, just what they get
               if(isGuide) return (
                 <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
                   padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
                   fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
                   {payModal==="skincare-guide"
-                    ? (lang==="fr"?"La référence complète des soins pour hommes — ingrédients, types de peau, et construction de routine. Accès immédiat après paiement."
-                      :lang==="es"?"La referencia completa de cuidado para hombres — ingredientes, tipos de piel y construcción de rutina. Acceso inmediato tras el pago."
-                      :"The complete men's skincare reference — every ingredient, every skin type, routine building from scratch. Instant access after payment.")
+                    ? (lang==="fr"?"La référence complète des soins pour hommes -- ingrédients, types de peau, et construction de routine. Accès immédiat après paiement."
+                      :lang==="es"?"La referencia completa de cuidado para hombres -- ingredientes, tipos de piel y construcción de rutina. Acceso inmediato tras el pago."
+                      :"The complete men's skincare reference -- every ingredient, every skin type, routine building from scratch. Instant access after payment.")
                     : payModal==="shaving-guide"
-                    ? (lang==="fr"?"La bible du rasage clinique — science des lames, technique par type de barbe, traitement des boutons. Accès immédiat."
-                      :lang==="es"?"La biblia clínica del afeitado — ciencia de hojas, técnica por tipo de barba, tratamiento de granos. Acceso inmediato."
-                      :"The clinical shaving bible — blade science, technique by beard type, bump treatment. Instant access after payment.")
-                    : (lang==="fr"?"Les deux guides complets — soins de la peau et rasage. Économise $3. Accès immédiat aux deux."
-                      :lang==="es"?"Ambas guías completas — cuidado de piel y afeitado. Ahorra $3. Acceso inmediato a las dos."
-                      :"Both complete guides — skincare and shaving. Save $3. Instant access to both after payment.")
+                    ? (lang==="fr"?"La bible du rasage clinique -- science des lames, technique par type de barbe, traitement des boutons. Accès immédiat."
+                      :lang==="es"?"La biblia clínica del afeitado -- ciencia de hojas, técnica por tipo de barba, tratamiento de granos. Acceso inmediato."
+                      :"The clinical shaving bible -- blade science, technique by beard type, bump treatment. Instant access after payment.")
+                    : (lang==="fr"?"Les deux guides complets -- soins de la peau et rasage. Économise $3. Accès immédiat aux deux."
+                      :lang==="es"?"Ambas guías completas -- cuidado de piel y afeitado. Ahorra $3. Acceso inmediato a las dos."
+                      :"Both complete guides -- skincare and shaving. Save $3. Instant access to both after payment.")
                   }
                 </div>
               );
   
-              // Personalised skin reports — reference their skin type
+              // Personalised skin reports -- reference their skin type
               if(isSkinPersonalised && profile) return (
                 <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
                   padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
                   fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
                   {payModal==="biology"
-                    ? (lang==="fr"?`Ce rapport explique exactement pourquoi ta peau ${profile.skinType?.toLowerCase()||""} se comporte comme elle le fait — au niveau cellulaire.`
-                      :lang==="es"?`Este informe explica exactamente por qué tu piel ${profile.skinType?.toLowerCase()||""} se comporta como lo hace — a nivel celular.`
-                      :`This report explains exactly why your ${profile.skinType||""} skin behaves the way it does — at the cellular level.`)
+                    ? (lang==="fr"?`Ce rapport explique exactement pourquoi ta peau ${profile.skinType?.toLowerCase()||""} se comporte comme elle le fait -- au niveau cellulaire.`
+                      :lang==="es"?`Este informe explica exactamente por qué tu piel ${profile.skinType?.toLowerCase()||""} se comporta como lo hace -- a nivel celular.`
+                      :`This report explains exactly why your ${profile.skinType||""} skin behaves the way it does -- at the cellular level.`)
                     : payModal==="routine"
-                    ? (lang==="fr"?"Une carte de routine imprimable construite à partir de ton profil exact — pas un guide générique."
-                      :lang==="es"?"Una tarjeta de rutina imprimible construida desde tu perfil exacto — no una guía genérica."
-                      :"A printable routine card built from your exact skin profile — not a generic guide.")
-                    : (lang==="fr"?`Les deux rapports personnalisés pour ta peau ${profile.skinType?.toLowerCase()||""} — meilleure valeur.`
-                      :lang==="es"?`Ambos informes personalizados para tu piel ${profile.skinType?.toLowerCase()||""} — mejor valor.`
-                      :`Both reports personalised to your ${profile.skinType||""} skin profile — best value.`)
+                    ? (lang==="fr"?"Une carte de routine imprimable construite à partir de ton profil exact -- pas un guide générique."
+                      :lang==="es"?"Una tarjeta de rutina imprimible construida desde tu perfil exacto -- no una guía genérica."
+                      :"A printable routine card built from your exact skin profile -- not a generic guide.")
+                    : (lang==="fr"?`Les deux rapports personnalisés pour ta peau ${profile.skinType?.toLowerCase()||""} -- meilleure valeur.`
+                      :lang==="es"?`Ambos informes personalizados para tu piel ${profile.skinType?.toLowerCase()||""} -- mejor valor.`
+                      :`Both reports personalised to your ${profile.skinType||""} skin profile -- best value.`)
                   }
                 </div>
               );
   
-              // Personalised shave reports — reference their shave problem
+              // Personalised shave reports -- reference their shave problem
               if(isShavePersonalised && savedShave) return (
                 <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
                   padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
                   fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
                   {payModal==="shave-biology"
-                    ? (lang==="fr"?"Ce rapport explique la biologie exacte derrière tes problèmes de rasage — au niveau cellulaire et folliculaire."
-                      :lang==="es"?"Este informe explica la biología exacta detrás de tus problemas de afeitado — a nivel celular y folicular."
-                      :"This report explains the exact biology behind your shaving problem — at the cellular and follicle level.")
+                    ? (lang==="fr"?"Ce rapport explique la biologie exacte derrière tes problèmes de rasage -- au niveau cellulaire et folliculaire."
+                      :lang==="es"?"Este informe explica la biología exacta detrás de tus problemas de afeitado -- a nivel celular y folicular."
+                      :"This report explains the exact biology behind your shaving problem -- at the cellular and follicle level.")
                     : payModal==="shave-card"
-                    ? (lang==="fr"?"Ta carte de protocole de rasage personnalisée — tes étapes exactes pré, pendant et post-rasage."
-                      :lang==="es"?"Tu tarjeta de protocolo de afeitado personalizada — tus pasos exactos pre, durante y post-afeitado."
-                      :"Your personalised shave protocol card — your exact pre, during, and post-shave steps.")
-                    : (lang==="fr"?"Les deux rapports de rasage personnalisés à ton profil exact — meilleure valeur."
-                      :lang==="es"?"Ambos informes de afeitado personalizados para tu perfil exacto — mejor valor."
-                      :"Both shave reports personalised to your exact profile — best value.")
+                    ? (lang==="fr"?"Ta carte de protocole de rasage personnalisée -- tes étapes exactes pré, pendant et post-rasage."
+                      :lang==="es"?"Tu tarjeta de protocolo de afeitado personalizada -- tus pasos exactos pre, durante y post-afeitado."
+                      :"Your personalised shave protocol card -- your exact pre, during, and post-shave steps.")
+                    : (lang==="fr"?"Les deux rapports de rasage personnalisés à ton profil exact -- meilleure valeur."
+                      :lang==="es"?"Ambos informes de afeitado personalizados para tu perfil exacto -- mejor valor."
+                      :"Both shave reports personalised to your exact profile -- best value.")
                   }
                 </div>
               );
@@ -3768,7 +4562,7 @@ Rules:
               </div>
             ):(
               <>
-                {/* Apple Pay / Google Pay — shows automatically if available */}
+                {/* Apple Pay / Google Pay -- shows automatically if available */}
                 {prButtonAvailable&&(
                   <div style={{marginBottom:16}}>
                     <div id="skinr-pr-button" style={{minHeight:48}}/>
@@ -3823,7 +4617,7 @@ Rules:
   
   )}
   
-  {/* ── PRIVACY POLICY MODAL ── */}
+  {/* – PRIVACY POLICY MODAL – */}
   {showPrivacy&&(
   <div className=“modal-ov” role=“dialog” aria-modal=“true” onClick={()=>setShowPrivacy(false)}>
   <div className=“modal” onClick={e=>e.stopPropagation()} style={{maxHeight:“80vh”,overflowY:“auto”}}>
@@ -3844,7 +4638,7 @@ Rules:
   </div>
   )}
   
-  {/* ── TERMS OF SERVICE MODAL ── */}
+  {/* – TERMS OF SERVICE MODAL – */}
   {showTerms&&(
   <div className=“modal-ov” role=“dialog” aria-modal=“true” onClick={()=>setShowTerms(false)}>
   <div className=“modal” onClick={e=>e.stopPropagation()} style={{maxHeight:“80vh”,overflowY:“auto”}}>
