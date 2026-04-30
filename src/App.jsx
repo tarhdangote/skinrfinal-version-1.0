@@ -9,7 +9,6 @@ const CONFIG = {
     domain:            "https://www.getskinr.com",
     affiliateTag:      "skinr07-20",
     amazonBase:        "https://www.amazon.com",
-    unlockCode:        "SKINR2025",
     formspree:         "261158684435060",
     twitterHandle:     "@getskinr",
     // ── SKIN ANALYSIS REPORTS ──────────────────────────────────────
@@ -245,9 +244,6 @@ const BASE_T = {
   comboTitle:"Both Reports — Best Value",
   unlockBtn:"Unlock — $10",
   comboBtn:"Get Both — $15",
-  enterCode:"Have an unlock code?",
-  unlockCodePlaceholder:"Enter unlock code",
-  unlockCodeBtn:"Unlock",
   alreadyUnlocked:"◆ Reports Unlocked",
   nav:{home:"Home",analysis:"Analysis",coach:"Coach",checkin:"Progress",shave:"Shave",guides:"Guides",community:"Community"},
   // Community
@@ -441,9 +437,6 @@ const FR_T = {
   comboTitle:"Les Deux Rapports — Meilleure Valeur",
   unlockBtn:"Déverrouiller — 10 $",
   comboBtn:"Obtenir les Deux — 15 $",
-  enterCode:"T'as un code de déverrouillage?",
-  unlockCodePlaceholder:"Entrer le code",
-  unlockCodeBtn:"Déverrouiller",
   alreadyUnlocked:"◆ Rapports Déverrouillés",
   nav:{home:"Accueil",analysis:"Analyse",coach:"Coach",checkin:"Progrès",shave:"Rasage",guides:"Guides",community:"Communauté"},
   communityTitle:"La Communauté SKINR",
@@ -624,9 +617,6 @@ const ES_T = {
   comboTitle:"Ambos Informes — Mejor Valor",
   unlockBtn:"Desbloquear — $10",
   comboBtn:"Obtener Ambos — $15",
-  enterCode:"¿Tienes un código de desbloqueo?",
-  unlockCodePlaceholder:"Ingresar código",
-  unlockCodeBtn:"Desbloquear",
   alreadyUnlocked:"◆ Informes Desbloqueados",
   nav:{home:"Inicio",analysis:"Análisis",coach:"Coach",checkin:"Progreso",shave:"Afeitado",guides:"Guías",community:"Comunidad"},
   communityTitle:"La Comunidad SKINR",
@@ -1538,8 +1528,6 @@ export default function SkinrApp() {
   const [shaveCardUnlocked, setShaveCardUnlocked] = useState(false);
   const [skincareGuideUnlocked, setSkincareGuideUnlocked] = useState(false);
   const [shavingGuideUnlocked, setShavingGuideUnlocked]   = useState(false);
-  const [unlockInput, setUnlockInput]       = useState("");
-  const [unlockErr, setUnlockErr]           = useState(false);
   const [bioReport, setBioReport]           = useState(null);
   const [bioLoad, setBioLoad]               = useState(false);
   const [cardReport, setCardReport]         = useState(null);
@@ -1778,7 +1766,6 @@ export default function SkinrApp() {
         if(p==="shave-card" || p==="shave-combo") { setShaveCardUnlocked(true);  LS.set("skinr2:shaveCardUnlocked",true); }
         if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
         if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
-        if(p==="skin-combo") { setUnlocked(true); LS.set("skinr2:unlocked",true); }
         LS.set("skinr2:purchasedProduct", p);
         setPaySuccess(true);
         // Send purchase confirmation email
@@ -1966,25 +1953,6 @@ export default function SkinrApp() {
     } catch(_){}
     setCiLoad(false);
   };
-
-  // ── UNLOCK CODE ──
-  const tryUnlock = () => {
-    if(unlockInput.trim().toUpperCase() === CONFIG.business.unlockCode.toUpperCase()){
-      setUnlocked(true); setUnlockErr(false);
-      LS.set("skinr2:unlocked", true);
-    } else { setUnlockErr(true); }
-  };
-
-  // ── CHECK URL PARAM for Gumroad redirect ──
-  useEffect(()=>{
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("unlock");
-    if(code && code.toUpperCase() === CONFIG.business.unlockCode.toUpperCase()){
-      setUnlocked(true); LS.set("skinr2:unlocked", true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    if(LS.get("skinr2:unlocked")) setUnlocked(true);
-  },[]);
 
   // ── BIOLOGY REPORT GENERATION ──
   const generateBioReport = async () => {
@@ -2895,29 +2863,18 @@ Rules:
                   )}
                 </div>
               </div>
-              {/* Combo + unlock code row */}
+              {/* Combo row */}
               <div style={{padding:"14px 18px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
                 {(biologyUnlocked&&routineUnlocked)?(
                   <div style={{textAlign:"center",fontFamily:"var(--fc)",fontSize:12,color:"var(--green)",fontStyle:"italic"}}>{t.alreadyUnlocked}</div>
                 ):(
                   <div style={{display:"flex",flexDirection:"column",gap:10}}>
                     <button className="btn btn-p" style={{width:"100%",fontSize:12}}
-                      onClick={()=>openPayment("combo")}>
-                      ◆ {t.comboBtn} — ${CONFIG.business.comboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
+                      onClick={()=>openPayment("skin-combo")}>
+                      ◆ {t.comboBtn} — ${CONFIG.business.skinComboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
                     </button>
-                    <div style={{display:"flex",gap:7,alignItems:"center"}}>
-                      <input
-                        style={{flex:1,background:"var(--bg)",border:`1px solid ${unlockErr?"var(--red)":"var(--border)"}`,padding:"8px 12px",fontFamily:"var(--fc)",fontSize:13,color:"var(--white)",outline:"none",fontStyle:"italic"}}
-                        placeholder={t.unlockCodePlaceholder}
-                        value={unlockInput}
-                        onChange={e=>{setUnlockInput(e.target.value);setUnlockErr(false);}}
-                        onKeyDown={e=>e.key==="Enter"&&tryUnlock()}
-                      />
-                      <button className="btn btn-g" style={{padding:"8px 14px",fontSize:11,flexShrink:0}} onClick={tryUnlock}>{t.unlockCodeBtn}</button>
-                    </div>
-                    {unlockErr&&<div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--red)",fontStyle:"italic"}}>Invalid code.</div>}
                     <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center"}}>
-                      {lang==="fr"?"Paiement sécurisé via Stripe — aucune donnée de carte stockée":lang==="es"?"Pago seguro via Stripe — ningún dato de tarjeta almacenado":"Secure payment via Stripe — card data never stored on our servers"}
+                      {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe — card data never stored on our servers"}
                     </div>
                   </div>
                 )}
@@ -3660,31 +3617,74 @@ Rules:
                   </button>
                 </div>
 
-                {/* Personalised context */}
-                {profile&&(
-                  <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
-                    padding:"10px 14px",marginBottom:16,fontSize:13,fontFamily:"var(--fc)",
-                    color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
-                    {payModal==="biology"
-                      ? (lang==="fr"
-                          ? `Ce rapport explique exactement pourquoi ta peau ${profile.skinType?.toLowerCase()||""} se comporte comme elle le fait — au niveau cellulaire.`
-                          : lang==="es"
-                          ? `Este informe explica exactamente por qué tu piel ${profile.skinType?.toLowerCase()||""} se comporta como lo hace — a nivel celular.`
-                          : `This report explains exactly why your ${profile.skinType||""} skin behaves the way it does — at the cellular level.`)
-                      : payModal==="routine"
-                      ? (lang==="fr"
-                          ? `Une carte de routine imprimable construite à partir de ton profil exact — pas un guide générique.`
-                          : lang==="es"
-                          ? `Una tarjeta de rutina imprimible construida desde tu perfil exacto — no una guía genérica.`
-                          : `A printable routine card built from your exact profile — not a generic guide.`)
-                      : (lang==="fr"
-                          ? `Les deux rapports personnalisés à ton profil ${profile.skinType?.toLowerCase()||""} — meilleure valeur.`
-                          : lang==="es"
-                          ? `Ambos informes personalizados para tu perfil ${profile.skinType?.toLowerCase()||""} — mejor valor.`
-                          : `Both reports personalised to your ${profile.skinType||""} profile — best value.`)
-                    }
-                  </div>
-                )}
+                {/* Context box — accurate description per product, no false claims */}
+                {(() => {
+                  const isGuide = payModal==="skincare-guide"||payModal==="shaving-guide"||payModal==="guides-combo";
+                  const isSkinPersonalised = payModal==="biology"||payModal==="routine"||payModal==="skin-combo";
+                  const isShavePersonalised = payModal==="shave-biology"||payModal==="shave-card"||payModal==="shave-combo";
+
+                  // Guides — no personalisation claim, just what they get
+                  if(isGuide) return (
+                    <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+                      padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
+                      fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                      {payModal==="skincare-guide"
+                        ? (lang==="fr"?"La référence complète des soins pour hommes — ingrédients, types de peau, et construction de routine. Accès immédiat après paiement."
+                          :lang==="es"?"La referencia completa de cuidado para hombres — ingredientes, tipos de piel y construcción de rutina. Acceso inmediato tras el pago."
+                          :"The complete men's skincare reference — every ingredient, every skin type, routine building from scratch. Instant access after payment.")
+                        : payModal==="shaving-guide"
+                        ? (lang==="fr"?"La bible du rasage clinique — science des lames, technique par type de barbe, traitement des boutons. Accès immédiat."
+                          :lang==="es"?"La biblia clínica del afeitado — ciencia de hojas, técnica por tipo de barba, tratamiento de granos. Acceso inmediato."
+                          :"The clinical shaving bible — blade science, technique by beard type, bump treatment. Instant access after payment.")
+                        : (lang==="fr"?"Les deux guides complets — soins de la peau et rasage. Économise $3. Accès immédiat aux deux."
+                          :lang==="es"?"Ambas guías completas — cuidado de piel y afeitado. Ahorra $3. Acceso inmediato a las dos."
+                          :"Both complete guides — skincare and shaving. Save $3. Instant access to both after payment.")
+                      }
+                    </div>
+                  );
+
+                  // Personalised skin reports — reference their skin type
+                  if(isSkinPersonalised && profile) return (
+                    <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+                      padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
+                      fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                      {payModal==="biology"
+                        ? (lang==="fr"?`Ce rapport explique exactement pourquoi ta peau ${profile.skinType?.toLowerCase()||""} se comporte comme elle le fait — au niveau cellulaire.`
+                          :lang==="es"?`Este informe explica exactamente por qué tu piel ${profile.skinType?.toLowerCase()||""} se comporta como lo hace — a nivel celular.`
+                          :`This report explains exactly why your ${profile.skinType||""} skin behaves the way it does — at the cellular level.`)
+                        : payModal==="routine"
+                        ? (lang==="fr"?"Une carte de routine imprimable construite à partir de ton profil exact — pas un guide générique."
+                          :lang==="es"?"Una tarjeta de rutina imprimible construida desde tu perfil exacto — no una guía genérica."
+                          :"A printable routine card built from your exact skin profile — not a generic guide.")
+                        : (lang==="fr"?`Les deux rapports personnalisés pour ta peau ${profile.skinType?.toLowerCase()||""} — meilleure valeur.`
+                          :lang==="es"?`Ambos informes personalizados para tu piel ${profile.skinType?.toLowerCase()||""} — mejor valor.`
+                          :`Both reports personalised to your ${profile.skinType||""} skin profile — best value.`)
+                      }
+                    </div>
+                  );
+
+                  // Personalised shave reports — reference their shave problem
+                  if(isShavePersonalised && savedShave) return (
+                    <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+                      padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
+                      fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                      {payModal==="shave-biology"
+                        ? (lang==="fr"?"Ce rapport explique la biologie exacte derrière tes problèmes de rasage — au niveau cellulaire et folliculaire."
+                          :lang==="es"?"Este informe explica la biología exacta detrás de tus problemas de afeitado — a nivel celular y folicular."
+                          :"This report explains the exact biology behind your shaving problem — at the cellular and follicle level.")
+                        : payModal==="shave-card"
+                        ? (lang==="fr"?"Ta carte de protocole de rasage personnalisée — tes étapes exactes pré, pendant et post-rasage."
+                          :lang==="es"?"Tu tarjeta de protocolo de afeitado personalizada — tus pasos exactos pre, durante y post-afeitado."
+                          :"Your personalised shave protocol card — your exact pre, during, and post-shave steps.")
+                        : (lang==="fr"?"Les deux rapports de rasage personnalisés à ton profil exact — meilleure valeur."
+                          :lang==="es"?"Ambos informes de afeitado personalizados para tu perfil exacto — mejor valor."
+                          :"Both shave reports personalised to your exact profile — best value.")
+                      }
+                    </div>
+                  );
+
+                  return null;
+                })()}
 
                 {/* Email field for report delivery */}
                 <div style={{marginBottom:14}}>
