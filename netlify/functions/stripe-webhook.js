@@ -1,79 +1,86 @@
 /**
- * SKINR -- Stripe Webhook Handler + PDF Generation + Email Delivery
+ * SKINR -- Stripe Webhook + Branded PDF Generation + Gmail Delivery
  * netlify/functions/stripe-webhook.js
  *
- * Flow:
- * 1. Stripe fires payment_intent.succeeded
- * 2. We verify the signature (HMAC-SHA256)
- * 3. We generate a PDF of the purchased report using plain text formatting
- * 4. We send the PDF to the customer via Gmail SMTP
- * 5. We send a copy notification to the owner
+ * Generates a luxury branded PDF for every purchase and emails it
+ * to the customer within 60 seconds of payment confirmation.
+ *
+ * Design: Black background, gold accents, Helvetica typography.
+ * Matches the SKINR brand aesthetic.
  */
 
-const crypto = require("crypto");
-const https  = require("https");
+const crypto     = require("crypto");
+const https      = require("https");
 const nodemailer = require("nodemailer");
+const PDFDocument = require("pdfkit");
 
-// ── PRODUCT LABELS ────────────────────────────────────────────────────────────
+// ── BRAND COLOURS ─────────────────────────────────────────────────────────────
+const BRAND = {
+  black:  "#050505",
+  card:   "#0D0D0D",
+  gold:   "#B8972A",
+  gold2:  "#D4AF50",
+  white:  "#F2EEE6",
+  cream:  "#D8D2C8",
+  soft:   "#B8AEA6",
+  muted:  "#4E4844",
+  border: "#1E1A14",
+};
+
+// ── PRODUCT LABELS ─────────────────────────────────────────────────────────────
 const PRODUCT_LABELS = {
   "biology":        "Skin Biology Report",
-  "routine":        "Personalised Routine Card",
-  "skin-combo":     "Skin Analysis Bundle (Biology Report + Routine Card)",
+  "routine":        "Personalised Daily Routine Card",
+  "skin-combo":     "Skin Analysis Bundle",
   "shave-biology":  "Shave Biology Report",
   "shave-card":     "Shave Protocol Card",
   "shave-combo":    "Shave Protocol Bundle",
   "skincare-guide": "The No-BS Men's Skincare Guide",
   "shaving-guide":  "The Men's Shaving Bible",
-  "guides-combo":   "Both SKINR Guides",
+  "guides-combo":   "Complete Guide Collection",
+};
+
+const PRODUCT_PRICES = {
+  "biology": 15, "routine": 12, "skin-combo": 22,
+  "shave-biology": 15, "shave-card": 12, "shave-combo": 22,
+  "skincare-guide": 9, "shaving-guide": 9, "guides-combo": 15,
 };
 
 // ── VERIFY STRIPE SIGNATURE ───────────────────────────────────────────────────
 const verifyStripeSignature = (payload, signature, secret) => {
-  const parts     = signature.split(",");
-  const timestamp = parts.find(p => p.startsWith("t="))?.split("=")[1];
+  const parts      = signature.split(",");
+  const timestamp  = parts.find(p => p.startsWith("t="))?.split("=")[1];
   const signatures = parts.filter(p => p.startsWith("v1=")).map(p => p.split("=")[1]);
-  if (!timestamp || signatures.length === 0) return false;
-
-  // Replay attack prevention -- reject events older than 5 minutes
+  if (!timestamp || !signatures.length) return false;
   if (Math.abs(Date.now() / 1000 - parseInt(timestamp)) > 300) return false;
-
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(`${timestamp}.${payload}`, "utf8")
-    .digest("hex");
-
+  const expected = crypto.createHmac("sha256", secret)
+    .update(`${timestamp}.${payload}`, "utf8").digest("hex");
   return signatures.some(sig => {
-    try {
-      return crypto.timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expected, "hex"));
-    } catch (_) { return false; }
+    try { return crypto.timingSafeEqual(Buffer.from(sig,"hex"), Buffer.from(expected,"hex")); }
+    catch(_) { return false; }
   });
 };
 
-// ── CALL CLAUDE API to generate personalised report content ───────────────────
+// ── CALL CLAUDE ───────────────────────────────────────────────────────────────
 const callClaude = (prompt) => new Promise((resolve, reject) => {
   const body = JSON.stringify({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 3000,
+    max_tokens: 2500,
     messages: [{ role: "user", content: prompt }],
   });
-
   const req = https.request({
-    hostname: "api.anthropic.com",
-    path: "/v1/messages",
-    method: "POST",
+    hostname: "api.anthropic.com", path: "/v1/messages", method: "POST",
     headers: {
-      "Content-Type":      "application/json",
-      "x-api-key":         process.env.ANTHROPIC_API_KEY,
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
       "anthropic-version": "2023-06-01",
     },
   }, (res) => {
     let data = "";
-    res.on("data", chunk => data += chunk);
+    res.on("data", c => data += c);
     res.on("end", () => {
-      try {
-        const parsed = JSON.parse(data);
-        resolve(parsed.content?.[0]?.text || "");
-      } catch (e) { resolve(""); }
+      try { resolve(JSON.parse(data).content?.[0]?.text || ""); }
+      catch(e) { resolve(""); }
     });
   });
   req.on("error", reject);
@@ -81,259 +88,465 @@ const callClaude = (prompt) => new Promise((resolve, reject) => {
   req.end();
 });
 
-// ── BUILD PDF TEXT CONTENT ────────────────────────────────────────────────────
-// Creates a clean plain-text formatted document
-// When we upgrade to full PDF library this function stays the same
-const buildPdfText = (product, reportContent, skinType, email) => {
-  const date = new Date().toLocaleDateString("en-CA", {
-    year: "numeric", month: "long", day: "numeric"
-  });
-  const label = PRODUCT_LABELS[product] || "SKINR Report";
-
-  return `
-SKINR
-Clinical Skincare & Shaving Platform for Men
-getskinr.com
-================================================================
-
-${label.toUpperCase()}
-Generated: ${date}
-${skinType ? `Skin Profile: ${skinType}` : ""}
-${email ? `Prepared for: ${email}` : ""}
-
-================================================================
-IMPORTANT: This report contains clinical guidance generated
-specifically for your profile. It is not a substitute for
-professional medical advice. Consult a dermatologist for
-any persistent skin or shaving concerns.
-================================================================
-
-${reportContent}
-
-================================================================
-SKINR -- Free. Clinical. Built for Men.
-getskinr.com | hello@getskinr.com
-
-Amazon affiliate links in SKINR support this free service
-at no extra cost to you. Recommendations are based solely
-on clinical evidence and your profile -- no brand pays for
-placement.
-================================================================
-`.trim();
-};
-
-// ── GENERATE REPORT CONTENT VIA CLAUDE ───────────────────────────────────────
-const generateReportContent = async (product, skinType, metadata) => {
+// ── GENERATE REPORT CONTENT ───────────────────────────────────────────────────
+const generateContent = async (product, skinType) => {
   const isGuide = product.includes("guide");
+
   if (isGuide) {
-    // Guides are static -- return a professional intro + table of contents
-    if (product === "skincare-guide" || product === "guides-combo") {
-      return `THE NO-BS MEN'S SKINCARE GUIDE
+    const skincareToC = `THE NO-BS MEN'S SKINCARE GUIDE
 A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine
 
 TABLE OF CONTENTS
+
 1. Why Most Men's Skin Routines Fail
-2. The Biology You Actually Need to Know
-   -- The Skin Barrier
-   -- Sebum and Oil Production
-   -- Cellular Turnover
-   -- The pH Factor
-3. Skin Types -- Clinical Definitions
-   -- Dry, Oily, Combination, Sensitive, Acne-Prone
-4. The Ingredient Guide -- What Actually Works
-   -- Niacinamide, Retinol, Salicylic Acid, Hyaluronic Acid
-   -- Vitamin C, Ceramides, AHAs, Benzoyl Peroxide, SPF
-5. Building Your Routine -- Morning and Evening
+2. The Biology You Need to Know
+   The Skin Barrier / Sebum Production / Cellular Turnover / The pH Factor
+3. Skin Types — Clinical Definitions
+   Dry / Oily / Combination / Sensitive / Acne-Prone
+4. The Ingredient Guide — What Actually Works
+   Niacinamide / Retinol / Salicylic Acid / Hyaluronic Acid /
+   Vitamin C / Ceramides / AHAs / Benzoyl Peroxide / SPF
+5. Building Your Routine — Morning and Evening
 6. How to Read a Product Label
 7. The Most Common Mistakes Men Make
 8. Hyperpigmentation and Dark Spots
 9. When to See a Dermatologist
 
-ACCESS YOUR FULL GUIDE
-Your complete guide is available in the SKINR app at getskinr.com.
-Sign in and go to the Guides section -- your purchase is saved to your account.
-The full guide contains approximately 5,000 words of clinical reference material
-covering every topic in the table of contents above in complete detail.
+YOUR COMPLETE GUIDE IS IN THE SKINR APP
+Your full 5,000-word guide is accessible at getskinr.com under the Guides tab.
+Your purchase is permanently saved to your browser.`;
 
-For any questions about your guide contact hello@getskinr.com`;
-    }
-    if (product === "shaving-guide" || product === "guides-combo") {
-      return `THE MEN'S SHAVING BIBLE
+    const shavingToC = `THE MEN'S SHAVING BIBLE
 Blade Science, Skin Biology, and Clinical Technique
 
 TABLE OF CONTENTS
+
 1. Why Your Shave Is Failing
-2. What Shaving Actually Does to Your Skin
-   -- The Mechanics of the Cut
-   -- Pseudofolliculitis Barbae (Razor Bumps) -- The Clinical Facts
-   -- The Acid Mantle and Shaving
-3. Razor Science -- Every Type Explained
-   -- Multi-Blade Cartridge, Safety/DE, Electric, Straight, OneBlade
-4. Clinical Shaving Technique Phase by Phase
-   -- Pre-Shave, The Shave, Post-Shave
+2. What Shaving Does to Your Skin
+   Mechanics of the Cut / Pseudofolliculitis Barbae / The Acid Mantle
+3. Razor Science — Every Type Explained
+   Multi-Blade Cartridge / Safety DE Razor / Electric Foil / Straight Razor
+4. Clinical Shaving Technique — Phase by Phase
+   Pre-Shave / The Shave / Post-Shave Recovery Protocol
 5. Technique by Beard Type
-   -- Fine, Medium, Coarse Straight, Coarse Curly, Patchy
-6. Treating Active Razor Bumps -- Clinical Protocol
-7. Products That Work -- Ingredient-Led Recommendations
+   Fine Straight / Medium / Coarse Straight / Coarse Curly / Patchy
+6. Treating Active Razor Bumps — Clinical Protocol
+7. Products That Work — Ingredient-Led Recommendations
 8. Electric Shaver Optimisation
 9. When to See a Dermatologist
 
-ACCESS YOUR FULL GUIDE
-Your complete guide is available in the SKINR app at getskinr.com.
-The full guide contains approximately 5,500 words of clinical reference material.
+YOUR COMPLETE GUIDE IS IN THE SKINR APP
+Your full 5,500-word guide is accessible at getskinr.com under the Guides tab.`;
 
-For any questions contact hello@getskinr.com`;
-    }
+    if (product === "guides-combo") return { skincare: skincareToC, shaving: shavingToC };
+    if (product === "skincare-guide") return { skincare: skincareToC };
+    if (product === "shaving-guide") return { shaving: shavingToC };
   }
 
-  // Personalised reports -- generate via Claude
   const prompts = {
-    "biology": `You are a clinical dermatologist writing a personalised skin biology report. 
-Skin type: ${skinType || "combination"}. 
-Write a comprehensive 800-word clinical biology report explaining:
-1. Why this specific skin type behaves the way it does at a cellular level
-2. The biological mechanism behind the main concerns for this skin type
-3. What specific ingredients work for this biology and why (molecular mechanism)
-4. The long-term trajectory of this skin type with and without proper care
-5. Three non-obvious insights specific to this skin type
+    "biology": `Clinical dermatologist writing a personalised skin biology report.
+Skin type: ${skinType || "combination skin"}.
+Write 600-800 words in 4 sections with clear headings:
+SECTION 1 — YOUR SKIN BIOLOGY: Why this skin type behaves the way it does at a cellular level.
+SECTION 2 — THE ROOT CAUSES: The specific biological mechanisms driving the main concerns.
+SECTION 3 — YOUR INGREDIENT SCIENCE: What ingredients work for this biology and why, at the molecular level.
+SECTION 4 — YOUR TRAJECTORY: What happens to this skin type over time with and without proper care.
+Write in clinical but accessible language. Use paragraphs. Address reader directly.`,
 
-Write in clear, clinical but accessible language. No bullet points -- use paragraphs.
-Address the reader directly as "your skin".`,
-
-    "routine": `You are a clinical dermatologist writing a personalised daily routine card.
-Skin type: ${skinType || "combination"}.
-Write a complete morning and evening routine:
-
+    "routine": `Clinical dermatologist writing a personalised daily routine card.
+Skin type: ${skinType || "combination skin"}.
+Format exactly as:
 MORNING ROUTINE
-List 4-5 steps with: product type, exact application method, timing, and clinical reason.
+Step 1 — [Product type]: [Exact application method]. [Timing]. [Clinical reason].
+Step 2 — [Product type]: [Exact application method]. [Timing]. [Clinical reason].
+Step 3 — [Product type]: [Exact application method]. [Timing]. [Clinical reason].
+Step 4 — SPF: [Application]. [Why non-negotiable].
 
-EVENING ROUTINE  
-List 3-4 steps with: product type, exact application method, timing, and clinical reason.
+EVENING ROUTINE
+Step 1 — [Product type]: [Exact method]. [Timing]. [Clinical reason].
+Step 2 — [Product type]: [Exact method]. [Timing]. [Clinical reason].
+Step 3 — [Product type]: [Exact method]. [Timing]. [Clinical reason].
 
-GOLDEN RULES (3 rules specific to this skin type)
+YOUR GOLDEN RULES
+Rule 1: [Specific to this skin type]
+Rule 2: [Specific to this skin type]
+Rule 3: [Specific to this skin type]
 
-THE ONE THING TO REMEMBER (one powerful sentence)
+THE ONE THING TO REMEMBER
+[One powerful sentence specific to this skin type]`,
 
-Be specific and clinical. No generic advice.`,
+    "shave-biology": `Shaving dermatologist writing a personalised shave biology report.
+Skin type: ${skinType || "combination skin"}.
+Write 600-800 words in 4 sections:
+SECTION 1 — THE BIOLOGY OF YOUR SHAVING PROBLEM: Root cause at the cellular level.
+SECTION 2 — THE RAZOR MECHANICS: Why specific blade types cause damage for this skin profile.
+SECTION 3 — THE HEALING SCIENCE: Post-shave recovery biology for this skin type.
+SECTION 4 — YOUR PROTOCOL RATIONALE: Why the recommended approach works for this specific biology.`,
 
-    "shave-biology": `You are a shaving dermatologist writing a personalised shave biology report.
-Skin type: ${skinType || "combination"}.
-Write a comprehensive 800-word clinical report explaining:
-1. The biological reason shaving causes problems for this skin type
-2. The cellular mechanism of razor bumps and irritation for this profile
-3. Why specific blade types cause more damage for this skin biology
-4. The post-shave recovery biology specific to this skin type
-5. The long-term skin trajectory with correct vs incorrect shaving technique
+    "shave-card": `Shaving dermatologist writing a personalised shave protocol card.
+Skin type: ${skinType || "combination skin"}.
+Format exactly as:
+PRE-SHAVE PROTOCOL
+Step 1 — [Action]: [Exact method]. Duration: [time]. Why: [physiological reason].
+Step 2 — [Action]: [Exact method]. Duration: [time]. Why: [physiological reason].
+Step 3 — [Product]: [Application]. Duration: [time]. Why: [physiological reason].
 
-Write in clinical but accessible language. Use paragraphs not bullet points.`,
+THE SHAVE
+Step 1 — [Direction and technique]: [Exact instruction]. Why: [dermatological reason].
+Step 2 — [Rinse protocol]: [Exact instruction]. Why: [reason].
+Step 3 — [Final pass if needed]: [Exact instruction]. Why: [reason].
 
-    "shave-card": `You are a shaving dermatologist writing a personalised shave protocol card.
-Skin type: ${skinType || "combination"}.
+POST-SHAVE RECOVERY
+Step 1 — [Action]: [Exact product and method]. Why: [physiological effect].
+Step 2 — [Treatment]: [Exact product and method]. Why: [physiological effect].
+Step 3 — [Moisturiser]: [Exact product and amount]. Why: [physiological effect].
 
-PRE-SHAVE PROTOCOL (3 steps with timing and clinical reason)
+BLADE RECOMMENDATION
+Recommended: [Specific razor model]
+Why: [Clinical reason for this skin type]
+Blade: [Specific blade brand and why]
 
-THE SHAVE (3 steps with exact technique and why)
+CRITICAL RULE
+[The single most important instruction for this skin type — one sentence]
 
-POST-SHAVE PROTOCOL (3 steps with products and clinical reason)
-
-BLADE RECOMMENDATION (specific razor type and model for this skin type)
-
-CRITICAL RULE (the single most important thing for this skin type)
-
-WEEK ONE PROTOCOL (day by day guidance for the first 7 days)
-
-Be specific. Mention actual products by name.`,
+WEEK ONE PROTOCOL
+[Day by day guidance for days 1 through 7]`,
   };
 
-  // For combos, generate both reports
   if (product === "skin-combo") {
-    const bio = await callClaude(prompts["biology"]);
-    const card = await callClaude(prompts["routine"]);
-    return `PART 1: SKIN BIOLOGY REPORT\n${"=".repeat(60)}\n${bio}\n\nPART 2: PERSONALISED ROUTINE CARD\n${"=".repeat(60)}\n${card}`;
+    const [bio, card] = await Promise.all([
+      callClaude(prompts["biology"]),
+      callClaude(prompts["routine"]),
+    ]);
+    return { biology: bio, routine: card };
   }
   if (product === "shave-combo") {
-    const bio = await callClaude(prompts["shave-biology"]);
-    const card = await callClaude(prompts["shave-card"]);
-    return `PART 1: SHAVE BIOLOGY REPORT\n${"=".repeat(60)}\n${bio}\n\nPART 2: SHAVE PROTOCOL CARD\n${"=".repeat(60)}\n${card}`;
+    const [bio, card] = await Promise.all([
+      callClaude(prompts["shave-biology"]),
+      callClaude(prompts["shave-card"]),
+    ]);
+    return { shaveBiology: bio, shaveCard: card };
   }
 
-  const prompt = prompts[product];
-  if (!prompt) return `Your ${PRODUCT_LABELS[product] || "SKINR report"} is ready. Access it at getskinr.com`;
-  return await callClaude(prompt);
+  const text = await callClaude(prompts[product] || prompts["biology"]);
+  return { main: text };
 };
 
-// ── SEND EMAIL VIA GMAIL SMTP ─────────────────────────────────────────────────
-const sendEmail = async (to, subject, htmlBody, textContent, filename) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASS,
-    },
-  });
+// ── BUILD BRANDED PDF ─────────────────────────────────────────────────────────
+const buildPDF = (product, content, skinType, email) => new Promise((resolve, reject) => {
+  try {
+    const doc    = new PDFDocument({ size: "A4", margin: 0, info: {
+      Title:   PRODUCT_LABELS[product] || "SKINR Report",
+      Author:  "SKINR",
+      Subject: "Clinical Skincare Report",
+    }});
+    const chunks = [];
+    doc.on("data",  c => chunks.push(c));
+    doc.on("end",   () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
 
-  const mailOptions = {
-    from:    `SKINR <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    html:    htmlBody,
-    text:    textContent,
-    attachments: [{
-      filename,
-      content:     Buffer.from(textContent, "utf-8"),
-      contentType: "text/plain", // Plain text now -- PDF when we upgrade
-    }],
-  };
+    const W  = doc.page.width;   // 595
+    const M  = 48;               // margin
+    const CW = W - M * 2;       // content width
 
-  return transporter.sendMail(mailOptions);
-};
+    // Helper: hex to RGB
+    const hex = (h) => {
+      const r = parseInt(h.slice(1,3),16);
+      const g = parseInt(h.slice(3,5),16);
+      const b = parseInt(h.slice(5,7),16);
+      return [r,g,b];
+    };
 
-// ── BUILD HTML EMAIL BODY ─────────────────────────────────────────────────────
-const buildEmailHtml = (product, skinType, label) => `
+    // ── PAGE BACKGROUND ─────────────────────────────────────────────────────
+    const drawBackground = () => {
+      doc.rect(0, 0, W, doc.page.height).fill(BRAND.black);
+    };
+    drawBackground();
+
+    // ── HEADER ──────────────────────────────────────────────────────────────
+    // Gold top bar
+    doc.rect(0, 0, W, 4).fill(BRAND.gold);
+
+    // Logo area background
+    doc.rect(0, 4, W, 88).fill("#080808");
+
+    // Gold diamond
+    doc.save()
+      .translate(M, 48)
+      .rotate(45)
+      .rect(-7, -7, 14, 14)
+      .fill(BRAND.gold)
+      .restore();
+
+    // SKINR wordmark
+    doc.font("Helvetica-Bold")
+      .fontSize(22)
+      .fillColor(BRAND.white)
+      .text("SKINR", M + 18, 37, { lineBreak: false });
+
+    // Tagline
+    doc.font("Helvetica")
+      .fontSize(7.5)
+      .fillColor(BRAND.soft)
+      .text("FREE. CLINICAL. BUILT FOR MEN.", M + 18, 62, { lineBreak: false, characterSpacing: 2 });
+
+    // Website top-right
+    doc.font("Helvetica")
+      .fontSize(8)
+      .fillColor(BRAND.gold)
+      .text("getskinr.com", W - M - 70, 46, { lineBreak: false });
+
+    // Gold divider line
+    doc.rect(M, 96, CW, 0.5).fill(BRAND.gold);
+
+    // ── REPORT TITLE BLOCK ───────────────────────────────────────────────────
+    let y = 116;
+
+    // Label
+    doc.font("Helvetica")
+      .fontSize(8)
+      .fillColor(BRAND.gold)
+      .text((PRODUCT_LABELS[product] || "SKINR Report").toUpperCase(),
+        M, y, { characterSpacing: 3, lineBreak: false });
+    y += 22;
+
+    // Skin type if present
+    if (skinType) {
+      doc.font("Helvetica")
+        .fontSize(10)
+        .fillColor(BRAND.soft)
+        .text(`Prepared for: ${skinType} skin profile`, M, y);
+      y += 18;
+    }
+
+    // Date
+    const date = new Date().toLocaleDateString("en-CA", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+    doc.font("Helvetica")
+      .fontSize(9)
+      .fillColor(BRAND.muted)
+      .text(date, M, y);
+    y += 28;
+
+    // Thin gold rule
+    doc.rect(M, y, CW, 0.5).fill(BRAND.gold);
+    y += 20;
+
+    // ── CONTENT RENDERER ────────────────────────────────────────────────────
+    const addPage = () => {
+      doc.addPage();
+      drawBackground();
+      // Gold top bar on new pages
+      doc.rect(0, 0, W, 2).fill(BRAND.gold);
+      // Small footer on each page
+      doc.font("Helvetica").fontSize(7).fillColor(BRAND.muted)
+        .text("SKINR -- getskinr.com", M, doc.page.height - 28, {
+          width: CW, align: "center"
+        });
+      return 32;
+    };
+
+    const checkY = (needed = 40) => {
+      if (y + needed > doc.page.height - 60) {
+        y = addPage();
+      }
+    };
+
+    const writeSection = (title, body) => {
+      checkY(60);
+
+      // Section title background strip
+      doc.rect(M, y, CW, 24).fill("#111008");
+      doc.rect(M, y, 3, 24).fill(BRAND.gold);
+
+      doc.font("Helvetica-Bold")
+        .fontSize(9)
+        .fillColor(BRAND.gold)
+        .text(title.toUpperCase(), M + 12, y + 7, {
+          characterSpacing: 1.5, lineBreak: false
+        });
+      y += 34;
+
+      // Body text -- split by newlines, handle paragraphs
+      const lines = body.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) { y += 8; continue; }
+
+        // Sub-headings (ALL CAPS lines or lines ending with :)
+        const isSubhead = (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 80)
+          || trimmed.endsWith(":");
+
+        checkY(isSubhead ? 30 : 22);
+
+        if (isSubhead) {
+          doc.font("Helvetica-Bold")
+            .fontSize(9)
+            .fillColor(BRAND.cream)
+            .text(trimmed, M, y, { width: CW });
+          y += doc.currentLineHeight() + 6;
+        } else {
+          doc.font("Helvetica")
+            .fontSize(10)
+            .fillColor(BRAND.soft)
+            .text(trimmed, M, y, { width: CW, lineGap: 3 });
+          y += doc.currentLineHeight() + 8;
+        }
+      }
+      y += 12;
+    };
+
+    // ── WRITE CONTENT BASED ON PRODUCT ──────────────────────────────────────
+    if (content.biology)     writeSection("Skin Biology Report", content.biology);
+    if (content.routine)     writeSection("Your Daily Routine Card", content.routine);
+    if (content.shaveBiology)writeSection("Shave Biology Report", content.shaveBiology);
+    if (content.shaveCard)   writeSection("Your Shave Protocol Card", content.shaveCard);
+    if (content.skincare)    writeSection("Men's Skincare Guide", content.skincare);
+    if (content.shaving)     writeSection("Men's Shaving Bible", content.shaving);
+    if (content.main)        writeSection(PRODUCT_LABELS[product] || "Your Report", content.main);
+
+    // ── DISCLAIMER BOX ───────────────────────────────────────────────────────
+    checkY(80);
+    y += 10;
+    doc.rect(M, y, CW, 56).fill("#0A0A0A").stroke(BRAND.border);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor(BRAND.gold)
+      .text("MEDICAL DISCLAIMER", M + 12, y + 10, { characterSpacing: 1.5 });
+    doc.font("Helvetica").fontSize(7.5).fillColor(BRAND.muted)
+      .text(
+        "This report provides general clinical guidance and is not a substitute for professional medical advice. " +
+        "Consult a board-certified dermatologist for persistent skin conditions, severe acne, or any skin concern " +
+        "that does not respond to the protocols above.",
+        M + 12, y + 24, { width: CW - 24, lineGap: 2 }
+      );
+    y += 70;
+
+    // ── FOOTER ───────────────────────────────────────────────────────────────
+    checkY(60);
+    doc.rect(M, y, CW, 0.5).fill(BRAND.border);
+    y += 16;
+
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(BRAND.gold)
+      .text("SKINR", M, y, { lineBreak: false });
+    doc.font("Helvetica").fontSize(9).fillColor(BRAND.muted)
+      .text("  --  Free. Clinical. Built for Men.  --  getskinr.com", M + 36, y);
+    y += 18;
+
+    doc.font("Helvetica").fontSize(7.5).fillColor(BRAND.muted)
+      .text(
+        "Amazon affiliate links support this free service at no extra cost to you. " +
+        "All recommendations are based solely on clinical evidence and your skin profile. " +
+        "No brand pays for placement in SKINR.",
+        M, y, { width: CW, lineGap: 2 }
+      );
+
+    doc.end();
+
+  } catch(err) {
+    reject(err);
+  }
+});
+
+// ── BRANDED HTML EMAIL ────────────────────────────────────────────────────────
+const buildEmailHtml = (label, skinType, product) => `
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#050505;font-family:'Georgia',serif;">
-  <div style="max-width:600px;margin:0 auto;background:#0A0A0A;border:1px solid #2A2218;">
-    <!-- Header -->
-    <div style="background:#050505;padding:32px 40px;border-bottom:1px solid #B8972A;text-align:center;">
-      <div style="font-size:11px;letter-spacing:6px;color:#B8972A;text-transform:uppercase;margin-bottom:8px;">Clinical Skincare</div>
-      <div style="font-size:28px;font-weight:700;color:#F2EEE6;letter-spacing:4px;">SKINR</div>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your SKINR Report</title></head>
+<body style="margin:0;padding:0;background:#0D0D0D;font-family:Georgia,serif;">
+<div style="max-width:580px;margin:0 auto;background:#050505;border:1px solid #1E1A14;">
+
+  <!-- Gold top bar -->
+  <div style="height:3px;background:linear-gradient(90deg,#B8972A,#D4AF50,#B8972A);"></div>
+
+  <!-- Header -->
+  <div style="padding:36px 40px 28px;border-bottom:1px solid #1E1A14;text-align:center;">
+    <div style="display:inline-flex;align-items:center;gap:10px;">
+      <div style="width:10px;height:10px;background:#B8972A;transform:rotate(45deg);"></div>
+      <span style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;
+        color:#F2EEE6;letter-spacing:5px;">SKINR</span>
     </div>
-    <!-- Body -->
-    <div style="padding:40px;">
-      <div style="font-size:11px;letter-spacing:4px;color:#B8972A;text-transform:uppercase;margin-bottom:12px;">Your Report is Ready</div>
-      <h1 style="font-size:22px;color:#F2EEE6;font-weight:700;margin:0 0 20px 0;">${label}</h1>
-      ${skinType ? `<p style="font-size:14px;color:#B8AEA6;margin:0 0 20px 0;">Generated for: <strong style="color:#F2EEE6;">${skinType}</strong> skin profile</p>` : ""}
-      <p style="font-size:15px;color:#D8D2C8;line-height:1.8;margin:0 0 24px 0;">
-        Your personalised clinical report is attached to this email as a text file. 
-        Open it on any device to access your complete protocol.
-      </p>
-      <p style="font-size:15px;color:#D8D2C8;line-height:1.8;margin:0 0 32px 0;">
-        You can also access your report anytime at 
-        <a href="https://getskinr.com" style="color:#B8972A;">getskinr.com</a> 
-        -- your purchase is saved to your browser.
-      </p>
-      <!-- CTA -->
-      <div style="text-align:center;margin:32px 0;">
-        <a href="https://getskinr.com" style="background:#B8972A;color:#050505;padding:14px 32px;text-decoration:none;font-size:11px;letter-spacing:3px;text-transform:uppercase;font-weight:700;display:inline-block;">
-          Open SKINR
-        </a>
-      </div>
-    </div>
-    <!-- Footer -->
-    <div style="padding:24px 40px;border-top:1px solid #1A1A1A;text-align:center;">
-      <p style="font-size:11px;color:#4E4844;margin:0 0 8px 0;">
-        SKINR -- Free. Clinical. Built for Men.
-      </p>
-      <p style="font-size:11px;color:#4E4844;margin:0;">
-        Amazon affiliate links support this free service at no extra cost to you.
-        All recommendations are based solely on clinical evidence and your profile.
-      </p>
+    <div style="font-size:9px;letter-spacing:3px;color:#B8AEA6;margin-top:6px;
+      font-family:Arial,sans-serif;text-transform:uppercase;">
+      Free. Clinical. Built for Men.
     </div>
   </div>
-</body>
-</html>`;
+
+  <!-- Body -->
+  <div style="padding:40px;">
+    <div style="font-size:9px;letter-spacing:4px;color:#B8972A;
+      font-family:Arial,sans-serif;text-transform:uppercase;margin-bottom:14px;">
+      Your Report Is Ready
+    </div>
+    <h1 style="font-size:20px;color:#F2EEE6;font-weight:700;margin:0 0 20px;line-height:1.3;">
+      ${label}
+    </h1>
+    ${skinType ? `
+    <div style="background:#0D0D0D;border-left:3px solid #B8972A;padding:12px 16px;margin-bottom:24px;">
+      <div style="font-size:9px;letter-spacing:3px;color:#B8972A;font-family:Arial,sans-serif;
+        text-transform:uppercase;margin-bottom:4px;">Generated For</div>
+      <div style="font-size:14px;color:#F2EEE6;">${skinType} skin profile</div>
+    </div>` : ""}
+
+    <p style="font-size:14px;color:#D8D2C8;line-height:1.85;margin:0 0 20px;">
+      Your personalised clinical report is attached to this email as a PDF.
+      Open it on any device — save it, print it, keep it.
+    </p>
+    <p style="font-size:14px;color:#D8D2C8;line-height:1.85;margin:0 0 32px;">
+      Your report is also accessible anytime in the SKINR app at
+      <a href="https://skinrfinal.netlify.app" style="color:#B8972A;text-decoration:none;">
+        skinrfinal.netlify.app
+      </a>
+      under your results — your purchase is permanently saved.
+    </p>
+
+    <!-- CTA Button -->
+    <div style="text-align:center;margin:32px 0;">
+      <a href="https://skinrfinal.netlify.app"
+        style="background:#B8972A;color:#050505;padding:14px 36px;
+          text-decoration:none;font-size:9px;letter-spacing:3px;
+          text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;
+          display:inline-block;">
+        Open SKINR
+      </a>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div style="height:1px;background:#1E1A14;margin:0 40px;"></div>
+
+  <!-- Footer -->
+  <div style="padding:24px 40px;text-align:center;">
+    <p style="font-size:10px;color:#4E4844;margin:0 0 8px;font-family:Arial,sans-serif;">
+      SKINR -- getskinr.com -- hello@getskinr.com
+    </p>
+    <p style="font-size:10px;color:#4E4844;margin:0;font-family:Arial,sans-serif;line-height:1.6;">
+      Amazon affiliate links support this free service at no extra cost to you.<br>
+      All recommendations are based solely on clinical evidence and your skin profile.
+    </p>
+  </div>
+
+  <!-- Gold bottom bar -->
+  <div style="height:2px;background:linear-gradient(90deg,#B8972A,#D4AF50,#B8972A);"></div>
+
+</div>
+</body></html>`;
+
+// ── SEND EMAIL ────────────────────────────────────────────────────────────────
+const sendEmail = async (to, subject, html, pdfBuffer, filename) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
+  });
+  return transporter.sendMail({
+    from:    `SKINR <${process.env.GMAIL_USER}>`,
+    to, subject, html,
+    attachments: [{
+      filename,
+      content:     pdfBuffer,
+      contentType: "application/pdf",
+    }],
+  });
+};
 
 // ── MAIN HANDLER ──────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
@@ -342,13 +555,11 @@ exports.handler = async (event) => {
   }
 
   // Verify Stripe signature
-  const webhookSecret  = process.env.STRIPE_WEBHOOK_SECRET;
-  const stripeSignature = event.headers["stripe-signature"];
-
-  if (webhookSecret && stripeSignature) {
-    const isValid = verifyStripeSignature(event.body, stripeSignature, webhookSecret);
-    if (!isValid) {
-      console.error("Webhook signature verification failed");
+  const secret    = process.env.STRIPE_WEBHOOK_SECRET;
+  const signature = event.headers["stripe-signature"];
+  if (secret && signature) {
+    if (!verifyStripeSignature(event.body, signature, secret)) {
+      console.error("Webhook signature failed");
       return { statusCode: 400, body: "Invalid signature" };
     }
   }
@@ -356,62 +567,70 @@ exports.handler = async (event) => {
   try {
     const webhookEvent = JSON.parse(event.body);
 
-    // ── PAYMENT SUCCEEDED ────────────────────────────────────────────────────
     if (webhookEvent.type === "payment_intent.succeeded") {
-      const intent  = webhookEvent.data.object;
+      const intent   = webhookEvent.data.object;
       const { product, email, skinType } = intent.metadata;
-      const amount  = intent.amount / 100;
-      const label   = PRODUCT_LABELS[product] || "SKINR Report";
+      const amount   = intent.amount / 100;
+      const label    = PRODUCT_LABELS[product] || "SKINR Report";
+      const filename = `SKINR-${(label).replace(/[^a-zA-Z0-9]/g,"-")}.pdf`;
 
-      console.log(`Payment confirmed: ${intent.id} | ${product} | $${amount} | ${email || "no email"}`);
+      console.log(`Payment: ${intent.id} | ${product} | $${amount} | ${email}`);
 
-      // Send email with PDF if we have the customer's email
       if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
         try {
-          console.log(`Generating report content for ${product}...`);
-          const reportContent = await generateReportContent(product, skinType, intent.metadata);
+          // Generate content via Claude
+          console.log("Generating report content...");
+          const content = await generateContent(product, skinType);
 
-          const pdfText  = buildPdfText(product, reportContent, skinType, email);
-          const htmlBody = buildEmailHtml(product, skinType, label);
-          const filename = `SKINR-${label.replace(/[^a-zA-Z0-9]/g, "-")}.txt`;
-          const subject  = `Your SKINR ${label}`;
+          // Build branded PDF
+          console.log("Building PDF...");
+          const pdfBuffer = await buildPDF(product, content, skinType, email);
+
+          // Build email
+          const html    = buildEmailHtml(label, skinType, product);
+          const subject = `Your SKINR ${label}`;
 
           // Send to customer
-          await sendEmail(email, subject, htmlBody, pdfText, filename);
-          console.log(`Report emailed to ${email}`);
+          await sendEmail(email, subject, html, pdfBuffer, filename);
+          console.log(`PDF emailed to ${email}`);
 
-          // Send notification to owner
-          const ownerEmail = process.env.GMAIL_USER;
-          await sendEmail(
-            ownerEmail,
-            `[SKINR Sale] ${label} -- $${amount} -- ${email}`,
-            `<p>New purchase: ${label}<br>Amount: $${amount}<br>Customer: ${email}<br>Skin type: ${skinType || "not provided"}</p>`,
-            `New purchase: ${label}\nAmount: $${amount}\nCustomer: ${email}\nSkin type: ${skinType || "not provided"}`,
-            `SKINR-sale-${intent.id}.txt`
-          );
-          console.log("Owner notification sent");
+          // Owner notification (no attachment -- just the alert)
+          const owner = process.env.GMAIL_USER;
+          await nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: owner, pass: process.env.GMAIL_APP_PASS },
+          }).sendMail({
+            from:    `SKINR <${owner}>`,
+            to:      owner,
+            subject: `[SKINR Sale] ${label} -- $${amount} -- ${email}`,
+            html:    `<p style="font-family:Arial;font-size:14px;">
+              <strong>New SKINR purchase</strong><br><br>
+              Product: <strong>${label}</strong><br>
+              Amount: <strong>$${amount} USD</strong><br>
+              Customer: <strong>${email}</strong><br>
+              Skin type: ${skinType || "not provided"}<br>
+              Payment ID: ${intent.id}<br>
+              Time: ${new Date().toISOString()}
+            </p>`,
+          });
+          console.log("Owner notified");
 
-        } catch (emailErr) {
-          // Never let email failure break the webhook response
-          // Stripe will retry if we return non-200
-          console.error("Email delivery failed:", emailErr.message);
+        } catch(emailErr) {
+          console.error("Delivery error:", emailErr.message);
+          // Do not return non-200 -- Stripe would retry
         }
-      } else {
-        console.log("No email provided -- skipping report delivery");
       }
     }
 
-    // ── PAYMENT FAILED ───────────────────────────────────────────────────────
     if (webhookEvent.type === "payment_intent.payment_failed") {
       const intent = webhookEvent.data.object;
       console.error(`Payment failed: ${intent.id} -- ${intent.last_payment_error?.message}`);
     }
 
-    // Always return 200 -- Stripe retries on non-200
     return { statusCode: 200, body: JSON.stringify({ received: true }) };
 
-  } catch (err) {
-    console.error("Webhook handler error:", err.message);
+  } catch(err) {
+    console.error("Webhook error:", err.message);
     return { statusCode: 400, body: "Webhook error" };
   }
 };
