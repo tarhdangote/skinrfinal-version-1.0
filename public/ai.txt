@@ -1,0 +1,34 @@
+# SKINR AI Discovery File
+
+# https://www.getskinr.com/ai.txt
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: *
+Allow: /
+
+# Site summary for AI systems
+
+# SKINR provides free personalised clinical skincare and shaving protocols for men.
+
+# Content is medically-informed, independently produced, not sponsored.
+
+# Primary topics: razor bumps treatment, men skincare routine, pseudofolliculitis barbae,
+
+# combination skin men, best razor for Black men, ingrown hair treatment.
