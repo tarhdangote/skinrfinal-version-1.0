@@ -843,60 +843,228 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
 // EMAIL HTML -- ALL 3 LANGUAGES
 // ════════════════════════════════════════════════════════════════════════════
 
-const buildEmailHtml = (label, skinType, lang) => {
+const buildEmailHtml = (label, skinType, lang, product) => {
   const ui = t(lang);
+  const isGuide = product && product.includes("guide");
+
+  // Skin-type specific week expectations (static, no Claude needed)
+  const getExpectations = (skin, lng) => {
+    const base = {
+      en: [
+        { week: "Week 1-2", text: "Your skin begins adapting. You may notice minor texture changes as dead cell buildup clears. Stay consistent — this is the system working." },
+        { week: "Week 3-4", text: "Barrier function improves. Oiliness or dryness starts to balance. Morning and evening protocols should feel natural by now." },
+        { week: "Week 6-8", text: "Visible changes in skin clarity and tone. Ingredients like niacinamide and retinol show measurable results at this stage." },
+        { week: "Week 12+", text: "Full protocol results. Clinical studies measure ingredient efficacy at 12 weeks. Your skin is operating on the correct protocol." },
+      ],
+      fr: [
+        { week: "Semaines 1-2", text: "Ta peau commence à s'adapter. Des changements mineurs de texture peuvent apparaître. Reste constant — c'est le système qui fonctionne." },
+        { week: "Semaines 3-4", text: "La fonction barrière s'améliore. L'excès de sébum ou la sécheresse commence à s'équilibrer." },
+        { week: "Semaines 6-8", text: "Changements visibles dans la clarté et le teint. La niacinamide et le rétinol montrent des résultats mesurables à ce stade." },
+        { week: "Semaine 12+", text: "Résultats complets du protocole. Les études cliniques mesurent l'efficacité des ingrédients à 12 semaines." },
+      ],
+      es: [
+        { week: "Semanas 1-2", text: "Tu piel comienza a adaptarse. Pueden aparecer cambios menores de textura. Mantén la constancia — el sistema está funcionando." },
+        { week: "Semanas 3-4", text: "La función barrera mejora. El exceso de sebo o la sequedad comienza a equilibrarse." },
+        { week: "Semanas 6-8", text: "Cambios visibles en claridad y tono. La niacinamida y el retinol muestran resultados medibles en esta etapa." },
+        { week: "Semana 12+", text: "Resultados completos del protocolo. Los estudios clínicos miden la eficacia de los ingredientes a las 12 semanas." },
+      ],
+    };
+    return (base[lng] || base.en);
+  };
+
+  const expectations = !isGuide && skinType ? getExpectations(skinType, lang) : null;
+  const appUrl = "https://skinrfinal.netlify.app";
+
+  const weekCard = (item) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #1E1A14;vertical-align:top;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:3px;">${item.week}</div>
+        <div style="font-size:13px;color:#B8AEA6;line-height:1.7;">${item.text}</div>
+      </td>
+    </tr>`;
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SKINR</title></head>
 <body style="margin:0;padding:0;background:#0D0D0D;font-family:Arial,sans-serif;">
-<div style="max-width:580px;margin:0 auto;background:#050505;border:1px solid #1E1A14;">
+<div style="max-width:600px;margin:0 auto;background:#050505;border:1px solid #1E1A14;">
 
+  <!-- Gold top bar -->
   <div style="height:3px;background:linear-gradient(90deg,#B8972A,#D4AF50,#B8972A);"></div>
 
-  <div style="padding:32px 40px 24px;border-bottom:1px solid #1E1A14;text-align:center;">
+  <!-- Header -->
+  <div style="padding:28px 40px 22px;border-bottom:1px solid #1E1A14;text-align:center;">
     <div style="display:inline-flex;align-items:center;gap:10px;">
-      <div style="width:11px;height:11px;background:#B8972A;transform:rotate(45deg);"></div>
-      <span style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#F2EEE6;letter-spacing:5px;">SKINR</span>
+      <div style="width:10px;height:10px;background:#B8972A;transform:rotate(45deg);"></div>
+      <span style="font-size:22px;font-weight:700;color:#F2EEE6;letter-spacing:5px;">SKINR</span>
     </div>
-    <div style="font-size:8px;letter-spacing:2.5px;color:#B8AEA6;margin-top:6px;text-transform:uppercase;">
-      Free. Clinical. Built for Men.
-    </div>
+    <div style="font-size:8px;letter-spacing:2.5px;color:#B8AEA6;margin-top:5px;text-transform:uppercase;">Free. Clinical. Built for Men.</div>
   </div>
 
-  <div style="padding:36px 40px;">
-    <div style="font-size:9px;letter-spacing:4px;color:#B8972A;text-transform:uppercase;margin-bottom:14px;">
-      ${ui.emailReady}
-    </div>
-    <h1 style="font-size:20px;color:#F2EEE6;font-weight:700;margin:0 0 20px;line-height:1.3;">${label}</h1>
+  <!-- Body -->
+  <div style="padding:36px 40px 28px;">
 
-    ${skinType ? `<div style="background:#0D0D0D;border-left:3px solid #B8972A;padding:11px 16px;margin-bottom:22px;">
-      <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:5px;">${ui.profile}</div>
-      <div style="font-size:14px;color:#F2EEE6;">${skinType}</div>
+    <!-- Label -->
+    <div style="font-size:9px;letter-spacing:4px;color:#B8972A;text-transform:uppercase;margin-bottom:12px;">${ui.emailReady}</div>
+    <h1 style="font-size:22px;color:#F2EEE6;font-weight:700;margin:0 0 22px;line-height:1.3;">${label}</h1>
+
+    <!-- Profile card (personalised reports only) -->
+    ${skinType && !isGuide ? `
+    <div style="background:#0D0D0D;border:1px solid #1E1A14;border-left:3px solid #B8972A;padding:14px 18px;margin-bottom:24px;">
+      <div style="font-size:8px;letter-spacing:2.5px;color:#B8972A;text-transform:uppercase;margin-bottom:6px;">${ui.profile}</div>
+      <div style="font-size:16px;color:#F2EEE6;font-weight:700;">${skinType}</div>
+      <div style="font-size:12px;color:#B8AEA6;margin-top:3px;">
+        ${lang === "fr" ? "Rapport généré spécifiquement pour ta biologie cutanée."
+          : lang === "es" ? "Informe generado específicamente para tu biología cutánea."
+          : "Report generated specifically for your skin biology."}
+      </div>
     </div>` : ""}
 
-    <p style="font-size:14px;color:#D8D2C8;line-height:1.85;margin:0 0 18px;">${ui.emailBody}</p>
+    <!-- Main message -->
+    <p style="font-size:14px;color:#D8D2C8;line-height:1.85;margin:0 0 14px;">${ui.emailBody}</p>
     <p style="font-size:14px;color:#D8D2C8;line-height:1.85;margin:0 0 28px;">
-      ${ui.emailAccess}
-      <a href="https://skinrfinal.netlify.app" style="color:#B8972A;text-decoration:none;">skinrfinal.netlify.app</a>
+      ${lang === "fr"
+        ? "Ton profil est sauvegardé dans le navigateur où tu as effectué ton achat. Pour y accéder sur un autre appareil, fais une nouvelle analyse — elle prend 60 secondes."
+        : lang === "es"
+        ? "Tu perfil está guardado en el navegador donde realizaste tu compra. Para acceder desde otro dispositivo, haz un nuevo análisis — toma 60 segundos."
+        : "Your profile is saved in the browser where you made your purchase. To access on another device, run a new analysis — it takes 60 seconds."}
     </p>
 
-    <div style="text-align:center;margin:28px 0;">
-      <a href="https://skinrfinal.netlify.app"
-        style="background:#B8972A;color:#050505;padding:14px 36px;text-decoration:none;
-          font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:700;display:inline-block;">
-        ${ui.emailBtn}
-      </a>
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0 32px;">
+      <a href="${appUrl}" style="background:#B8972A;color:#050505;padding:14px 36px;
+        text-decoration:none;font-size:9px;letter-spacing:3px;text-transform:uppercase;
+        font-weight:700;display:inline-block;">${ui.emailBtn}</a>
     </div>
+
+    <!-- Week-by-week expectations (personalised reports only) -->
+    ${expectations ? `
+    <div style="border-top:1px solid #1E1A14;padding-top:24px;margin-top:8px;">
+      <div style="font-size:9px;letter-spacing:3px;color:#B8972A;text-transform:uppercase;margin-bottom:16px;">
+        ${lang === "fr" ? "Ce à quoi t'attendre" : lang === "es" ? "Qué esperar" : "What to Expect"}
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${expectations.map(weekCard).join("")}
+      </table>
+    </div>` : ""}
+
+    <!-- PDF instructions -->
+    <div style="background:#0D0D0D;border:1px solid #1E1A14;padding:16px 18px;margin-top:28px;">
+      <div style="font-size:9px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:6px;">
+        ${lang === "fr" ? "Votre PDF" : lang === "es" ? "Tu PDF" : "Your PDF"}
+      </div>
+      <div style="font-size:13px;color:#B8AEA6;line-height:1.7;">
+        ${lang === "fr"
+          ? "Ton rapport est joint en tant que pièce jointe PDF. Sauvegarde-le dans iCloud Drive, Google Drive ou tes fichiers locaux pour un accès permanent."
+          : lang === "es"
+          ? "Tu informe está adjunto como PDF. Guárdalo en iCloud Drive, Google Drive o tus archivos locales para acceso permanente."
+          : "Your report is attached as a PDF. Save it to iCloud Drive, Google Drive, or your local files for permanent access on any device."}
+      </div>
+    </div>
+
+    <!-- Week 1 Actionable Tips -->
+    ${!isGuide ? `
+    <div style="border-top:1px solid #1E1A14;padding-top:24px;margin-top:28px;">
+      <div style="font-size:9px;letter-spacing:3px;color:#B8972A;text-transform:uppercase;margin-bottom:14px;">
+        ${lang === "fr" ? "Tes 3 Actions Semaine 1" : lang === "es" ? "Tus 3 Acciones Semana 1" : "Your 3 Week 1 Actions"}
+      </div>
+      ${(product && (product.includes("shave") || product === "shave-combo")) ? `
+      <div style="margin-bottom:12px;padding:12px 0;border-bottom:1px solid #1E1A14;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">01</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "Si tu utilises encore des rasoirs multi-lames, passe à un rasoir simple lame cette semaine. C'est le changement le plus impactant que tu puisses faire."
+            : lang === "es"
+            ? "Si aún usas maquinillas de varias hojas, cambia a una de hoja simple esta semana. Es el cambio más impactante que puedes hacer."
+            : "If you are still using a multi-blade cartridge razor, switch to a single-blade safety razor this week. This is the highest-impact change you can make."}
+        </div>
+      </div>
+      <div style="margin-bottom:12px;padding:12px 0;border-bottom:1px solid #1E1A14;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">02</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "Avant chaque rasage cette semaine : 90 secondes d'eau tiède sur la zone de rasage. Pas négociable. L'eau hydrate le poil et réduit la force de coupe de 70%."
+            : lang === "es"
+            ? "Antes de cada afeitado esta semana: 90 segundos de agua tibia en la zona de afeitado. No negociable. El agua hidrata el vello y reduce la fuerza de corte en 70%."
+            : "Before every shave this week: 90 seconds of warm water on the shave area. Non-negotiable. Water hydrates the hair shaft and reduces cutting force by 70%."}
+        </div>
+      </div>
+      <div style="padding:12px 0;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">03</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "Après chaque rasage : eau froide pendant 30 secondes, puis ton traitement post-rasage. L'eau froide provoque une vasoconstriction qui réduit l'inflammation avant qu'elle ne commence."
+            : lang === "es"
+            ? "Después de cada afeitado: agua fría durante 30 segundos, luego tu tratamiento post-afeitado. El agua fría provoca vasoconstricción que reduce la inflamación antes de que empiece."
+            : "After every shave: cold water for 30 seconds, then your post-shave treatment. Cold water causes vasoconstriction that reduces inflammation before it starts."}
+        </div>
+      </div>` : `
+      <div style="margin-bottom:12px;padding:12px 0;border-bottom:1px solid #1E1A14;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">01</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "Cette semaine : implante uniquement la routine du matin. Ne changes rien d'autre. Ajoute la routine du soir en semaine 2 quand le matin est naturel."
+            : lang === "es"
+            ? "Esta semana: implementa solo la rutina de mañana. No cambies nada más. Agrega la rutina de noche en la semana 2 cuando la mañana sea natural."
+            : "This week: implement the morning routine only. Change nothing else. Add the evening routine in week 2 once the morning feels natural."}
+        </div>
+      </div>
+      <div style="margin-bottom:12px;padding:12px 0;border-bottom:1px solid #1E1A14;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">02</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "Le SPF est non négociable, même en hiver, même par temps nuageux. L'exposition UV quotidienne accumule les dommages sur des années. Commence aujourd'hui."
+            : lang === "es"
+            ? "El FPS es no negociable, incluso en invierno, incluso en días nublados. La exposición UV diaria acumula daño durante años. Empieza hoy."
+            : "SPF is non-negotiable, even in winter, even on cloudy days. Incidental daily UV exposure accumulates damage over years. Start today."}
+        </div>
+      </div>
+      <div style="padding:12px 0;">
+        <div style="font-size:8px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">03</div>
+        <div style="font-size:13px;color:#D8D2C8;line-height:1.7;">
+          ${lang === "fr"
+            ? "N'introduis pas d'autres nouveaux produits cette semaine. Si ta peau réagit, tu dois savoir exactement quel produit en est la cause. Un produit à la fois."
+            : lang === "es"
+            ? "No introduzcas otros productos nuevos esta semana. Si tu piel reacciona, necesitas saber exactamente qué producto es la causa. Un producto a la vez."
+            : "Do not introduce any other new products this week. If your skin reacts, you need to know exactly which product caused it. One product at a time."}
+        </div>
+      </div>`}
+    </div>` : ""}
+
+    <!-- Support -->
+    <div style="background:#0A0A0A;border:1px solid #1E1A14;padding:14px 18px;margin-top:24px;text-align:center;">
+      <div style="font-size:12px;color:#B8AEA6;line-height:1.7;">
+        ${lang === "fr"
+          ? "Questions? Email non reçu? Nous répondons en moins de 24h."
+          : lang === "es"
+          ? "¿Preguntas? ¿Email no recibido? Respondemos en menos de 24h."
+          : "Questions? Email not received? We respond within 24 hours."}
+        <br>
+        <a href="mailto:hello@getskinr.com" style="color:#B8972A;text-decoration:none;font-weight:700;">hello@getskinr.com</a>
+      </div>
+    </div>
+
   </div>
 
+  <!-- Divider -->
   <div style="height:1px;background:#1E1A14;margin:0 40px;"></div>
 
-  <div style="padding:22px 40px;text-align:center;">
-    <p style="font-size:10px;color:#4E4844;margin:0 0 7px;">SKINR &mdash; skinrfinal.netlify.app &mdash; hello@getskinr.com</p>
-    <p style="font-size:10px;color:#4E4844;margin:0;line-height:1.7;">${ui.emailFooter}</p>
+  <!-- Footer -->
+  <div style="padding:20px 40px 22px;text-align:center;">
+    <p style="font-size:10px;color:#4E4844;margin:0 0 6px;">SKINR &mdash; getskinr.com &mdash; hello@getskinr.com</p>
+    <p style="font-size:10px;color:#4E4844;margin:0;line-height:1.65;">${ui.emailFooter}</p>
+    <p style="font-size:9px;color:#3A3634;margin:8px 0 0;">
+      ${lang === "fr"
+        ? "Tu reçois cet email car tu as effectué un achat sur SKINR."
+        : lang === "es"
+        ? "Recibes este email porque realizaste una compra en SKINR."
+        : "You received this email because you made a purchase on SKINR."}
+    </p>
   </div>
 
+  <!-- Gold bottom bar -->
   <div style="height:2px;background:linear-gradient(90deg,#B8972A,#D4AF50,#B8972A);"></div>
+
 </div>
 </body></html>`;
 };
@@ -915,6 +1083,60 @@ const sendMail = async (to, subject, html, pdfBuffer, filename) => {
     to, subject, html,
     attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
   });
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAILCHIMP -- POST-PURCHASE EMAIL SEQUENCE
+// Adds customer to audience with product tags so Day 3 and Day 14
+// automated sequences fire automatically in Mailchimp.
+// Requires: MAILCHIMP_API_KEY and MAILCHIMP_AUDIENCE_ID in Netlify env vars.
+// ════════════════════════════════════════════════════════════════════════════
+
+const addToMailchimp = async (email, product, skinType, lang) => {
+  const apiKey    = process.env.MAILCHIMP_API_KEY;
+  const audienceId = process.env.MAILCHIMP_AUDIENCE_ID;
+  if (!apiKey || !audienceId) return; // Silent skip if not configured
+
+  try {
+    const dc  = apiKey.split("-").pop(); // e.g. us21
+    const md5 = crypto.createHash("md5").update(email.toLowerCase()).digest("hex");
+    const url = `https://${dc}.api.mailchimp.com/3.0/lists/${audienceId}/members/${md5}`;
+
+    const isGuide = product.includes("guide");
+    const tags = [
+      `product-${product}`,
+      `lang-${lang}`,
+      isGuide ? "purchased-guide" : "purchased-report",
+      skinType ? `skin-${skinType.toLowerCase().replace(/\s+/g, "-").substring(0, 20)}` : "no-profile",
+    ];
+
+    const payload = {
+      email_address: email,
+      status_if_new: "subscribed",
+      status:        "subscribed",
+      tags,
+      merge_fields: {
+        PRODUCT:   getLabel(product, lang),
+        SKINTYPE:  skinType || "",
+        LANGUAGE:  lang,
+        PURCHDATE: new Date().toISOString().split("T")[0],
+      },
+    };
+
+    await fetch(url, {
+      method:  "PUT",
+      headers: {
+        "Authorization": `Basic ${Buffer.from(`anystring:${apiKey}`).toString("base64")}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log(`Mailchimp: ${email} added to audience with tags [${tags.join(", ")}]`);
+  } catch (err) {
+    // Never let Mailchimp failure affect delivery
+    console.error("Mailchimp error (non-critical):", err.message);
+  }
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -983,9 +1205,12 @@ exports.handler = async (event) => {
         : `Your SKINR ${label}`;
 
       // 4. Send to customer
-      const html = buildEmailHtml(label, skinType, lang);
+      const html = buildEmailHtml(label, skinType, lang, product);
       await sendMail(email, subject, html, pdf, filename);
       console.log(`Delivered to ${email}`);
+
+          // Add to Mailchimp for automated Day 3 and Day 14 follow-up sequences
+          addToMailchimp(email, product, skinType, lang).catch(()=>{});
 
       // 5. Owner notification (plain, no attachment)
       const owner = process.env.GMAIL_USER;
@@ -1020,3 +1245,6 @@ exports.handler = async (event) => {
 
   return { statusCode: 200, body: JSON.stringify({ received: true }) };
 };
+
+// ════════════════════════════════════════════════════════════════════════════
+// (Mailchimp integration is defined above near the main handler)
