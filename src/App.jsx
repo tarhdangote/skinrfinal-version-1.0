@@ -2473,6 +2473,10 @@ export default function SkinrApp() {
   const [bioLoad, setBioLoad]               = useState(false);
   const [cardReport, setCardReport]         = useState(null);
   const [cardLoad, setCardLoad]             = useState(false);
+  const [shaveBioReport, setShaveBioReport] = useState(null);
+  const [shaveBioLoad, setShaveBioLoad]     = useState(false);
+  const [shaveCardReportData, setShaveCardReportData] = useState(null);
+  const [shaveCardLoad2, setShaveCardLoad2] = useState(false);
   // ready
   const [ready, setReady]           = useState(false);
   const chatRef = useRef(null);
@@ -3015,7 +3019,75 @@ Rules:
     setCardLoad(false);
   };
 
-  // -- EMAIL CAPTURE --
+  // -- SHAVE BIOLOGY REPORT GENERATION --
+  const generateShaveBioReport = async () => {
+    if(!savedShave || shaveBioLoad) return;
+    setShaveBioLoad(true);
+    const ln = LANGUAGES.find(l=>l.code===lang)?.label || "English";
+    const answers = savedShave.answers || {};
+    const prompt = `You are a shaving dermatologist writing a personalised shave biology report in ${ln}.
+No markdown. No asterisks. No hash symbols. Plain text only. Use ALL CAPS for section headings.
+
+Patient: method=${answers.method||"cartridge"}, beard=${answers.beard||"medium"}, 
+problem=${answers.problem||"irritation"}, bumps=${answers.activeBumps||"none"}, 
+blade=${answers.currentBlade||"unknown"}, frequency=${answers.frequency||"daily"}
+
+Write 600 words in these 4 sections:
+
+SECTION 1 - THE BIOLOGY OF YOUR SHAVING PROBLEM
+Why this specific combination of beard type, shaving method, and skin causes the exact problem described.
+
+SECTION 2 - THE RAZOR MECHANICS
+Why the current blade type causes damage for this specific beard and skin type at the cellular level.
+
+SECTION 3 - THE HEALING SCIENCE
+What happens in the skin during post-shave recovery and why the recommended protocol accelerates it.
+
+SECTION 4 - YOUR PROTOCOL RATIONALE
+Why each element of the recommended protocol works for this specific biological profile.
+
+Write in clinical but accessible language. Address the reader directly. No bullet points - use paragraphs.`;
+    try {
+      const text = await callAI([{role:"user",content:prompt}], "", 2000);
+      if(text) setShaveBioReport(text);
+    } catch(_) {}
+    setShaveBioLoad(false);
+  };
+
+  // -- SHAVE PROTOCOL CARD GENERATION --
+  const generateShaveCard = async () => {
+    if(!savedShave || shaveCardLoad2) return;
+    setShaveCardLoad2(true);
+    const ln = LANGUAGES.find(l=>l.code===lang)?.label || "English";
+    const answers = savedShave.answers || {};
+    const prompt = `You are a shaving dermatologist creating a personalised shave protocol card in ${ln}. Return ONLY valid JSON -- no markdown.
+
+Patient: method=${answers.method||"cartridge"}, beard=${answers.beard||"medium"},
+problem=${answers.problem||"irritation"}, bumps=${answers.activeBumps||"none"},
+budget=${answers.budget||"mid"}
+
+Return this JSON:
+{
+  "preShave": [
+    {"step":1,"title":"Step name","instruction":"Exact action","duration":"X seconds","why":"Clinical reason"}
+  ],
+  "shaveSteps": [
+    {"step":1,"title":"Step name","instruction":"Exact technique","why":"Dermatological reason"}
+  ],
+  "postShave": [
+    {"step":1,"title":"Step name","instruction":"Exact product and method","why":"Physiological effect"}
+  ],
+  "bladeRecommendation": "Specific razor model and why for this beard type",
+  "criticalRule": "Single most important instruction for this profile",
+  "weekOneProtocol": "Day by day guidance for days 1 through 7"
+}`;
+    try {
+      const raw = await callAI([{role:"user",content:prompt}], "", 1500);
+      const parsed = parseJSON(raw);
+      if(parsed) setShaveCardReportData(parsed);
+    } catch(_) {}
+    setShaveCardLoad2(false);
+  };
   const submitEmail = async () => {
     if(!emailVal.trim()) return;
     LS.set(SK.email, emailVal.trim());
@@ -4181,11 +4253,11 @@ Rules:
                       {lang==="fr"?"Pourquoi ton type de barbe spécifique cause ces problèmes -- au niveau cellulaire.":lang==="es"?"Por qué tu tipo específico de barba causa estos problemas -- a nivel celular.":"The cellular reason your specific beard type and skin cause this exact problem."}
                     </div>
                     {shaveBioUnlocked?(
-                      bioReport?(
-                        <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85,maxHeight:300,overflowY:"auto"}}>{bioReport}</div>
+                      shaveBioReport?(
+                        <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85,maxHeight:300,overflowY:"auto"}}>{shaveBioReport}</div>
                       ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>
-                          {bioLoad?t.generatingLabel:t.generateReport}
+                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveBioReport} disabled={shaveBioLoad}>
+                          {shaveBioLoad?t.generatingLabel:t.generateReport}
                         </button>
                       )
                     ):(
@@ -4203,13 +4275,14 @@ Rules:
                       {lang==="fr"?"Tes étapes exactes de rasage -- pré, pendant, post -- formatées pour le mur de ta salle de bain.":lang==="es"?"Tus pasos exactos de afeitado -- pre, durante, post -- formateados para la pared de tu baño.":"Your exact shaving steps -- pre, during, post -- formatted as a printable bathroom card."}
                     </div>
                     {shaveCardUnlocked?(
-                      cardReport?(
+                      shaveCardReportData?(
                         <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85}}>
-                          {cardReport.preShave?.map((s,i)=><div key={i} style={{marginBottom:6}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.title}</strong> -- {s.instruction}</div>)}
+                          {shaveCardReportData.preShave?.map((s,i)=><div key={i} style={{marginBottom:6}}><span style={{color:"var(--gold)"}}>{i+1}. </span><strong>{s.title}</strong> -- {s.instruction}</div>)}
+                          {shaveCardReportData.criticalRule&&<div style={{borderTop:"1px solid var(--border)",marginTop:10,paddingTop:10,color:"var(--gold)",fontStyle:"italic",fontSize:12}}>{shaveCardReportData.criticalRule}</div>}
                         </div>
                       ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>
-                          {cardLoad?t.generatingLabel:t.generateCard}
+                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveCard} disabled={shaveCardLoad2}>
+                          {shaveCardLoad2?t.generatingLabel:t.generateCard}
                         </button>
                       )
                     ):(
@@ -4685,7 +4758,14 @@ Rules:
                       onClick={confirmPayment} disabled={payLoading||!clientSecret||!cardElement}>
                       {payLoading
                         ? (lang==="fr"?"Traitement...":lang==="es"?"Procesando...":"Processing...")
-                        : (lang==="fr"?`Payer $${payModal==="combo"?15:10} USD`:lang==="es"?`Pagar $${payModal==="combo"?15:10} USD`:`Pay $${payModal==="combo"?15:10} USD`)}
+                        : (()=>{
+                          const amt = payModal==="skin-combo"||payModal==="shave-combo"?22
+                            :payModal==="guides-combo"?15
+                            :payModal==="skincare-guide"||payModal==="shaving-guide"?9
+                            :payModal==="routine"||payModal==="shave-card"?12
+                            :15; // biology, shave-biology default $15
+                          return lang==="fr"?`Payer $${amt} USD`:lang==="es"?`Pagar $${amt} USD`:`Pay $${amt} USD`;
+                        })()}
                     </button>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
                       fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic"}}>
