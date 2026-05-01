@@ -2581,7 +2581,8 @@ export default function SkinrApp() {
         body: JSON.stringify({
           product,
           email: emailSaved || "",
-          skinType: profile?.skinType || "",
+          skinType: profile?.skinType || savedShave?.skinType || "",
+          lang: lang || "en",
         }),
       });
       const data = await res.json();
