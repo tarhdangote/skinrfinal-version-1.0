@@ -695,17 +695,27 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
 
     // ── HELPERS ─────────────────────────────────────────────────────────────
 
-    const safeContentBottom = FOOTER_Y - 28;
+    // safeContentBottom: where content must stop to leave room for footer
+    // Increased buffer to prevent over-eager page breaks
+    const safeContentBottom = FOOTER_Y - 16;
 
     const needPage = (estimatedHeight) => {
-      if (y + estimatedHeight > safeContentBottom) {
+      // Only break page if we genuinely cannot fit the minimum content
+      // Use a conservative minimum (one line height) not the full estimate
+      const minHeight = Math.min(estimatedHeight, 22);
+      if (y + minHeight > safeContentBottom) {
         doc.addPage(); // pageAdded fires: fillPage + drawTopBar + drawFooter
         y = CONT_START_Y;
       }
     };
 
     const drawSectionHeader = (title) => {
-      needPage(40);
+      // Section header needs 60px: 26 header + 34 gap + some body text
+      // If less than 60px left, start new page so header and first line stay together
+      if (y + 60 > safeContentBottom) {
+        doc.addPage();
+        y = CONT_START_Y;
+      }
       doc.rect(MARGIN, y, CW, 26).fill(C.card);
       doc.rect(MARGIN, y, 3, 26).fill(C.gold);
       doc.font("Helvetica-Bold").fontSize(8.5).fillColor(C.gold)
@@ -727,8 +737,13 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
       const lineGap  = isSubhead ? 1 : 3;
       const gap      = isSubhead ? 5 : 9;
 
-      // Estimate: 2 lines minimum for page-break check
-      needPage(fontSize * 1.5 * 2);
+      // Only check for page break using single line height
+      // This prevents premature breaks that cause blank pages
+      const oneLineH = fontSize * 1.4;
+      if (y + oneLineH > safeContentBottom) {
+        doc.addPage();
+        y = CONT_START_Y;
+      }
 
       doc.font(font).fontSize(fontSize).fillColor(color)
         .text(text, MARGIN, y, { width: CW, lineGap });
