@@ -1086,60 +1086,6 @@ const sendMail = async (to, subject, html, pdfBuffer, filename) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// MAILCHIMP -- POST-PURCHASE EMAIL SEQUENCE
-// Adds customer to audience with product tags so Day 3 and Day 14
-// automated sequences fire automatically in Mailchimp.
-// Requires: MAILCHIMP_API_KEY and MAILCHIMP_AUDIENCE_ID in Netlify env vars.
-// ════════════════════════════════════════════════════════════════════════════
-
-const addToMailchimp = async (email, product, skinType, lang) => {
-  const apiKey    = process.env.MAILCHIMP_API_KEY;
-  const audienceId = process.env.MAILCHIMP_AUDIENCE_ID;
-  if (!apiKey || !audienceId) return; // Silent skip if not configured
-
-  try {
-    const dc  = apiKey.split("-").pop(); // e.g. us21
-    const md5 = crypto.createHash("md5").update(email.toLowerCase()).digest("hex");
-    const url = `https://${dc}.api.mailchimp.com/3.0/lists/${audienceId}/members/${md5}`;
-
-    const isGuide = product.includes("guide");
-    const tags = [
-      `product-${product}`,
-      `lang-${lang}`,
-      isGuide ? "purchased-guide" : "purchased-report",
-      skinType ? `skin-${skinType.toLowerCase().replace(/\s+/g, "-").substring(0, 20)}` : "no-profile",
-    ];
-
-    const payload = {
-      email_address: email,
-      status_if_new: "subscribed",
-      status:        "subscribed",
-      tags,
-      merge_fields: {
-        PRODUCT:   getLabel(product, lang),
-        SKINTYPE:  skinType || "",
-        LANGUAGE:  lang,
-        PURCHDATE: new Date().toISOString().split("T")[0],
-      },
-    };
-
-    await fetch(url, {
-      method:  "PUT",
-      headers: {
-        "Authorization": `Basic ${Buffer.from(`anystring:${apiKey}`).toString("base64")}`,
-        "Content-Type":  "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log(`Mailchimp: ${email} added to audience with tags [${tags.join(", ")}]`);
-  } catch (err) {
-    // Never let Mailchimp failure affect delivery
-    console.error("Mailchimp error (non-critical):", err.message);
-  }
-};
-
-// ════════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -1209,8 +1155,8 @@ exports.handler = async (event) => {
       await sendMail(email, subject, html, pdf, filename);
       console.log(`Delivered to ${email}`);
 
-          // Add to Mailchimp for automated Day 3 and Day 14 follow-up sequences
-          addToMailchimp(email, product, skinType, lang).catch(()=>{});
+          // Add to Loops for automated Day 3 and Day 14 sequences
+          addToLoops(email, product, skinType, lang).catch(()=>{});
 
       // 5. Owner notification (plain, no attachment)
       const owner = process.env.GMAIL_USER;
@@ -1247,4 +1193,70 @@ exports.handler = async (event) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// (Mailchimp integration is defined above near the main handler)
+// ════════════════════════════════════════════════════════════════════════════
+// LOOPS.SO -- POST-PURCHASE EMAIL SEQUENCE
+// Free up to 2,000 contacts. No step limits.
+// Triggers automated Day 3 and Day 14 sequences per product.
+// Requires: LOOPS_API_KEY in Netlify environment variables.
+// ════════════════════════════════════════════════════════════════════════════
+
+const addToLoops = async (email, product, skinType, lang) => {
+  const apiKey = process.env.LOOPS_API_KEY;
+  if (!apiKey || !email) return;
+
+  try {
+    // Step 1 -- Create or update contact in Loops
+    const contactRes = await fetch("https://app.loops.so/api/v1/contacts/create", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        source:       "SKINR Purchase",
+        userGroup:    product,
+        skinType:     skinType || "",
+        product:      getLabel(product, lang),
+        lang,
+        purchaseDate: new Date().toISOString().split("T")[0],
+      }),
+    });
+
+    if (!contactRes.ok) {
+      const err = await contactRes.text();
+      console.error("Loops contact error:", err);
+      return;
+    }
+
+    // Step 2 -- Fire event that triggers the journey for this product
+    const eventRes = await fetch("https://app.loops.so/api/v1/events/send", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        eventName: "skinrPurchaseCompleted",
+        eventProperties: {
+          product,
+          productLabel: getLabel(product, lang),
+          skinType:     skinType || "",
+          lang,
+        },
+      }),
+    });
+
+    if (!eventRes.ok) {
+      const err = await eventRes.text();
+      console.error("Loops event error:", err);
+      return;
+    }
+
+    console.log(`Loops: contact added and event fired for ${email} — ${product}`);
+  } catch (err) {
+    // Never let Loops failure affect delivery
+    console.error("Loops error (non-critical):", err.message);
+  }
+};
