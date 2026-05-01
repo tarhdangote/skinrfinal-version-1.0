@@ -2441,6 +2441,7 @@ export default function SkinrApp() {
   const [emailDone, setEmailDone]=useState(false);
   const [showPrivacy, setShowPrivacy]=useState(false);
   const [showTerms, setShowTerms]=useState(false);
+  const [cookieConsent, setCookieConsent]=useState(null); // null=undecided, 'accepted', 'declined'
   // Payment state
   const [payModal, setPayModal]             = useState(null); // null | "biology" | "routine" | "combo"
   const [payLoading, setPayLoading]         = useState(false);
@@ -2531,6 +2532,9 @@ export default function SkinrApp() {
     if(LS.get("skinr2:shaveCardUnlocked")) setShaveCardUnlocked(true);
     if(LS.get("skinr2:skincareGuideUnlocked")) setSkincareGuideUnlocked(true);
     if(LS.get("skinr2:shavingGuideUnlocked")) setShavingGuideUnlocked(true);
+    // Cookie consent
+    const storedConsent = LS.get("skinr2:consent");
+    if(storedConsent) setCookieConsent(storedConsent);
     setCommunityPosts(LS.get("skinr2:community")||[]);
     setPostLikes(LS.get("skinr2:likes")||{});
     setReviews(LS.get("skinr2:reviews")||[]);
@@ -2912,6 +2916,18 @@ export default function SkinrApp() {
   };
 
   // -- BIOLOGY REPORT GENERATION --
+  // System prompt enforces language and no-markdown for all in-app Claude calls
+  const getSystemPrompt = (langCode) => {
+    const ln = LANGUAGES.find(l=>l.code===langCode)?.label || "English";
+    const langRule = langCode !== "en"
+      ? `CRITICAL: Your entire response MUST be written in ${ln}. Every word. Zero English.`
+      : "Write in English.";
+    return `You write clinical skincare and shaving reports for a premium men's platform. ABSOLUTE RULES:
+${langRule}
+No markdown whatsoever: no #, ##, **, *, ---, >, backticks, or bullet symbols.
+Use ALL CAPS for section headings followed by a colon.
+Write in flowing prose paragraphs only. No lists.`;
+  };
   const generateBioReport = async () => {
     if(!profile||bioLoad) return;
     setBioLoad(true);
@@ -2934,7 +2950,7 @@ Write in flowing prose (no bullet points). Cover:
 
 Write at the level of a highly educated non-specialist. Precise but accessible. Approximately 800-1000 words total.`;
     try {
-      const text = await callAI([{role:"user",content:prompt}], "", 4000);
+      const text = await callAI([{role:"user",content:prompt}], getSystemPrompt(lang), 4000);
       setBioReport(text);
       // Send biology report to email
       if(emailSaved && text) {
@@ -2996,7 +3012,7 @@ Rules:
 - why must explain the clinical mechanism for THIS skin type specifically
 - goldenRules must be personalised -- not generic advice any person could give`;
     try {
-      const raw = await callAI([{role:"user",content:prompt}], "", 2000);
+      const raw = await callAI([{role:"user",content:prompt}], getSystemPrompt(lang), 2000);
       const parsed = parseJSON(raw);
       if(parsed) {
         setCardReport(parsed);
@@ -3025,8 +3041,15 @@ Rules:
     if(!savedShave || shaveBioLoad) return;
     setShaveBioLoad(true);
     const ln = LANGUAGES.find(l=>l.code===lang)?.label || "English";
+    const langInstruction = lang==="fr"
+      ? "MANDATORY: Write ENTIRELY in Quebec French. Every word must be in French. Do not write a single word in English."
+      : lang==="es"
+      ? "OBLIGATORIO: Escribe TODO en español latinoamericano. Ni una palabra en inglés."
+      : "Write in English.";
     const answers = savedShave.answers || {};
-    const prompt = `You are a shaving dermatologist writing a personalised shave biology report in ${ln}.
+    const prompt = `${langInstruction}
+
+You are a shaving dermatologist writing a personalised shave biology report in ${ln}.
 No markdown. No asterisks. No hash symbols. Plain text only. Use ALL CAPS for section headings.
 
 Patient: method=${answers.method||"cartridge"}, beard=${answers.beard||"medium"}, 
@@ -3047,9 +3070,10 @@ What happens in the skin during post-shave recovery and why the recommended prot
 SECTION 4 - YOUR PROTOCOL RATIONALE
 Why each element of the recommended protocol works for this specific biological profile.
 
-Write in clinical but accessible language. Address the reader directly. No bullet points - use paragraphs.`;
+Write in clinical but accessible language. Address the reader directly. No bullet points - use paragraphs.
+${langInstruction}`;
     try {
-      const text = await callAI([{role:"user",content:prompt}], "", 2000);
+      const text = await callAI([{role:"user",content:prompt}], getSystemPrompt(lang), 2000);
       if(text) setShaveBioReport(text);
     } catch(_) {}
     setShaveBioLoad(false);
@@ -3083,12 +3107,25 @@ Return this JSON:
   "weekOneProtocol": "Day by day guidance for days 1 through 7"
 }`;
     try {
-      const raw = await callAI([{role:"user",content:prompt}], "", 1500);
+      const raw = await callAI([{role:"user",content:prompt}], getSystemPrompt(lang), 1500);
       const parsed = parseJSON(raw);
       if(parsed) setShaveCardReportData(parsed);
     } catch(_) {}
     setShaveCardLoad2(false);
   };
+  // -- COOKIE CONSENT HANDLERS --
+  const acceptConsent = () => {
+    LS.set("skinr2:consent", "accepted");
+    setCookieConsent("accepted");
+    try {
+      if(window.gtag) window.gtag("consent", "update", { analytics_storage: "granted" });
+    } catch(_) {}
+  };
+  const declineConsent = () => {
+    LS.set("skinr2:consent", "declined");
+    setCookieConsent("declined");
+  };
+
   const submitEmail = async () => {
     if(!emailVal.trim()) return;
     LS.set(SK.email, emailVal.trim());
@@ -4593,13 +4630,94 @@ Return this JSON:
         <div className="modal" onClick={e=>e.stopPropagation()}>
           <div className="modal-inner">
             {paySuccess?(
-              <div style={{textAlign:"center",padding:"20px 0"}}>
-                <div style={{fontSize:32,marginBottom:12}}>*</div>
-                <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:700,fontStyle:"italic",color:"var(--gold)",marginBottom:8}}>
-                  {lang==="fr"?"Paiement Confirmé!":lang==="es"?"¡Pago Confirmado!":"Payment Confirmed!"}
+              <div style={{padding:"8px 0"}}>
+                {/* Success header */}
+                <div style={{textAlign:"center",padding:"20px 0 24px",
+                  borderBottom:"1px solid var(--border)",marginBottom:24}}>
+                  <div style={{
+                    width:56,height:56,background:"rgba(184,151,42,0.12)",
+                    border:"1px solid var(--gold)",borderRadius:"50%",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    margin:"0 auto 16px",fontSize:22}}>
+                    *
+                  </div>
+                  <div style={{fontFamily:"var(--fh)",fontSize:20,fontWeight:700,
+                    fontStyle:"italic",color:"var(--gold)",marginBottom:8}}>
+                    {lang==="fr"?"Paiement Confirmé":lang==="es"?"Pago Confirmado":"Payment Confirmed"}
+                  </div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--cream)",
+                    fontStyle:"italic",lineHeight:1.7}}>
+                    {lang==="fr"
+                      ?"Ton achat est confirmé. Ton rapport est en cours de génération."
+                      :lang==="es"
+                      ?"Tu compra está confirmada. Tu informe está siendo generado."
+                      :"Your purchase is confirmed. Your report is being generated."}
+                  </div>
                 </div>
-                <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",fontStyle:"italic"}}>
-                  {lang==="fr"?"Tes rapports sont maintenant déverrouillés.":lang==="es"?"Tus informes ya están desbloqueados.":"Your reports are now unlocked. Generating now..."}
+
+                {/* What happens next */}
+                <div style={{marginBottom:20}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,
+                    color:"var(--gold)",textTransform:"uppercase",marginBottom:12}}>
+                    {lang==="fr"?"Ce Qui Se Passe Maintenant":lang==="es"?"Lo Que Pasa Ahora":"What Happens Now"}
+                  </div>
+                  {[
+                    {
+                      time: lang==="fr"?"Maintenant":lang==="es"?"Ahora":"Right now",
+                      action: lang==="fr"
+                        ?"Ton rapport est déverrouillé — clique sur Générer ci-dessous."
+                        :lang==="es"
+                        ?"Tu informe está desbloqueado — haz clic en Generar abajo."
+                        :"Your report is unlocked — click Generate below.",
+                    },
+                    {
+                      time: lang==="fr"?"Dans ~60 secondes":lang==="es"?"En ~60 segundos":"Within ~60 seconds",
+                      action: lang==="fr"
+                        ?"Un PDF de ton rapport arrive dans ta boîte email."
+                        :lang==="es"
+                        ?"Un PDF de tu informe llega a tu bandeja de entrada."
+                        :"A PDF of your report arrives in your inbox.",
+                    },
+                    {
+                      time: lang==="fr"?"Email pas reçu?":lang==="es"?"¿No recibiste el email?":"Email not received?",
+                      action: lang==="fr"
+                        ?"Vérifie ton dossier spam. Sinon, écris-nous à hello@getskinr.com"
+                        :lang==="es"
+                        ?"Revisa tu carpeta de spam. Si no, escríbenos a hello@getskinr.com"
+                        :"Check your spam folder. Otherwise email us at hello@getskinr.com",
+                    },
+                  ].map((item,i)=>(
+                    <div key={i} style={{display:"flex",gap:12,marginBottom:12,
+                      paddingBottom:12,
+                      borderBottom:i<2?"1px solid var(--border)":"none"}}>
+                      <div style={{
+                        flexShrink:0,width:6,height:6,borderRadius:"50%",
+                        background:"var(--gold)",marginTop:6}}>
+                      </div>
+                      <div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:1,
+                          color:"var(--gold)",textTransform:"uppercase",marginBottom:3}}>
+                          {item.time}
+                        </div>
+                        <div style={{fontFamily:"var(--fc)",fontSize:13,
+                          color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                          {item.action}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Stripe receipt note */}
+                <div style={{background:"var(--s)",border:"1px solid var(--border)",
+                  padding:"10px 14px",fontFamily:"var(--fc)",fontSize:11,
+                  color:"var(--muted)",fontStyle:"italic",textAlign:"center",
+                  lineHeight:1.6}}>
+                  {lang==="fr"
+                    ?"Un reçu Stripe a également été envoyé à ton adresse email."
+                    :lang==="es"
+                    ?"Un recibo de Stripe también fue enviado a tu dirección de email."
+                    :"A Stripe payment receipt has also been sent to your email."}
                 </div>
               </div>
             ):(
@@ -4784,6 +4902,52 @@ Return this JSON:
               </>
             )}
           </div>
+        </div>
+      </div>
+    )}
+
+    {/* -- COOKIE CONSENT BANNER -- CASL/GDPR COMPLIANT -- */}
+    {cookieConsent===null&&(
+      <div style={{
+        position:"fixed",bottom:0,left:0,right:0,zIndex:9999,
+        background:"#0A0A0A",borderTop:"2px solid var(--gold)",
+        padding:"14px 24px",display:"flex",alignItems:"center",
+        justifyContent:"space-between",gap:16,flexWrap:"wrap",
+        boxShadow:"0 -4px 24px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{flex:1,minWidth:200}}>
+          <div style={{fontFamily:"var(--fh)",fontSize:14,fontWeight:700,
+            fontStyle:"italic",color:"var(--white)",marginBottom:5}}>
+            {lang==="fr"?"Ce site utilise des cookies analytiques":lang==="es"?"Este sitio usa cookies analíticas":"This site uses analytics cookies"}
+          </div>
+          <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.65}}>
+            {lang==="fr"
+              ?"Nous utilisons Google Analytics pour améliorer SKINR. Aucune donnée vendue. Aucune publicité. Jamais. Tu peux refuser sans aucun impact sur ton expérience."
+              :lang==="es"
+              ?"Usamos Google Analytics para mejorar SKINR. Ningún dato vendido. Sin publicidad. Nunca. Puedes rechazar sin ningún impacto en tu experiencia."
+              :"We use Google Analytics to improve SKINR. No data sold. No ads. Ever. You can decline with zero impact on your experience."}
+            {" "}
+            <button onClick={()=>setShowPrivacy(true)}
+              style={{background:"none",border:"none",color:"var(--gold)",
+                fontFamily:"var(--fc)",fontSize:12,fontStyle:"italic",
+                cursor:"pointer",padding:0,textDecoration:"underline"}}>
+              {lang==="fr"?"Politique de confidentialité":lang==="es"?"Política de privacidad":"Privacy Policy"}
+            </button>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10,flexShrink:0}}>
+          <button onClick={declineConsent}
+            style={{background:"none",border:"1px solid var(--border)",
+              color:"var(--soft)",padding:"9px 20px",fontFamily:"var(--fc)",
+              fontSize:12,fontStyle:"italic",cursor:"pointer",letterSpacing:1}}>
+            {lang==="fr"?"Refuser":lang==="es"?"Rechazar":"Decline"}
+          </button>
+          <button onClick={acceptConsent}
+            style={{background:"var(--gold)",border:"none",color:"#050505",
+              padding:"9px 24px",fontFamily:"var(--fh)",fontSize:12,
+              fontWeight:700,fontStyle:"italic",cursor:"pointer",letterSpacing:1}}>
+            {lang==="fr"?"Accepter":lang==="es"?"Aceptar":"Accept"}
+          </button>
         </div>
       </div>
     )}
