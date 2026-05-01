@@ -62,10 +62,22 @@ const verifyStripeSignature = (payload, signature, secret) => {
 };
 
 // ── CALL CLAUDE ───────────────────────────────────────────────────────────────
+const SYSTEM_NO_MARKDOWN = `You are writing content for a printed PDF report. 
+CRITICAL RULES - follow exactly:
+- NO markdown symbols whatsoever. No #, ##, ###, **, __, *, -, ---, >, \`
+- NO asterisks for bold or italic
+- NO hash symbols for headings
+- Use PLAIN TEXT ONLY
+- For section headings write them in ALL CAPS followed by a colon
+- For emphasis write the word in ALL CAPS
+- Separate paragraphs with a blank line
+- Use plain hyphens (-) only in product names, never as bullet points or dividers`;
+
 const callClaude = (prompt) => new Promise((resolve, reject) => {
   const body = JSON.stringify({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 2500,
+    system: SYSTEM_NO_MARKDOWN,
     messages: [{ role: "user", content: prompt }],
   });
   const req = https.request({
@@ -87,6 +99,22 @@ const callClaude = (prompt) => new Promise((resolve, reject) => {
   req.write(body);
   req.end();
 });
+
+// Strip any remaining markdown that Claude might still produce
+const stripMarkdown = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/^#{1,6}\s+/gm, "")          // Remove # headings
+    .replace(/\*\*(.+?)\*\*/g, "$1")       // Remove **bold**
+    .replace(/\*(.+?)\*/g, "$1")           // Remove *italic*
+    .replace(/^[-*]{3,}\s*$/gm, "")        // Remove --- dividers
+    .replace(/^>\s+/gm, "")               // Remove blockquotes
+    .replace(/`(.+?)`/g, "$1")            // Remove inline code
+    .replace(/^\s*[-*+]\s+/gm, "")        // Remove bullet points
+    .replace(/^\s*\d+\.\s+/gm, "")        // Remove numbered lists
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")   // Remove links, keep text
+    .trim();
+};
 
 // ── GENERATE REPORT CONTENT ───────────────────────────────────────────────────
 const generateContent = async (product, skinType) => {
@@ -218,18 +246,18 @@ WEEK ONE PROTOCOL
       callClaude(prompts["biology"]),
       callClaude(prompts["routine"]),
     ]);
-    return { biology: bio, routine: card };
+    return { biology: stripMarkdown(bio), routine: stripMarkdown(card) };
   }
   if (product === "shave-combo") {
     const [bio, card] = await Promise.all([
       callClaude(prompts["shave-biology"]),
       callClaude(prompts["shave-card"]),
     ]);
-    return { shaveBiology: bio, shaveCard: card };
+    return { shaveBiology: stripMarkdown(bio), shaveCard: stripMarkdown(card) };
   }
 
   const text = await callClaude(prompts[product] || prompts["biology"]);
-  return { main: text };
+  return { main: stripMarkdown(text) };
 };
 
 // ── BUILD BRANDED PDF ─────────────────────────────────────────────────────────
