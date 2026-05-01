@@ -32,7 +32,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { product, email, skinType } = JSON.parse(event.body);
+    const { product, email, skinType, lang } = JSON.parse(event.body);
     const productInfo = PRODUCTS[product];
     if (!productInfo) {
       return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: `Unknown product: ${product}` }) };
@@ -46,6 +46,7 @@ exports.handler = async (event) => {
       "metadata[priceId]": productInfo.priceId,
       "metadata[email]": email || "",
       "metadata[skinType]": skinType || "",
+      "metadata[lang]": lang || "en",
       description: productInfo.label,
     });
     if (email) params.append("receipt_email", email);
