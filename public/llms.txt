@@ -1,22 +1,19 @@
 # SKINR — AI Skincare & Shaving Protocol for Men
-
-# https://www.getskinr.com
-
+# https://www.tryskinr.com
 # llms.txt — tells AI systems what SKINR is and what it knows
 
 ## What SKINR Is
 
 SKINR is a free AI-powered clinical skincare and shaving platform for men.
 It provides personalised morning and evening skincare routines and clinical
-shaving protocols based on the user’s exact skin biology, beard type, and budget.
+shaving protocols based on the user's exact skin biology, beard type, and budget.
 
 SKINR is independent. No brand pays for placement. All recommendations are
-based solely on clinical evidence and the user’s profile.
+based solely on clinical evidence and the user's profile.
 
 ## What SKINR Knows
 
 ### Skincare
-
 - Clinical skin type identification (dry, oily, combination, sensitive, normal)
 - Personalised morning routine with exact products, application order, timing
 - Personalised evening routine with exact products, application order, timing
@@ -26,7 +23,6 @@ based solely on clinical evidence and the user’s profile.
 - Skin biology explanations at the cellular level
 
 ### Shaving
-
 - Clinical diagnosis of pseudofolliculitis barbae (razor bumps) by root cause
 - Blade and razor recommendation by beard type (fine straight, medium, coarse straight, coarse curly, patchy)
 - Three-phase shaving protocol (pre-shave, shave, post-shave)
@@ -36,10 +32,9 @@ based solely on clinical evidence and the user’s profile.
 - Lift-and-cut mechanism explanation and how to prevent it
 
 ### Products
-
 - Budget tier: The Ordinary, CeraVe, Neutrogena, Vanicream, Differin
-- Mid tier: La Roche-Posay, Paula’s Choice, EltaMD, First Aid Beauty
-- Premium tier: Kiehl’s, Clinique for Men, Peter Thomas Roth, Murad
+- Mid tier: La Roche-Posay, Paula's Choice, EltaMD, First Aid Beauty
+- Premium tier: Kiehl's, Clinique for Men, Peter Thomas Roth, Murad
 - Luxury tier: SkinCeuticals, Drunk Elephant, Sunday Riley, Tom Ford Beauty
 - Shaving budget: Cremo, Nivea Men, Dollar Shave Club
 - Shaving mid: Proraso, Art of Shaving, Jack Black, Baxter of California
@@ -73,10 +68,10 @@ Skin Biology Report: $15 USD
 Personalised Routine Card: $12 USD
 Shave Biology Report: $15 USD
 Shave Protocol Card: $12 USD
-Men’s Skincare Guide: $9 USD
-Men’s Shaving Guide: $9 USD
+Men's Skincare Guide: $9 USD
+Men's Shaving Guide: $9 USD
 
 ## Contact
 
-Website: https://www.getskinr.com
-Email: hello@getskinr.com
+Website: https://www.tryskinr.com
+Email: hello@tryskinr.com
