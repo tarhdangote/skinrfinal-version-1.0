@@ -1158,7 +1158,7 @@ const BASE_T = {
   shaveQ3:"What is your primary shaving problem?",
   shaveOpts3:[{v:"bumps",label:"Razor Bumps & Ingrown Hairs"},{v:"redness",label:"Redness, Burning & Irritation"},{v:"dryness",label:"Post-Shave Dryness & Tightness"},{v:"cuts",label:"Frequent Nicks & Cuts"},{v:"none",label:"No significant problems -- just optimising"}],
   shaveQ4:"Do you currently have active razor bumps on your face or neck?",
-  shaveOpts4:[{v:"none",label:"None -- no current bumps"},{v:"mild",label:"Mild -- a few occasional bumps"},{v:"moderate",label:"Moderate -- several bumps, some inflamed"},{v:"severe",label:"Severe -- widespread, painful, or causing scarring"}],
+  shaveOpts4:[{v:"none",label:"None -- no current bumps"},{v:"face",label:"Bumps on my face"},{v:"neck",label:"Bumps on my neck"},{v:"both",label:"Bumps on both face and neck"},{v:"severe",label:"Severe -- widespread, painful, or causing scarring"}],
   shaveQ5:"What razor or blade are you currently using?",
   shaveOpts5:[{v:"gillette",label:"Gillette Fusion, Mach3, or similar cartridge"},{v:"dollar_shave",label:"Dollar Shave Club or subscription cartridge"},{v:"merkur",label:"Merkur safety razor"},{v:"feather",label:"Feather or Japanese safety razor"},{v:"braun",label:"Braun electric shaver"},{v:"philips",label:"Philips Norelco electric"},{v:"other",label:"Different brand or not sure"},{v:"none_currently",label:"Not currently shaving regularly"}],
   shaveQ6:"How frequently do you shave?",
@@ -1351,7 +1351,7 @@ const FR_T = {
   shaveQ3:"C'est quoi ton principal problème de rasage?",
   shaveOpts3:[{v:"bumps",label:"Boutons de rasoir et poils incarnés"},{v:"redness",label:"Rougeurs, brûlures et irritation"},{v:"dryness",label:"Sécheresse et tiraillement post-rasage"},{v:"cuts",label:"Coupures et entailles fréquentes"},{v:"none",label:"Aucun problème majeur -- juste optimiser"}],
   shaveQ4:"T'as présentement des boutons de rasoir actifs sur le visage ou le cou?",
-  shaveOpts4:[{v:"none",label:"Aucun -- pas de boutons en ce moment"},{v:"mild",label:"Légers -- quelques boutons occasionnels"},{v:"moderate",label:"Modérés -- plusieurs boutons, certains enflammés"},{v:"severe",label:"Sévères -- répandus, douloureux, ou causant des cicatrices"}],
+  shaveOpts4:[{v:"none",label:"Aucun -- pas de boutons en ce moment"},{v:"face",label:"Boutons sur le visage"},{v:"neck",label:"Boutons sur le cou"},{v:"both",label:"Boutons sur le visage et le cou"},{v:"severe",label:"Sévères -- répandus, douloureux, ou causant des cicatrices"}],
   shaveQ5:"Quel rasoir ou quelle lame t'utilises en ce moment?",
   shaveOpts5:[{v:"gillette",label:"Gillette Fusion, Mach3, ou cartouche similaire"},{v:"dollar_shave",label:"Dollar Shave Club ou abonnement cartouche"},{v:"merkur",label:"Rasoir de sûreté Merkur"},{v:"feather",label:"Lame Feather ou rasoir japonais"},{v:"braun",label:"Rasoir électrique Braun"},{v:"philips",label:"Rasoir électrique Philips Norelco"},{v:"other",label:"Autre marque ou pas sûr"},{v:"none_currently",label:"Je rase pas régulièrement en ce moment"}],
   shaveQ6:"À quelle fréquence tu te rases?",
@@ -1531,7 +1531,7 @@ const ES_T = {
   shaveQ3:"¿Cuál es tu principal problema al afeitarte?",
   shaveOpts3:[{v:"bumps",label:"Granos de afeitar y pelos encarnados"},{v:"redness",label:"Rojez, ardor e irritación"},{v:"dryness",label:"Sequedad y tirante post-afeitado"},{v:"cuts",label:"Cortes y heridas frecuentes"},{v:"none",label:"Sin problemas significativos -- solo optimizar"}],
   shaveQ4:"¿Tienes actualmente granos de afeitar activos en la cara o el cuello?",
-  shaveOpts4:[{v:"none",label:"Ninguno -- sin granos en este momento"},{v:"mild",label:"Leves -- algunos granos ocasionales"},{v:"moderate",label:"Moderados -- varios granos, algunos inflamados"},{v:"severe",label:"Severos -- generalizados, dolorosos o causando cicatrices"}],
+  shaveOpts4:[{v:"none",label:"Ninguno -- sin granos en este momento"},{v:"face",label:"Granos en la cara"},{v:"neck",label:"Granos en el cuello"},{v:"both",label:"Granos en la cara y el cuello"},{v:"severe",label:"Severos -- generalizados, dolorosos o causando cicatrices"}],
   shaveQ5:"¿Qué maquinilla o hoja estás usando actualmente?",
   shaveOpts5:[{v:"gillette",label:"Gillette Fusion, Mach3 o cartucho similar"},{v:"dollar_shave",label:"Dollar Shave Club o cartucho por suscripción"},{v:"merkur",label:"Maquinilla de seguridad Merkur"},{v:"feather",label:"Hoja Feather o maquinilla japonesa"},{v:"braun",label:"Afeitadora eléctrica Braun"},{v:"philips",label:"Philips Norelco eléctrica"},{v:"other",label:"Otra marca o no estoy seguro"},{v:"none_currently",label:"No me afeito regularmente en este momento"}],
   shaveQ6:"¿Con qué frecuencia te afeitas?",
@@ -3228,14 +3228,14 @@ Return this JSON:
   // Home and Guides always visible. Others appear after completing analysis.
   // NAV_ITEMS -- shown in desktop tab bar and mobile dropdown
   // HOME is placed next to the logo separately in JSX
-  // GUIDES only shows after at least one protocol is completed
+  // GUIDES always visible -- moved next to home for new users
   const NAV_ITEMS = [
+    {id:"guides", l:t.nav.guides}, // Always visible -- first after home
     ...(has ? [{id:"results",   l:t.nav.analysis}] : []),
     ...(has ? [{id:"coach",     l:t.nav.coach}]    : []),
     ...(has ? [{id:"checkin",   l:t.nav.checkin}]  : []),
     ...(hasShave ? [{id:"shave",l:t.nav.shave}]    : []),
     ...((has||hasShave) ? [{id:"community",l:t.nav.community}] : []),
-    {id:"guides", l:t.nav.guides}, // Always visible -- guides are generic, no analysis needed
   ];
 
   if(!ready) return (
@@ -3987,7 +3987,7 @@ Return this JSON:
           {/* Quiz */}
           {!shaveResult&&!shaveLoad&&<>
             <div className="quiz-hdr" style={{marginBottom:24}}>
-              <button className="back-btn" onClick={handleShaveBack} disabled={shaveStep===0}>{t.back}</button>
+              <button className="back-btn" onClick={shaveStep===0?()=>go("guides"):handleShaveBack}>{t.back}</button>
               <div className="prog-track"><div className="prog-fill" style={{width:`${shaveProg}%`}}/></div>
               <span className="q-count">{shaveStep+1}{t.of}{shaveQs.length}</span>
             </div>
@@ -4489,7 +4489,7 @@ Return this JSON:
               </div>
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                 <button className="btn btn-p" style={{flex:1,minWidth:140,fontSize:12}}
-                  onClick={()=>go("home")}>
+                  onClick={startSkinQuiz}>
                   * {lang==="fr"?"Analyser Ma Peau -- Gratuit":lang==="es"?"Analizar Mi Piel -- Gratis":"Analyse My Skin -- Free"}
                 </button>
                 <button className="btn btn-g" style={{flex:1,minWidth:140,fontSize:12}}
@@ -4957,7 +4957,10 @@ Return this JSON:
       <div className="modal-ov" role="dialog" aria-modal="true" onClick={()=>setShowPrivacy(false)}>
         <div className="modal" onClick={e=>e.stopPropagation()} style={{maxHeight:"80vh",overflowY:"auto"}}>
           <div className="modal-inner">
-            <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:16,color:"var(--gold)"}}>Privacy Policy</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--gold)"}}>Privacy Policy</div>
+              <button onClick={()=>setShowPrivacy(false)} style={{background:"none",border:"none",color:"var(--soft)",fontSize:22,cursor:"pointer",lineHeight:1,padding:"0 4px"}} aria-label="Close">✕</button>
+            </div>
             <div style={{fontFamily:"var(--fc)",fontSize:14,lineHeight:1.85,color:"var(--cream)",fontStyle:"normal"}}>
               <p style={{marginBottom:12}}><strong>Last updated: {new Date().getFullYear()}</strong></p>
               <p style={{marginBottom:12}}>SKINR does not collect, sell, or share your personal data with any third party for commercial purposes.</p>
@@ -4978,7 +4981,10 @@ Return this JSON:
       <div className="modal-ov" role="dialog" aria-modal="true" onClick={()=>setShowTerms(false)}>
         <div className="modal" onClick={e=>e.stopPropagation()} style={{maxHeight:"80vh",overflowY:"auto"}}>
           <div className="modal-inner">
-            <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",marginBottom:16,color:"var(--gold)"}}>Terms of Service</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--gold)"}}>Terms of Service</div>
+              <button onClick={()=>setShowTerms(false)} style={{background:"none",border:"none",color:"var(--soft)",fontSize:22,cursor:"pointer",lineHeight:1,padding:"0 4px"}} aria-label="Close">✕</button>
+            </div>
             <div style={{fontFamily:"var(--fc)",fontSize:14,lineHeight:1.85,color:"var(--cream)",fontStyle:"normal"}}>
               <p style={{marginBottom:12}}><strong>Last updated: {new Date().getFullYear()}</strong></p>
               <p style={{marginBottom:12}}><strong>General guidance only.</strong> SKINR provides general skincare and shaving guidance based on your answers. This is not medical advice and is not a substitute for professional dermatological consultation.</p>
