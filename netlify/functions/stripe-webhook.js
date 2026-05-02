@@ -66,42 +66,42 @@ const UI = {
     disclaimer:  "MEDICAL DISCLAIMER",
     disclaimerText: "This report provides general clinical guidance and is not a substitute for professional medical advice. Consult a board-certified dermatologist for any persistent skin or shaving concern.",
     affiliate:   "Amazon affiliate links support this free service at no extra cost to you. All recommendations are based solely on clinical evidence and your profile. No brand pays for placement.",
-    access:      "Your full content is also accessible in the SKINR app at skinrfinal.netlify.app",
+    access:      "Your full content is also accessible in the SKINR app at tryskinr.com",
     emailReady:  "Your Report Is Ready",
     emailBody:   "Your personalised clinical report is attached as a PDF. Open it on any device, save it, print it, keep it.",
     emailAccess: "Also accessible anytime in the SKINR app at",
     emailBtn:    "Open SKINR",
     emailFooter: "Amazon affiliate links support this free service at no extra cost to you.",
     tocAccess:   "YOUR FULL GUIDE IS IN THE SKINR APP",
-    tocLine:     "Access your complete guide at skinrfinal.netlify.app under the Guides tab. Your purchase is permanently saved.",
+    tocLine:     "Access your complete guide at tryskinr.com under the Guides tab. Your purchase is permanently saved.",
   },
   fr: {
     profile:     "Préparé pour",
     disclaimer:  "AVIS MÉDICAL",
     disclaimerText: "Ce rapport fournit des orientations cliniques générales et ne remplace pas un avis médical professionnel. Consultez un dermatologue certifié pour tout problème persistant de peau ou de rasage.",
     affiliate:   "Les liens affiliés Amazon soutiennent ce service gratuit sans frais supplémentaires. Toutes les recommandations sont basées uniquement sur des preuves cliniques. Aucune marque ne paie pour figurer dans SKINR.",
-    access:      "Ton contenu complet est également accessible dans l'application SKINR sur skinrfinal.netlify.app",
+    access:      "Ton contenu complet est également accessible dans l'application SKINR sur tryskinr.com",
     emailReady:  "Ton Rapport est Prêt",
     emailBody:   "Ton rapport clinique personnalisé est joint en PDF. Ouvre-le sur n'importe quel appareil, sauvegarde-le, imprime-le, garde-le.",
     emailAccess: "Également accessible dans l'application SKINR sur",
     emailBtn:    "Ouvrir SKINR",
     emailFooter: "Les liens affiliés Amazon soutiennent ce service gratuit sans frais supplémentaires.",
     tocAccess:   "TON GUIDE COMPLET EST DANS L'APPLICATION SKINR",
-    tocLine:     "Accède à ton guide complet sur skinrfinal.netlify.app dans la section Guides. Ton achat est sauvegardé de façon permanente.",
+    tocLine:     "Accède à ton guide complet sur tryskinr.com dans la section Guides. Ton achat est sauvegardé de façon permanente.",
   },
   es: {
     profile:     "Preparado para",
     disclaimer:  "AVISO MÉDICO",
     disclaimerText: "Este informe proporciona orientación clínica general y no sustituye el consejo médico profesional. Consulta a un dermatólogo certificado para cualquier problema persistente de piel o afeitado.",
     affiliate:   "Los enlaces de afiliados de Amazon apoyan este servicio gratuito sin costo adicional. Todas las recomendaciones se basan únicamente en evidencia clínica. Ninguna marca paga por aparecer en SKINR.",
-    access:      "Tu contenido completo también es accesible en la app SKINR en skinrfinal.netlify.app",
+    access:      "Tu contenido completo también es accesible en la app SKINR en tryskinr.com",
     emailReady:  "Tu Informe Está Listo",
     emailBody:   "Tu informe clínico personalizado está adjunto en PDF. Ábrelo en cualquier dispositivo, guárdalo, imprímelo, consérvalo.",
     emailAccess: "También accesible en la app SKINR en",
     emailBtn:    "Abrir SKINR",
     emailFooter: "Los enlaces de afiliados de Amazon apoyan este servicio gratuito sin costo adicional.",
     tocAccess:   "TU GUÍA COMPLETA ESTÁ EN LA APP SKINR",
-    tocLine:     "Accede a tu guía completa en skinrfinal.netlify.app en la sección Guías. Tu compra está guardada de forma permanente.",
+    tocLine:     "Accede a tu guía completa en tryskinr.com en la sección Guías. Tu compra está guardada de forma permanente.",
   },
 };
 
@@ -617,7 +617,7 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
         .strokeColor(C.border).lineWidth(0.3).stroke();
       doc.font("Helvetica").fontSize(7).fillColor(C.muted)
         .text(
-          "SKINR  \u2014  skinrfinal.netlify.app  \u2014  Free. Clinical. Built for Men.",
+          "SKINR  \u2014  tryskinr.com  \u2014  Free. Clinical. Built for Men.",
           MARGIN, FOOTER_Y + 8,
           { width: CW, align: "center", lineBreak: false }
         );
@@ -659,7 +659,7 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
 
     // Website top right
     doc.font("Helvetica").fontSize(8).fillColor(C.gold)
-      .text("getskinr.com", A4.W - MARGIN - 68, 46, { lineBreak: false });
+      .text("tryskinr.com", A4.W - MARGIN - 68, 46, { lineBreak: false });
 
     // Gold rule under header
     doc.moveTo(MARGIN, HEADER_H)
@@ -841,7 +841,7 @@ const buildPDF = (product, content, skinType, lang) => new Promise((resolve, rej
     doc.font("Helvetica-Bold").fontSize(9).fillColor(C.gold)
       .text("SKINR", MARGIN, y, { continued: true, lineBreak: false });
     doc.font("Helvetica").fontSize(9).fillColor(C.muted)
-      .text("  \u2014  Free. Clinical. Built for Men.  \u2014  getskinr.com");
+      .text("  \u2014  Free. Clinical. Built for Men.  \u2014  tryskinr.com");
     y = doc.y + 8;
 
     doc.font("Helvetica").fontSize(7.5).fillColor(C.muted)
@@ -888,7 +888,7 @@ const buildEmailHtml = (label, skinType, lang, product) => {
   };
 
   const expectations = !isGuide && skinType ? getExpectations(skinType, lang) : null;
-  const appUrl = "https://skinrfinal.netlify.app";
+  const appUrl = "https://www.tryskinr.com";
 
   const weekCard = (item) => `
     <tr>
@@ -1055,7 +1055,7 @@ const buildEmailHtml = (label, skinType, lang, product) => {
           ? "¿Preguntas? ¿Email no recibido? Respondemos en menos de 24h."
           : "Questions? Email not received? We respond within 24 hours."}
         <br>
-        <a href="mailto:hello@getskinr.com" style="color:#B8972A;text-decoration:none;font-weight:700;">hello@getskinr.com</a>
+        <a href="mailto:hello@tryskinr.com" style="color:#B8972A;text-decoration:none;font-weight:700;">hello@tryskinr.com</a>
       </div>
     </div>
 
@@ -1066,7 +1066,7 @@ const buildEmailHtml = (label, skinType, lang, product) => {
 
   <!-- Footer -->
   <div style="padding:20px 40px 22px;text-align:center;">
-    <p style="font-size:10px;color:#4E4844;margin:0 0 6px;">SKINR &mdash; getskinr.com &mdash; hello@getskinr.com</p>
+    <p style="font-size:10px;color:#4E4844;margin:0 0 6px;">SKINR &mdash; tryskinr.com &mdash; hello@tryskinr.com</p>
     <p style="font-size:10px;color:#4E4844;margin:0;line-height:1.65;">${ui.emailFooter}</p>
     <p style="font-size:9px;color:#3A3634;margin:8px 0 0;">
       ${lang === "fr"
