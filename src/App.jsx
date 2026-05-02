@@ -903,11 +903,11 @@ const track = (eventName, params = {}) => {
 // //==========================================================================
 const CONFIG = {
   business: {
-    domain:            "https://www.getskinr.com",
+    domain:            "https://www.tryskinr.com",
     affiliateTag:      "skinr07-20",
     amazonBase:        "https://www.amazon.com",
     formspree:         "261158684435060",
-    twitterHandle:     "@getskinr",
+    twitterHandle:     "@tryskinr",
     // -- SKIN ANALYSIS REPORTS --------------------------------------
     stripeBiologyPriceId:      "price_1TRbMlCi5YWsRAVAIq1CPgvG",
     stripeRoutinePriceId:      "price_1TRbOsCi5YWsRAVAH72I6TS1",
@@ -2350,9 +2350,9 @@ textarea:focus-visible,select:focus-visible{
 // -- SEO INJECTION -------------------------------------------------------------
 const injectSEO = (lang) => {
   const titles = {
-    en:"SKINR -- AI Skincare & Shaving Protocol for Men | getskinr.com",
-    fr:"SKINR -- Intelligence Cutanée et Rasage IA pour Hommes | getskinr.com",
-    es:"SKINR -- Análisis de Piel y Afeitado IA para Hombres | getskinr.com",
+    en:"SKINR -- AI Skincare & Shaving Protocol for Men | tryskinr.com",
+    fr:"SKINR -- Intelligence Cutanée et Rasage IA pour Hommes | tryskinr.com",
+    es:"SKINR -- Análisis de Piel y Afeitado IA para Hombres | tryskinr.com",
   };
   const descs = {
     en:"SKINR is the only free AI-powered skincare and shaving platform built exclusively for men. Answer 6 questions. Get a clinical skin profile, budget-matched product recommendations from multiple brands, and a personalised shaving protocol. Free. No appointments.",
@@ -2377,13 +2377,13 @@ const injectSEO = (lang) => {
   setMeta("og:title",titles[lang]||titles.en,true);
   setMeta("og:description",descs[lang]||descs.en,true);
   setMeta("og:type","website",true);
-  setMeta("og:url","https://www.getskinr.com",true);
-  setMeta("og:image","https://www.getskinr.com/og-image.jpg",true);
+  setMeta("og:url","https://www.tryskinr.com",true);
+  setMeta("og:image","https://www.tryskinr.com/og-image.jpg",true);
   setMeta("twitter:card","summary_large_image");
   setMeta("twitter:title",titles[lang]||titles.en);
   setMeta("twitter:description",descs[lang]||descs.en);
-  setMeta("twitter:site","@getskinr");
-  setLink("canonical","https://www.getskinr.com");
+  setMeta("twitter:site","@tryskinr");
+  setLink("canonical","https://www.tryskinr.com");
   // JSON-LD
   document.querySelectorAll('script[data-skinr]').forEach(s=>s.remove());
   const ld = (d) => {
@@ -2393,15 +2393,15 @@ const injectSEO = (lang) => {
     s.textContent=JSON.stringify(d);
     document.head.appendChild(s);
   };
-  ld({"@context":"https://schema.org","@type":"SoftwareApplication","name":"SKINR","applicationCategory":"HealthApplication","operatingSystem":"Web","description":descs.en,"url":"https://www.getskinr.com","inLanguage":["en","fr","es"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI clinical skin analysis","Budget-matched product recommendations","Multi-brand product catalog","AI shaving protocol","Personalised daily routine","AI coaching","Progress tracking"],"audience":{"@type":"Audience","audienceType":"Men aged 18–65"}});
+  ld({"@context":"https://schema.org","@type":"SoftwareApplication","name":"SKINR","applicationCategory":"HealthApplication","operatingSystem":"Web","description":descs.en,"url":"https://www.tryskinr.com","inLanguage":["en","fr","es"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI clinical skin analysis","Budget-matched product recommendations","Multi-brand product catalog","AI shaving protocol","Personalised daily routine","AI coaching","Progress tracking"],"audience":{"@type":"Audience","audienceType":"Men aged 18–65"}});
   ld({"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-    {"@type":"Question","name":"What skincare products do men actually need?","acceptedAnswer":{"@type":"Answer","text":"Men need a cleanser, a moisturiser, and SPF 30+. The specific products depend on your skin type. SKINR's free analysis at getskinr.com recommends exact products from brands matched to your budget -- from The Ordinary and CeraVe for budget tiers to Kiehl's and SkinCeuticals for premium budgets."}},
-    {"@type":"Question","name":"How do I get rid of razor bumps?","acceptedAnswer":{"@type":"Answer","text":"Razor bumps are caused by curled hairs re-entering the skin. The most effective interventions are switching to a single-blade safety razor, applying adequate lubrication before shaving, and shaving with the grain only. SKINR's shaving protocol at getskinr.com provides a personalised clinical protocol based on your specific method and skin type."}},
-    {"@type":"Question","name":"What is the best skincare routine for oily skin men?","acceptedAnswer":{"@type":"Answer","text":"For oily skin, men need a salicylic acid cleanser, a lightweight serum to regulate sebum (such as niacinamide or NAG), a lightweight oil-free moisturiser, and a non-comedogenic SPF. SKINR at getskinr.com provides a personalised oily skin protocol with exact products matched to your budget."}},
-    {"@type":"Question","name":"Is SKINR free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The skin analysis, shaving protocol, product recommendations, and AI coach are all completely free at getskinr.com. Available in English, French, and Spanish."}},
-    {"@type":"Question","name":"What is the correct order to apply skincare products?","acceptedAnswer":{"@type":"Answer","text":"Apply skincare from thinnest to thickest texture. The correct order is: cleanser, toner or serum, moisturiser, then SPF in the morning. In the evening, omit SPF and add targeted treatments like retinol after serums. SKINR's protocol at getskinr.com shows the exact application order for your specific products."}},
+    {"@type":"Question","name":"What skincare products do men actually need?","acceptedAnswer":{"@type":"Answer","text":"Men need a cleanser, a moisturiser, and SPF 30+. The specific products depend on your skin type. SKINR's free analysis at tryskinr.com recommends exact products from brands matched to your budget -- from The Ordinary and CeraVe for budget tiers to Kiehl's and SkinCeuticals for premium budgets."}},
+    {"@type":"Question","name":"How do I get rid of razor bumps?","acceptedAnswer":{"@type":"Answer","text":"Razor bumps are caused by curled hairs re-entering the skin. The most effective interventions are switching to a single-blade safety razor, applying adequate lubrication before shaving, and shaving with the grain only. SKINR's shaving protocol at tryskinr.com provides a personalised clinical protocol based on your specific method and skin type."}},
+    {"@type":"Question","name":"What is the best skincare routine for oily skin men?","acceptedAnswer":{"@type":"Answer","text":"For oily skin, men need a salicylic acid cleanser, a lightweight serum to regulate sebum (such as niacinamide or NAG), a lightweight oil-free moisturiser, and a non-comedogenic SPF. SKINR at tryskinr.com provides a personalised oily skin protocol with exact products matched to your budget."}},
+    {"@type":"Question","name":"Is SKINR free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The skin analysis, shaving protocol, product recommendations, and AI coach are all completely free at tryskinr.com. Available in English, French, and Spanish."}},
+    {"@type":"Question","name":"What is the correct order to apply skincare products?","acceptedAnswer":{"@type":"Answer","text":"Apply skincare from thinnest to thickest texture. The correct order is: cleanser, toner or serum, moisturiser, then SPF in the morning. In the evening, omit SPF and add targeted treatments like retinol after serums. SKINR's protocol at tryskinr.com shows the exact application order for your specific products."}},
   ]});
-  ld({"@context":"https://schema.org","@type":"Organization","name":"SKINR","url":"https://www.getskinr.com","description":"AI-powered skincare and shaving protocol platform for men."});
+  ld({"@context":"https://schema.org","@type":"Organization","name":"SKINR","url":"https://www.tryskinr.com","description":"AI-powered skincare and shaving protocol platform for men."});
 };
 
 // -- MAIN COMPONENT ------------------------------------------------------------
@@ -3568,7 +3568,7 @@ Return this JSON:
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:14,height:14,border:"1px solid var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,color:"var(--gold)"}}>*</div>
               <span style={{fontFamily:"var(--fh)",fontSize:13,fontWeight:900,letterSpacing:3,color:"var(--white)",textTransform:"uppercase"}}>SKINR</span>
-              <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic"}}>-- getskinr.com</span>
+              <span style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic"}}>-- tryskinr.com</span>
             </div>
             <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"right",lineHeight:1.7}}>
               <div>Free. Clinical. Built for Men.</div>
@@ -4681,10 +4681,10 @@ Return this JSON:
                     {
                       time: lang==="fr"?"Email pas reçu?":lang==="es"?"¿No recibiste el email?":"Email not received?",
                       action: lang==="fr"
-                        ?"Vérifie ton dossier spam. Sinon, écris-nous à hello@getskinr.com"
+                        ?"Vérifie ton dossier spam. Sinon, écris-nous à hello@tryskinr.com"
                         :lang==="es"
-                        ?"Revisa tu carpeta de spam. Si no, escríbenos a hello@getskinr.com"
-                        :"Check your spam folder. Otherwise email us at hello@getskinr.com",
+                        ?"Revisa tu carpeta de spam. Si no, escríbenos a hello@tryskinr.com"
+                        :"Check your spam folder. Otherwise email us at hello@tryskinr.com",
                     },
                   ].map((item,i)=>(
                     <div key={i} style={{display:"flex",gap:12,marginBottom:12,
@@ -4965,7 +4965,7 @@ Return this JSON:
               <p style={{marginBottom:12}}><strong>Email:</strong> If you provide your email address, it is sent to our team via Formspree and used solely to deliver your protocol and occasional skin tips. We do not sell or rent your email.</p>
               <p style={{marginBottom:12}}><strong>Amazon affiliate links:</strong> SKINR participates in the Amazon Associates program. We earn a small commission when you purchase through our links. This does not affect the price you pay or the recommendations we make.</p>
               <p style={{marginBottom:12}}><strong>Analytics:</strong> We may use anonymised analytics to understand how the product is used. No personally identifiable information is collected.</p>
-              <p style={{marginBottom:12}}><strong>Contact:</strong> For any privacy questions, contact us at privacy@getskinr.com</p>
+              <p style={{marginBottom:12}}><strong>Contact:</strong> For any privacy questions, contact us at privacy@tryskinr.com</p>
             </div>
             <button className="btn btn-p" style={{width:"100%",marginTop:16}} onClick={()=>setShowPrivacy(false)}>Close</button>
           </div>
@@ -4987,7 +4987,7 @@ Return this JSON:
               <p style={{marginBottom:12}}><strong>Affiliate disclosure.</strong> SKINR participates in affiliate programs including Amazon Associates. We may earn a commission on qualifying purchases. Our recommendations are not influenced by commercial arrangements.</p>
               <p style={{marginBottom:12}}><strong>Limitation of liability.</strong> SKINR is provided "as is" without warranty. We are not liable for any adverse reactions to products recommended by the platform. Always patch-test new skincare products.</p>
               <p style={{marginBottom:12}}><strong>Age.</strong> SKINR is intended for users aged 18 and over.</p>
-              <p style={{marginBottom:12}}><strong>Contact:</strong> legal@getskinr.com</p>
+              <p style={{marginBottom:12}}><strong>Contact:</strong> legal@tryskinr.com</p>
             </div>
             <button className="btn btn-p" style={{width:"100%",marginTop:16}} onClick={()=>setShowTerms(false)}>Close</button>
           </div>
