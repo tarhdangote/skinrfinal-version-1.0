@@ -1184,7 +1184,7 @@ const BASE_T = {
   routineCardDesc:"Your exact products, in your exact order, with your exact application instructions -- formatted as a print-ready card for your bathroom wall. Generated from your specific analysis.",
   comboTitle:"Both Reports -- Best Value",
   unlockBtn:"Unlock",
-  comboBtn:"Get Both -- $15",
+  comboBtn:"Get Both",
   alreadyUnlocked:"* Reports Unlocked",
   nav:{home:"Home",analysis:"Analysis",coach:"Coach",checkin:"Progress",shave:"Shave",guides:"Guides",community:"Community"},
   // Community
@@ -1377,7 +1377,7 @@ const FR_T = {
   routineCardDesc:"Tes produits exacts, dans ton ordre exact, avec tes instructions d'application exactes -- formaté comme une carte prête à imprimer pour le mur de ta salle de bain.",
   comboTitle:"Les Deux Rapports -- Meilleure Valeur",
   unlockBtn:"Déverrouiller",
-  comboBtn:"Obtenir les Deux -- 15 $",
+  comboBtn:"Obtenir les Deux",
   alreadyUnlocked:"* Rapports Déverrouillés",
   nav:{home:"Accueil",analysis:"Analyse",coach:"Coach",checkin:"Progrès",shave:"Rasage",guides:"Guides",community:"Communauté"},
   communityTitle:"La Communauté SKINR",
@@ -1557,7 +1557,7 @@ const ES_T = {
   routineCardDesc:"Tus productos exactos, en tu orden exacto, con tus instrucciones exactas de aplicación -- formateado como una tarjeta lista para imprimir para la pared de tu baño.",
   comboTitle:"Ambos Informes -- Mejor Valor",
   unlockBtn:"Desbloquear",
-  comboBtn:"Obtener Ambos -- $15",
+  comboBtn:"Obtener Ambos",
   alreadyUnlocked:"* Informes Desbloqueados",
   nav:{home:"Inicio",analysis:"Análisis",coach:"Coach",checkin:"Progreso",shave:"Afeitado",guides:"Guías",community:"Comunidad"},
   communityTitle:"La Comunidad SKINR",
@@ -4558,7 +4558,7 @@ Return this JSON:
                 {lang==="fr"?"La référence complète pour les soins de la peau et le rasage. Économise $3 en achetant les deux.":lang==="es"?"La referencia completa para cuidado de piel y afeitado. Ahorra $3 comprando ambas.":"The complete reference for skincare and shaving together. Save $3 buying both."}
               </div>
               <button className="btn btn-p" style={{width:"100%"}} onClick={()=>openPayment("guides-combo")}>
-                * {lang==="fr"?"Obtenir les Deux -- $15":lang==="es"?"Obtener Ambas -- $15":"Get Both -- $15"}
+                * {lang==="fr"?`Obtenir les Deux -- $${CONFIG.business.guideComboPrice}`:lang==="es"?`Obtener Ambas -- $${CONFIG.business.guideComboPrice}`:`Get Both -- $${CONFIG.business.guideComboPrice}`}
               </button>
               <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",textAlign:"center",marginTop:8}}>
                 {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe -- instant access after payment"}
