@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.getskinr.com/sitemap.xml
+Sitemap: https://www.tryskinr.com/sitemap.xml
