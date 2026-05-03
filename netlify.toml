@@ -5,7 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SENTRY_DSN"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SENTRY_DSN,GMAIL_USER"
 
 [functions]
   node_bundler = "esbuild"
