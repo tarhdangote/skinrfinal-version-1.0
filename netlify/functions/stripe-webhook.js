@@ -1094,7 +1094,7 @@ const sendMail = async (to, subject, html, pdfBuffer, filename) => {
     auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
   });
   return transporter.sendMail({
-    from:        `SKINR <${process.env.GMAIL_USER}>`,
+    from:        `SKINR <hello@tryskinr.com>`,
     to, subject, html,
     attachments: [{ filename, content: pdfBuffer, contentType: "application/pdf" }],
   });
@@ -1179,7 +1179,7 @@ exports.handler = async (event) => {
         service: "gmail",
         auth: { user: owner, pass: process.env.GMAIL_APP_PASS },
       }).sendMail({
-        from:    `SKINR <${owner}>`,
+        from:    `SKINR <hello@tryskinr.com>`,
         to:      owner,
         subject: `[SKINR Sale] ${label} \u2014 $${amount} \u2014 ${email}`,
         html: `<div style="font-family:Arial;font-size:14px;line-height:2;color:#333;">
