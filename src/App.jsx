@@ -3092,7 +3092,7 @@ export default function SkinrApp() {
       track("skin_analysis_complete", {skin_type: parsed.skinType, lang});
       const intro = [{role:"ai",text:parsed.coachIntro||"Your analysis is complete. How can I help you?"}];
       setMessages(intro); saveChat(intro);
-      setTimeout(()=>{ setView("results"); setShowEmail(!LS.get(SK.email)); },600);
+      setTimeout(()=>{ setView("results"); },600);
     } catch(e) {
       setView("home");
     }
@@ -3183,7 +3183,6 @@ export default function SkinrApp() {
         setSavedShave({ ...full, answers: ans });
         LS.set(SK.shave, { ...full, answers: ans });
         track("shave_protocol_complete", {bumps: ans.activeBumps, method: ans.method, lang});
-        if (!LS.get(SK.email)) setShowEmail(true);
         return;
       } catch (e) { console.error(`Stage 2 attempt ${attempt}:`, e.message); }
     }
@@ -3191,7 +3190,6 @@ export default function SkinrApp() {
     console.warn("Stage 2 failed -- saving partial result from stage 1");
     setSavedShave({ ...diagnosis, answers: ans });
     LS.set(SK.shave, { ...diagnosis, answers: ans });
-    if (!LS.get(SK.email)) setShowEmail(true);
   };
 
   // -- COACH --
