@@ -4714,8 +4714,8 @@ Return this JSON:
               </div>
             )}
 
-            {/* -- SHAVE OPTIONAL REPORTS -- */}
-            {shaveResult.skinBiologyTeaser&&(
+            {/* -- SHAVE OPTIONAL REPORTS -- only shown after purchase -- */}
+            {(shaveBioUnlocked||shaveCardUnlocked)&&(
               <div style={{border:"1px solid var(--goldb)",marginTop:20,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
                 <div style={{padding:"20px 20px 0"}}>
