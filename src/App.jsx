@@ -1156,7 +1156,7 @@ const BASE_T = {
   shaveQ2:"How would you describe your beard hair?",
   shaveOpts2:[{v:"fine_straight",label:"Fine and straight -- grows soft, little resistance"},{v:"medium",label:"Medium -- average thickness and density"},{v:"coarse_straight",label:"Coarse and straight -- thick, heavy stubble"},{v:"coarse_curly",label:"Coarse and curly -- tight curls, waves, or coils"},{v:"patchy",label:"Patchy -- uneven density across the face"}],
   shaveQ3:"What is your primary shaving problem?",
-  shaveOpts3:[{v:"bumps",label:"Razor Bumps & Ingrown Hairs"},{v:"redness",label:"Redness, Burning & Irritation"},{v:"dryness",label:"Post-Shave Dryness & Tightness"},{v:"cuts",label:"Frequent Nicks & Cuts"},{v:"none",label:"No significant problems -- just optimising"}],
+  shaveOpts3:[{v:"bumps",label:"Razor Bumps & Ingrown Hairs"},{v:"darkspots",label:"Dark Spots from Old Razor Bumps"},{v:"redness",label:"Redness, Burning & Irritation"},{v:"dryness",label:"Post-Shave Dryness & Tightness"},{v:"cuts",label:"Frequent Nicks & Cuts"},{v:"none",label:"No significant problems -- just optimising"}],
   shaveQ4:"Do you currently have active razor bumps on your face or neck?",
   shaveOpts4:[{v:"none",label:"None -- no current bumps"},{v:"face",label:"Bumps on my face"},{v:"neck",label:"Bumps on my neck"},{v:"both",label:"Bumps on both face and neck"},{v:"severe",label:"Severe -- widespread, painful, or causing scarring"}],
   shaveQ5:"What razor or blade are you currently using?",
@@ -1349,7 +1349,7 @@ const FR_T = {
   shaveQ2:"Comment tu décrirais ta barbe?",
   shaveOpts2:[{v:"fine_straight",label:"Fine et droite -- pousse douce, peu de résistance"},{v:"medium",label:"Moyenne -- épaisseur et densité normales"},{v:"coarse_straight",label:"Épaisse et droite -- chaume lourd et dense"},{v:"coarse_curly",label:"Épaisse et bouclée -- boucles serrées, vagues ou coils"},{v:"patchy",label:"Inégale -- densité variable sur le visage"}],
   shaveQ3:"C'est quoi ton principal problème de rasage?",
-  shaveOpts3:[{v:"bumps",label:"Boutons de rasoir et poils incarnés"},{v:"redness",label:"Rougeurs, brûlures et irritation"},{v:"dryness",label:"Sécheresse et tiraillement post-rasage"},{v:"cuts",label:"Coupures et entailles fréquentes"},{v:"none",label:"Aucun problème majeur -- juste optimiser"}],
+  shaveOpts3:[{v:"bumps",label:"Boutons de rasoir et poils incarnés"},{v:"darkspots",label:"Taches sombres causées par d'anciens boutons"},{v:"redness",label:"Rougeurs, brûlures et irritation"},{v:"dryness",label:"Sécheresse et tiraillement post-rasage"},{v:"cuts",label:"Coupures et entailles fréquentes"},{v:"none",label:"Aucun problème majeur -- juste optimiser"}],
   shaveQ4:"T'as présentement des boutons de rasoir actifs sur le visage ou le cou?",
   shaveOpts4:[{v:"none",label:"Aucun -- pas de boutons en ce moment"},{v:"face",label:"Boutons sur le visage"},{v:"neck",label:"Boutons sur le cou"},{v:"both",label:"Boutons sur le visage et le cou"},{v:"severe",label:"Sévères -- répandus, douloureux, ou causant des cicatrices"}],
   shaveQ5:"Quel rasoir ou quelle lame t'utilises en ce moment?",
@@ -1529,7 +1529,7 @@ const ES_T = {
   shaveQ2:"¿Cómo describirías tu barba?",
   shaveOpts2:[{v:"fine_straight",label:"Fina y recta -- crece suave, poca resistencia"},{v:"medium",label:"Media -- grosor y densidad promedio"},{v:"coarse_straight",label:"Gruesa y recta -- barba densa y pesada"},{v:"coarse_curly",label:"Gruesa y rizada -- rizos apretados, ondas o coils"},{v:"patchy",label:"Irregular -- densidad variable en la cara"}],
   shaveQ3:"¿Cuál es tu principal problema al afeitarte?",
-  shaveOpts3:[{v:"bumps",label:"Granos de afeitar y pelos encarnados"},{v:"redness",label:"Rojez, ardor e irritación"},{v:"dryness",label:"Sequedad y tirante post-afeitado"},{v:"cuts",label:"Cortes y heridas frecuentes"},{v:"none",label:"Sin problemas significativos -- solo optimizar"}],
+  shaveOpts3:[{v:"bumps",label:"Granos de afeitar y pelos encarnados"},{v:"darkspots",label:"Manchas oscuras de granos anteriores"},{v:"redness",label:"Rojez, ardor e irritación"},{v:"dryness",label:"Sequedad y tirante post-afeitado"},{v:"cuts",label:"Cortes y heridas frecuentes"},{v:"none",label:"Sin problemas significativos -- solo optimizar"}],
   shaveQ4:"¿Tienes actualmente granos de afeitar activos en la cara o el cuello?",
   shaveOpts4:[{v:"none",label:"Ninguno -- sin granos en este momento"},{v:"face",label:"Granos en la cara"},{v:"neck",label:"Granos en el cuello"},{v:"both",label:"Granos en la cara y el cuello"},{v:"severe",label:"Severos -- generalizados, dolorosos o causando cicatrices"}],
   shaveQ5:"¿Qué maquinilla o hoja estás usando actualmente?",
@@ -1992,7 +1992,7 @@ const calcScore = (profile, checkins=[]) => {
 
 // -- CSS -----------------------------------------------------------------------
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -2002,8 +2002,8 @@ const CSS = `
   --goldb:rgba(184,151,42,0.22); --goldbr:rgba(184,151,42,0.45);
   --white:#F2EEE6; --cream:#D8D2C8; --soft:#A09890; --muted:#4E4844;
   --red:#9E2B2B; --green:#2E6B46; --amber:#B87820; --purple:#7254B8;
-  --fh:'Playfair Display',serif; --fc:'Cormorant Garamond',serif;
-  --fb:'Josefin Sans',sans-serif; --fm:'DM Mono',monospace;
+  --fh:'Barlow Condensed',sans-serif; --fc:'DM Sans',sans-serif;
+  --fb:'Barlow',sans-serif; --fm:'DM Mono',monospace;
 }
 html,body{height:100%;background:var(--bg);}
 .app{min-height:100vh;background:var(--bg);color:var(--white);font-family:var(--fb);
@@ -2548,7 +2548,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
    Reading  (15px)  -- step instructions, summaries, week one, timeline
    Support  (14px)  -- why, clinical mechanism, severity, supporting text
    Minimum  (13px)  -- labels, badges, mood descriptions (nothing below this)
-   Cormorant Garamond reads optically smaller than its point size -- all sizes
+   DM Sans reads optically smaller than its point size -- all sizes
    set 1-2px larger than equivalent sans-serif for equivalent perceived weight.
 ------------------------------------------------------------------------------ */
 
@@ -4016,6 +4016,45 @@ Return this JSON:
             </div>
           )}
 
+          {/* ── UNLOCK PANEL — shown immediately after summary for maximum visibility ── */}
+          {profile&&!biologyUnlocked&&(
+            <div style={{border:"1px solid var(--gold)",marginTop:16,marginBottom:4,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
+              <div style={{padding:"16px 18px 12px",background:"rgba(184,151,42,0.06)"}}>
+                <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+                  {lang==="fr"?"Débloquer le Rapport Complet":lang==="es"?"Desbloquear Informe Completo":"Unlock Your Complete Report"}
+                </div>
+                <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",lineHeight:1.65,marginBottom:2}}>
+                  {lang==="fr"?"Obtenez l'analyse clinique complète de votre biologie cutanée et une carte de routine personnalisée.":lang==="es"?"Obtenga el análisis clínico completo de su biología cutánea y una tarjeta de rutina personalizada.":"Get the full clinical analysis of your skin biology and a personalised daily routine card — sent to your inbox as a PDF."}
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,background:"var(--border)",margin:"0 0 2px"}}>
+                <div style={{background:"var(--card)",padding:"14px 16px"}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>{t.biologyTitle}</div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",lineHeight:1.6,marginBottom:10}}>{t.biologyDesc}</div>
+                  <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("biology")}>
+                    {t.unlockBtn} -- ${CONFIG.business.biologyReportPrice}
+                  </button>
+                </div>
+                <div style={{background:"var(--card)",padding:"14px 16px"}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>{t.routineCardTitle}</div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",lineHeight:1.6,marginBottom:10}}>{t.routineCardDesc}</div>
+                  <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("routine")}>
+                    {t.unlockBtn} -- ${CONFIG.business.routineCardPrice}
+                  </button>
+                </div>
+              </div>
+              <div style={{padding:"12px 16px",background:"var(--s)",borderTop:"1px solid var(--border)"}}>
+                <button className="btn btn-p" style={{width:"100%",fontSize:12}} onClick={()=>openPayment("skin-combo")}>
+                  * {t.comboBtn} -- ${CONFIG.business.skinComboPrice} {lang==="fr"?"(meilleure valeur)":lang==="es"?"(mejor valor)":"(best value)"}
+                </button>
+                <div style={{fontFamily:"var(--fc)",fontSize:10,color:"var(--muted)",textAlign:"center",marginTop:6}}>
+                  {lang==="fr"?"Paiement sécurisé via Stripe":lang==="es"?"Pago seguro via Stripe":"Secured by Stripe — card data never stored"}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Morning */}
           <div className="period-hdr"><span className="sec-mark">*</span> {t.morning}</div>
           {profile.morning?.map((step,i)=>{
@@ -4115,9 +4154,9 @@ Return this JSON:
             {profile.timeToResults&&<div className="ins-box tip"><div className="ins-lbl">{t.expectedTimeline}</div><div className="ins-text">{profile.timeToResults}</div></div>}
           </div>
 
-          {/* Optional reports panel -- shown after skin analysis too */}
-          {profile&&(
-            <div style={{border:"1px solid var(--goldb)",marginTop:20,position:"relative",overflow:"hidden"}}>
+          {/* Optional reports panel -- full view if unlocked, minimal CTA if not */}
+          {profile&&(biologyUnlocked||routineUnlocked)&&(
+            <div style={{border:"1px solid var(--border)",marginTop:20,position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
               <div style={{padding:"18px 18px 0"}}>
                 <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",fontStyle:"italic",marginBottom:6}}>{t.optionalTitle}</div>
