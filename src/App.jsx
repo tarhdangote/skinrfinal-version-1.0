@@ -3029,17 +3029,6 @@ export default function SkinrApp() {
         const purchasedEmail = emailSaved || "";
         if(purchasedEmail) {
           try {
-            await fetch("https://formspree.io/f/261158684435060", {
-              method:"POST",
-              headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({
-                _subject:"SKINR Purchase Confirmed",
-                email: purchasedEmail,
-                product: payModal,
-                skinType: profile?.skinType || "Not analysed",
-                source:"SKINR Payment Confirmation",
-              }),
-            });
           } catch(_) {}
         }
         setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); }, 3500);
@@ -3279,16 +3268,6 @@ Write at the level of a highly educated non-specialist. Precise but accessible. 
       // Send biology report to email
       if(emailSaved && text) {
         try {
-          await fetch("https://formspree.io/f/261158684435060", {
-            method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({
-              _subject:"Your SKINR Biology Report",
-              email: emailSaved,
-              skinType: profile.skinType,
-              biologyReport: text,
-              source:"SKINR Biology Report Delivery",
-            }),
-          });
         } catch(_) {}
       }
     } catch(_){}
@@ -3343,16 +3322,6 @@ Rules:
         // Auto-send routine card to email if we have it
         if(emailSaved) {
           try {
-            await fetch("https://formspree.io/f/261158684435060", {
-              method:"POST", headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({
-                _subject:"Your SKINR Routine Card",
-                email: emailSaved,
-                skinType: profile.skinType,
-                routineCard: JSON.stringify(parsed, null, 2),
-                source:"SKINR Routine Card Delivery",
-              }),
-            });
           } catch(_) {}
         }
       }
@@ -3456,20 +3425,18 @@ Return this JSON:
     setEmailSaved(emailVal.trim());
     track("email_capture", {source: "modal"});
     setEmailDone(true);
-    // Send to Formspree -- sign up free at formspree.io and replace YOUR_FORM_ID
+    // Send welcome email via our own Gmail-powered subscribe function
     try {
-      await fetch("https://formspree.io/f/261158684435060", {
+      await fetch("/.netlify/functions/subscribe", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
-          email: emailVal.trim(),
-          skinType: profile?.skinType || "Not analysed",
-          shaveProblem: savedShave?.answers?.problem || "Not analysed",
-          source: "SKINR Protocol Capture",
-          _subject: "New SKINR Protocol Request",
+          email:    emailVal.trim(),
+          skinType: profile?.skinType || savedShave?.skinType || "",
+          lang:     lang || "en",
         }),
       });
-    } catch(e) { /* Formspree will retry -- do not show error to user */ }
+    } catch(_) { /* Silent fail — user already sees success */ }
     setTimeout(()=>{ setShowEmail(false); setEmailDone(false); }, 2500);
   };
 
@@ -3510,10 +3477,6 @@ Return this JSON:
     const updated = [review, ...reviews].slice(0, 50);
     setReviews(updated); LS.set("skinr2:reviews", updated);
     try {
-      await fetch("https://formspree.io/f/261158684435060", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({_subject:"New SKINR Review", name:review.name, review:review.text, skinType:review.skinType||"Not analysed"}),
-      });
     } catch(_) {}
     setReviewText(""); setReviewName(""); setReviewPosted(true);
     setTimeout(()=>setReviewPosted(false), 4000);
