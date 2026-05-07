@@ -1649,7 +1649,7 @@ const getSkinQs = (t, lang) => [
   { id:"breakouts", q:t.q_breakouts, opts:t.opts_breakouts.map((o,i)=>({v:["never","sometimes","often","always"][i],label:o})) },
   { id:"sensitivity",q:t.q_sensitivity,opts:t.opts_sensitivity.map((o,i)=>({v:["none","mild","moderate","severe"][i],label:o})) },
   { id:"age",       q:t.q_age,       opts:t.opts_age.map((o,i)=>({v:["under25","25to35","36to50","50plus"][i],label:o})) },
-  { id:"concern",   q:t.q_concern,   opts:t.opts_concern.map((o,i)=>({v:["dryness","oiliness","acne","aging","redness","pigmentation"][i],label:o})) },
+  { id:"concern",   q:t.q_concern,   opts:t.opts_concern.map((o,i)=>({v:["dryness","oiliness","acne","aging","redness","pigmentation"][i],label:o})), multi:true },
   { id:"budget",    q:t.q_budget,    opts:t.opts_budget.map((o,i)=>({v:["budget","mid","premium","luxury"][i],label:o})) },
 ];
 
@@ -1709,12 +1709,14 @@ Return ONE sentence of precise, actionable clinical advice specific to this stat
 // -- HELPERS -------------------------------------------------------------------
 const getAffLink = (search, lang) => {
   if(!search) return "https://www.amazon.com";
-  const tag = CONFIG.business.affiliateTag;
-  // Quebec French → amazon.ca, all others → amazon.com
-  const base = lang==="fr"
-    ? `https://www.amazon.ca/s?k=${encodeURIComponent(search)}&tag=${tag}`
-    : `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${tag}&linkCode=ur2`;
-  return base;
+  const tagUS = CONFIG.business.affiliateTag; // skinr07-20
+  const tagCA = "Skinr-20"; // Amazon Canada affiliate tag
+  // Quebec French → amazon.ca with CA tag
+  // All others → amazon.com with US tag
+  if(lang==="fr"){
+    return `https://www.amazon.ca/s?k=${encodeURIComponent(search)}&tag=${tagCA}`;
+  }
+  return `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${tagUS}&linkCode=ur2`;
 };
 
 const calcScore = (profile, checkins=[]) => {
@@ -2424,6 +2426,7 @@ export default function SkinrApp() {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState([]);
   const [heroExpanded, setHeroExpanded] = useState(false);
+  const [storyExpanded, setStoryExpanded] = useState(false);
   const [prevStack, setPrevStack]= useState([]); // back button history
   const [anim, setAnim]         = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -2505,7 +2508,7 @@ export default function SkinrApp() {
   const shaveQs = [
     {id:"method",      q:t.shaveQ1, opts:t.shaveOpts1},
     {id:"beard",       q:t.shaveQ2, opts:t.shaveOpts2},
-    {id:"problem",     q:t.shaveQ3, opts:t.shaveOpts3},
+    {id:"problem",     q:t.shaveQ3, opts:t.shaveOpts3, multi:true},
     {id:"activeBumps", q:t.shaveQ4, opts:t.shaveOpts4},
     {id:"currentBlade",q:t.shaveQ5, opts:t.shaveOpts5},
     {id:"frequency",   q:t.shaveQ6, opts:t.shaveOpts6},
@@ -2767,7 +2770,7 @@ export default function SkinrApp() {
 
   // -- SKIN QUIZ --
   const startSkinQuiz = () => {
-    setAnswers({}); setCurrentQ(0); setSelected(null); setPrevStack([]); go("quiz");
+    setAnswers({}); setCurrentQ(0); setSelected([]); setPrevStack([]); go("quiz");
   };
   const handleBack = () => {
     if(prevStack.length===0){go("home");return;}
@@ -3593,11 +3596,23 @@ Return this JSON:
               <div style={{fontFamily:"var(--fh)",fontSize:18,fontWeight:700,fontStyle:"italic",color:"var(--white)"}}>{t.storyTitle}</div>
             </div>
           </div>
-          <div style={{fontFamily:"var(--fc)",fontSize:16,lineHeight:2,color:"var(--soft)",fontStyle:"italic",marginBottom:28,maxWidth:680,borderLeft:"1px solid var(--border)",paddingLeft:20}}>
-            <p style={{marginBottom:18}}>{t.storyP1}</p>
-            <p style={{marginBottom:18}}>{t.storyP2}</p>
-            <p>{t.storyP3}</p>
+          <div style={{fontFamily:"var(--fc)",fontSize:16,lineHeight:2,color:"var(--soft)",fontStyle:"italic",marginBottom:12,maxWidth:680,borderLeft:"1px solid var(--border)",paddingLeft:20}}>
+            <p style={{marginBottom:storyExpanded?18:0}}>{t.storyP1}</p>
+            {storyExpanded&&<>
+              <p style={{marginBottom:18}}>{t.storyP2}</p>
+              <p>{t.storyP3}</p>
+            </>}
           </div>
+          <button onClick={()=>setStoryExpanded(p=>!p)} style={{
+            background:"none",border:"none",color:"var(--gold)",
+            fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
+            textTransform:"uppercase",cursor:"pointer",
+            padding:"0 0 24px 20px",display:"flex",alignItems:"center",gap:6
+          }}>
+            {storyExpanded
+              ? (lang==="fr"?"Lire Moins ↑":lang==="es"?"Leer Menos ↑":"Read Less ↑")
+              : (lang==="fr"?"Lire Plus ↓":lang==="es"?"Leer Más ↓":"Read More ↓")}
+          </button>
           <div style={{border:"1px solid var(--goldb)",borderLeft:"3px solid var(--gold)",padding:"18px 20px",marginBottom:32,background:"var(--gold3)"}}>
             <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>{t.missionLabel}</div>
             <div style={{fontFamily:"var(--fh)",fontSize:17,fontWeight:700,fontStyle:"italic",color:"var(--white)",lineHeight:1.5}}>{t.missionText}</div>
@@ -3646,15 +3661,18 @@ Return this JSON:
           <div className="q-meta">{currentQ+1}{t.of}{skinQs.length}</div>
           <h2 className="q-text">{skinQs[currentQ].q}</h2>
           <p className="q-hint">{t.quizHints[currentQ]}</p>
-          <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 12px",opacity:0.8}}>
-            {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
-            {selected.length>0?` (${selected.length}/3)`:""}
-          </p>
+          {skinQs[currentQ].multi&&(
+            <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 12px",opacity:0.8}}>
+              {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
+              {selected.length>0?` (${selected.length}/3)`:""}
+            </p>
+          )}
           <div className="opts" role="group">
             {skinQs[currentQ].opts.map(o=>(
-              <button key={o.v} className={`opt${selected.includes(o.v)?" sel":""}`}
-                role="checkbox" aria-checked={selected.includes(o.v)}
-                onClick={()=>toggleSkinOpt(o.v)}>
+              <button key={o.v} className={`opt${(skinQs[currentQ].multi?selected.includes(o.v):selected[0]===o.v)?" sel":""}`}
+                role={skinQs[currentQ].multi?"checkbox":"radio"}
+                aria-checked={skinQs[currentQ].multi?selected.includes(o.v):selected[0]===o.v}
+                onClick={()=>skinQs[currentQ].multi?toggleSkinOpt(o.v):setSelected([o.v])}>
                 <div className="opt-m" aria-hidden="true"/>
                 <span className="opt-lbl">{o.label}</span>
               </button>
@@ -4037,15 +4055,18 @@ Return this JSON:
             </div>
             <div className="q-num">0{shaveStep+1}</div>
             <div className="q-text" style={{fontFamily:"var(--fh)",fontSize:"clamp(17px,3vw,24px)",fontWeight:700,fontStyle:"italic",marginBottom:8}}>{shaveQs[shaveStep].q}</div>
-            <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 14px",opacity:0.8}}>
-              {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
-              {shaveSel.length>0?` (${shaveSel.length}/3)`:""}
-            </p>
+            {shaveQs[shaveStep].multi&&(
+              <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 14px",opacity:0.8}}>
+                {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
+                {shaveSel.length>0?` (${shaveSel.length}/3)`:""}
+              </p>
+            )}
             <div className="opts" role="group">
               {shaveQs[shaveStep].opts.map(o=>(
-                <button key={o.v} className={`opt${shaveSel.includes(o.v)?" sel":""}`}
-                  role="checkbox" aria-checked={shaveSel.includes(o.v)}
-                  onClick={()=>toggleShaveOpt(o.v)}>
+                <button key={o.v} className={`opt${(shaveQs[shaveStep].multi?shaveSel.includes(o.v):shaveSel[0]===o.v)?" sel":""}`}
+                  role={shaveQs[shaveStep].multi?"checkbox":"radio"}
+                  aria-checked={shaveQs[shaveStep].multi?shaveSel.includes(o.v):shaveSel[0]===o.v}
+                  onClick={()=>shaveQs[shaveStep].multi?toggleShaveOpt(o.v):setShaveSel([o.v])}>
                   <div className="opt-m" aria-hidden="true"/>
                   <span className="opt-lbl">{o.label}</span>
                 </button>
