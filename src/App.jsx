@@ -1707,8 +1707,15 @@ Return ONE sentence of precise, actionable clinical advice specific to this stat
 };
 
 // -- HELPERS -------------------------------------------------------------------
-const getAffLink = (search) =>
-  `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${CONFIG.business.affiliateTag}&linkCode=ur2`;
+const getAffLink = (search, lang) => {
+  if(!search) return "https://www.amazon.com";
+  const tag = CONFIG.business.affiliateTag;
+  // Quebec French → amazon.ca, all others → amazon.com
+  const base = lang==="fr"
+    ? `https://www.amazon.ca/s?k=${encodeURIComponent(search)}&tag=${tag}`
+    : `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${tag}&linkCode=ur2`;
+  return base;
+};
 
 const calcScore = (profile, checkins=[]) => {
   if(!profile) return 0;
@@ -2415,7 +2422,8 @@ export default function SkinrApp() {
   const [profile, setProfile]   = useState(null);
   const [answers, setAnswers]   = useState({});
   const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState([]);
+  const [heroExpanded, setHeroExpanded] = useState(false);
   const [prevStack, setPrevStack]= useState([]); // back button history
   const [anim, setAnim]         = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -2429,7 +2437,7 @@ export default function SkinrApp() {
   // shave
   const [shaveStep, setShaveStep]=useState(0);
   const [shaveAns, setShaveAns] = useState({});
-  const [shaveSel, setShaveSel] = useState(null);
+  const [shaveSel, setShaveSel] = useState([]);
   const [shavePrev, setShavePrev]=useState([]);
   const [shaveResult, setShaveResult]=useState(null);
   const [shaveLoad, setShaveLoad]=useState(false);
@@ -2762,23 +2770,31 @@ export default function SkinrApp() {
     setAnswers({}); setCurrentQ(0); setSelected(null); setPrevStack([]); go("quiz");
   };
   const handleBack = () => {
-    if(prevStack.length===0) return;
+    if(prevStack.length===0){go("home");return;}
     const prev = prevStack[prevStack.length-1];
     setCurrentQ(p=>p-1);
-    setSelected(prev.selected);
+    setSelected(Array.isArray(prev.selected)?prev.selected:[prev.selected].filter(Boolean));
     setAnswers(prev.answers);
     setPrevStack(p=>p.slice(0,-1));
   };
   const handleNext = () => {
-    if(!selected) return;
+    if(!selected||selected.length===0) return;
+    const val = selected.length===1?selected[0]:selected.join(",");
     setPrevStack(p=>[...p,{selected,answers:{...answers}}]);
-    const next = {...answers,[skinQs[currentQ].id]:selected};
+    const next = {...answers,[skinQs[currentQ].id]:val};
     setAnswers(next);
     if(currentQ < skinQs.length-1){
-      setAnim(true); setTimeout(()=>{setCurrentQ(p=>p+1);setSelected(null);setAnim(false);},220);
+      setAnim(true); setTimeout(()=>{setCurrentQ(p=>p+1);setSelected([]);setAnim(false);},220);
     } else {
       setView("analyzing"); setLoadStep(0); runSkinAnalysis(next);
     }
+  };
+  const toggleSkinOpt = (v) => {
+    setSelected(prev => {
+      if(prev.includes(v)) return prev.filter(x=>x!==v);
+      if(prev.length>=3) return prev;
+      return [...prev,v];
+    });
   };
 
   const runSkinAnalysis = async (ans) => {
@@ -2805,7 +2821,7 @@ export default function SkinrApp() {
 
   // -- SHAVE QUIZ --
   const startShaveQuiz = () => {
-    setShaveStep(0); setShaveAns({}); setShaveSel(null);
+    setShaveStep(0); setShaveAns({}); setShaveSel([]);
     setShaveResult(null); setShavePrev([]); setShaveError(false);
     go("shave");
   };
@@ -2820,16 +2836,27 @@ export default function SkinrApp() {
   const handleShaveBack = () => {
     if(shavePrev.length===0) return;
     const prev = shavePrev[shavePrev.length-1];
-    setShaveStep(p=>p-1); setShaveSel(prev.sel); setShaveAns(prev.ans); setShavePrev(p=>p.slice(0,-1));
+    setShaveStep(p=>p-1);
+    setShaveSel(Array.isArray(prev.sel)?prev.sel:[prev.sel].filter(Boolean));
+    setShaveAns(prev.ans);
+    setShavePrev(p=>p.slice(0,-1));
+  };
+  const toggleShaveOpt = (v) => {
+    setShaveSel(prev => {
+      if(prev.includes(v)) return prev.filter(x=>x!==v);
+      if(prev.length>=3) return prev;
+      return [...prev,v];
+    });
   };
   const handleShaveNext = async () => {
-    if (!shaveSel) return;
+    if (!shaveSel||shaveSel.length===0) return;
+    const val = shaveSel.length===1?shaveSel[0]:shaveSel.join(",");
     setShavePrev(p => [...p, { sel: shaveSel, ans: { ...shaveAns } }]);
-    const next = { ...shaveAns, [shaveQs[shaveStep].id]: shaveSel };
+    const next = { ...shaveAns, [shaveQs[shaveStep].id]: val };
     setShaveAns(next);
     if (shaveStep < shaveQs.length - 1) {
       setShaveStep(p => p + 1);
-      setShaveSel(null);
+      setShaveSel([]);
     } else {
       setShaveError(false);
       setShaveLoad(true);
@@ -3221,8 +3248,8 @@ Return this JSON:
   const score = calcScore(profile, checkins);
   const circ = 2*Math.PI*30;
   const dash = circ - (score/100)*circ;
-  const skinProg = ((currentQ+(selected?1:0))/skinQs.length)*100;
-  const shaveProg = ((shaveStep+(shaveSel?1:0))/shaveQs.length)*100;
+  const skinProg = ((currentQ+(selected.length>0?1:0))/skinQs.length)*100;
+  const shaveProg = ((shaveStep+(shaveSel.length>0?1:0))/shaveQs.length)*100;
 
   // Nav items -- only show sections relevant to the user's progress
   // Home and Guides always visible. Others appear after completing analysis.
@@ -3359,7 +3386,20 @@ Return this JSON:
           <div className="hero-h">{t.heroTitle}</div>
           <div className="hero-h2">{t.heroTitle2}</div>
           <div className="hero-rule"/>
-          <p className="hero-body">{t.heroBody}</p>
+          <p className="hero-body" style={{
+            display:"-webkit-box",WebkitLineClamp:heroExpanded?undefined:3,
+            WebkitBoxOrient:"vertical",overflow:heroExpanded?"visible":"hidden"
+          }}>{t.heroBody}</p>
+          <button onClick={()=>setHeroExpanded(p=>!p)} style={{
+            background:"none",border:"none",color:"var(--gold)",
+            fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
+            textTransform:"uppercase",cursor:"pointer",padding:"8px 0 0",
+            display:"flex",alignItems:"center",gap:6
+          }}>
+            {heroExpanded
+              ? (lang==="fr"?"Lire Moins ↑":lang==="es"?"Leer Menos ↑":"Read Less ↑")
+              : (lang==="fr"?"Lire Plus ↓":lang==="es"?"Leer Más ↓":"Read More ↓")}
+          </button>
 
           {/* Independence statement */}
           <div style={{
@@ -3606,11 +3646,15 @@ Return this JSON:
           <div className="q-meta">{currentQ+1}{t.of}{skinQs.length}</div>
           <h2 className="q-text">{skinQs[currentQ].q}</h2>
           <p className="q-hint">{t.quizHints[currentQ]}</p>
-          <div className="opts" role="radiogroup">
+          <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 12px",opacity:0.8}}>
+            {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
+            {selected.length>0?` (${selected.length}/3)`:""}
+          </p>
+          <div className="opts" role="group">
             {skinQs[currentQ].opts.map(o=>(
-              <button key={o.v} className={`opt${selected===o.v?" sel":""}`}
-                role="radio" aria-checked={selected===o.v}
-                onClick={()=>setSelected(o.v)}>
+              <button key={o.v} className={`opt${selected.includes(o.v)?" sel":""}`}
+                role="checkbox" aria-checked={selected.includes(o.v)}
+                onClick={()=>toggleSkinOpt(o.v)}>
                 <div className="opt-m" aria-hidden="true"/>
                 <span className="opt-lbl">{o.label}</span>
               </button>
@@ -3618,7 +3662,7 @@ Return this JSON:
           </div>
           <div className="q-foot">
             <span/>
-            <button className="btn btn-p" onClick={handleNext} disabled={!selected}>
+            <button className="btn btn-p" onClick={handleNext} disabled={selected.length===0}>
               {currentQ===skinQs.length-1?t.analyze:t.next}
             </button>
           </div>
@@ -3711,7 +3755,7 @@ Return this JSON:
                 <div className="step-instruction">{step.instruction}</div>
                 <div className="step-why">{step.why}</div>
                 <div className="step-links">
-                  <a className="step-link" href={getAffLink(step.amazonSearch)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                  <a className="step-link" href={getAffLink(step.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                 </div>
                 {step.clinicalMechanism&&(
                   <>
@@ -3757,7 +3801,7 @@ Return this JSON:
                 <div className="step-instruction">{step.instruction}</div>
                 <div className="step-why">{step.why}</div>
                 <div className="step-links">
-                  <a className="step-link" href={getAffLink(step.amazonSearch)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                  <a className="step-link" href={getAffLink(step.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                 </div>
                 {step.clinicalMechanism&&(
                   <>
@@ -3992,12 +4036,16 @@ Return this JSON:
               <span className="q-count">{shaveStep+1}{t.of}{shaveQs.length}</span>
             </div>
             <div className="q-num">0{shaveStep+1}</div>
-            <div className="q-text" style={{fontFamily:"var(--fh)",fontSize:"clamp(17px,3vw,24px)",fontWeight:700,fontStyle:"italic",marginBottom:18}}>{shaveQs[shaveStep].q}</div>
-            <div className="opts" role="radiogroup">
+            <div className="q-text" style={{fontFamily:"var(--fh)",fontSize:"clamp(17px,3vw,24px)",fontWeight:700,fontStyle:"italic",marginBottom:8}}>{shaveQs[shaveStep].q}</div>
+            <p style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",margin:"0 0 14px",opacity:0.8}}>
+              {lang==="fr"?"Sélectionne jusqu'à 3 réponses":lang==="es"?"Selecciona hasta 3 respuestas":"Select up to 3 answers"}
+              {shaveSel.length>0?` (${shaveSel.length}/3)`:""}
+            </p>
+            <div className="opts" role="group">
               {shaveQs[shaveStep].opts.map(o=>(
-                <button key={o.v} className={`opt${shaveSel===o.v?" sel":""}`}
-                  role="radio" aria-checked={shaveSel===o.v}
-                  onClick={()=>setShaveSel(o.v)}>
+                <button key={o.v} className={`opt${shaveSel.includes(o.v)?" sel":""}`}
+                  role="checkbox" aria-checked={shaveSel.includes(o.v)}
+                  onClick={()=>toggleShaveOpt(o.v)}>
                   <div className="opt-m" aria-hidden="true"/>
                   <span className="opt-lbl">{o.label}</span>
                 </button>
@@ -4005,7 +4053,7 @@ Return this JSON:
             </div>
             <div className="q-foot">
               <span/>
-              <button className="btn btn-p" onClick={handleShaveNext} disabled={!shaveSel}>
+              <button className="btn btn-p" onClick={handleShaveNext} disabled={shaveSel.length===0}>
                 {shaveStep===shaveQs.length-1?t.analyzeShave:t.next}
               </button>
             </div>
@@ -4040,7 +4088,7 @@ Return this JSON:
                 * Try Again
               </button>
               <button className="btn btn-g" style={{width:"100%",maxWidth:320,marginTop:10}}
-                onClick={()=>{setShaveError(false);setShaveStep(0);setShaveAns({});setShaveSel(null);}}>
+                onClick={()=>{setShaveError(false);setShaveStep(0);setShaveAns({});setShaveSel([]);}}>
                 Start Over
               </button>
             </div>
@@ -4123,7 +4171,7 @@ Return this JSON:
                         </div>
                         {blade.rating&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--green)",letterSpacing:1,marginBottom:6}}>★ {blade.rating}</div>}
                         <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6,marginBottom:8}}>{blade.why}</div>
-                        <a className="step-link" href={getAffLink(blade.amazonSearch)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                        <a className="step-link" href={getAffLink(blade.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                       </div>
                     ))}
                   </>}
@@ -4193,7 +4241,7 @@ Return this JSON:
                     </div>
                   )}
                   <div className="step-links" style={{marginTop:10}}>
-                    <a className="step-link" href={getAffLink(p.amazonSearch)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                    <a className="step-link" href={getAffLink(p.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                   </div>
                 </div>
               ))}
@@ -4242,7 +4290,7 @@ Return this JSON:
                     <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic",marginTop:8}}>Expected: {p.expectedTimeline}</div>
                   )}
                   <div className="step-links" style={{marginTop:10}}>
-                    <a className="step-link" href={getAffLink(p.amazonSearch)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                    <a className="step-link" href={getAffLink(p.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                   </div>
                 </div>
               ))}
