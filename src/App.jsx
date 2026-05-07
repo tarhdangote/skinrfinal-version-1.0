@@ -1707,13 +1707,11 @@ Return ONE sentence of precise, actionable clinical advice specific to this stat
 };
 
 // -- HELPERS -------------------------------------------------------------------
-const getAffLink = (search, lang) => {
+const getAffLink = (search, country) => {
   if(!search) return "https://www.amazon.com";
-  const tagUS = CONFIG.business.affiliateTag; // skinr07-20
-  const tagCA = "Skinr-20"; // Amazon Canada affiliate tag
-  // Quebec French → amazon.ca with CA tag
-  // All others → amazon.com with US tag
-  if(lang==="fr"){
+  const tagUS = CONFIG.business.affiliateTag; // skinr07-20 (amazon.com)
+  const tagCA = "Skinr-20";                   // amazon.ca
+  if(country==="CA"){
     return `https://www.amazon.ca/s?k=${encodeURIComponent(search)}&tag=${tagCA}`;
   }
   return `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${tagUS}&linkCode=ur2`;
@@ -2427,6 +2425,7 @@ export default function SkinrApp() {
   const [selected, setSelected] = useState([]);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [storyExpanded, setStoryExpanded] = useState(false);
+  const [userCountry, setUserCountry] = useState("");
   const [prevStack, setPrevStack]= useState([]); // back button history
   const [anim, setAnim]         = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -2503,6 +2502,18 @@ export default function SkinrApp() {
     };
     document.addEventListener("mousedown", handler);
     return ()=>document.removeEventListener("mousedown", handler);
+  },[]);
+
+  // Detect user country via IP for Amazon locale routing
+  // Uses free cloudflare trace endpoint -- no API key, no rate limit
+  useEffect(()=>{
+    fetch("https://cloudflare.com/cdn-cgi/trace")
+      .then(r=>r.text())
+      .then(text=>{
+        const match = text.match(/loc=([A-Z]{2})/);
+        if(match) setUserCountry(match[1]);
+      })
+      .catch(()=>{}); // Silent fail -- defaults to amazon.com
   },[]);
   const skinQs = getSkinQs(t, lang);
   const shaveQs = [
@@ -3773,7 +3784,7 @@ Return this JSON:
                 <div className="step-instruction">{step.instruction}</div>
                 <div className="step-why">{step.why}</div>
                 <div className="step-links">
-                  <a className="step-link" href={getAffLink(step.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                  <a className="step-link" href={getAffLink(step.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                 </div>
                 {step.clinicalMechanism&&(
                   <>
@@ -3819,7 +3830,7 @@ Return this JSON:
                 <div className="step-instruction">{step.instruction}</div>
                 <div className="step-why">{step.why}</div>
                 <div className="step-links">
-                  <a className="step-link" href={getAffLink(step.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                  <a className="step-link" href={getAffLink(step.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                 </div>
                 {step.clinicalMechanism&&(
                   <>
@@ -4192,7 +4203,7 @@ Return this JSON:
                         </div>
                         {blade.rating&&<div style={{fontFamily:"var(--fm)",fontSize:9,color:"var(--green)",letterSpacing:1,marginBottom:6}}>★ {blade.rating}</div>}
                         <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6,marginBottom:8}}>{blade.why}</div>
-                        <a className="step-link" href={getAffLink(blade.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                        <a className="step-link" href={getAffLink(blade.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                       </div>
                     ))}
                   </>}
@@ -4262,7 +4273,7 @@ Return this JSON:
                     </div>
                   )}
                   <div className="step-links" style={{marginTop:10}}>
-                    <a className="step-link" href={getAffLink(p.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                    <a className="step-link" href={getAffLink(p.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                   </div>
                 </div>
               ))}
@@ -4311,7 +4322,7 @@ Return this JSON:
                     <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)",fontStyle:"italic",marginTop:8}}>Expected: {p.expectedTimeline}</div>
                   )}
                   <div className="step-links" style={{marginTop:10}}>
-                    <a className="step-link" href={getAffLink(p.amazonSearch,lang)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
+                    <a className="step-link" href={getAffLink(p.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer">{t.findProduct}</a>
                   </div>
                 </div>
               ))}
