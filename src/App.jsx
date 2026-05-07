@@ -1707,13 +1707,126 @@ Return ONE sentence of precise, actionable clinical advice specific to this stat
 };
 
 // -- HELPERS -------------------------------------------------------------------
+// ── PRODUCT ASIN DATABASE ─────────────────────────────────────────────────────
+// 40+ clinically curated products with direct Amazon ASINs.
+// US users get direct product page links (3x better conversion).
+// CA users get amazon.ca search (correct store, affiliate tagged).
+// Each entry: { name, asinUS, tier, keyIngredient, suitableFor[], avoidFor[] }
+// Quarterly review: check links are live and rated 4+ stars.
+// ─────────────────────────────────────────────────────────────────────────────
+const PRODUCT_DB = {
+  // CLEANSERS
+  "CeraVe Hydrating Facial Cleanser":        { asinUS:"B01MSSDEPK", tier:"budget",  suitableFor:["dry","sensitive","normal","combination","eczema"],   avoidFor:["oily"],      keyIngredient:"ceramides,hyaluronic acid" },
+  "CeraVe Foaming Facial Cleanser":          { asinUS:"B01N1LL62W", tier:"budget",  suitableFor:["oily","combination","acne-prone","normal"],           avoidFor:["dry"],       keyIngredient:"niacinamide,ceramides" },
+  "CeraVe Acne Foaming Cream Cleanser":      { asinUS:"B07YLJPMC3", tier:"budget",  suitableFor:["acne-prone","oily"],                                  avoidFor:["dry","sensitive"], keyIngredient:"benzoyl peroxide 4%" },
+  "CeraVe SA Cleanser":                      { asinUS:"B08CQ9T6KN", tier:"budget",  suitableFor:["acne-prone","oily","combination","textured"],         avoidFor:["sensitive"], keyIngredient:"salicylic acid,niacinamide" },
+  "Cetaphil Daily Facial Cleanser":          { asinUS:"B07T3SKZQW", tier:"budget",  suitableFor:["sensitive","dry","normal","combination"],             avoidFor:[],            keyIngredient:"gentle surfactants" },
+  "La Roche-Posay Toleriane Hydrating Cleanser": { asinUS:"B01N7T7JA3", tier:"mid", suitableFor:["sensitive","dry","rosacea","eczema"],                 avoidFor:[],            keyIngredient:"ceramides,niacinamide" },
+  "La Roche-Posay Toleriane Purifying Foaming Cleanser": { asinUS:"B01N7SSVMM", tier:"mid", suitableFor:["oily","acne-prone","sensitive-oily"],       avoidFor:["dry"],       keyIngredient:"niacinamide,ceramides" },
+  "Kiehl's Ultra Facial Cleanser":           { asinUS:"B008I3XGB0", tier:"premium", suitableFor:["all","normal","dry","combination"],                   avoidFor:[],            keyIngredient:"squalane,avocado oil" },
+
+  // MOISTURIZERS
+  "CeraVe Moisturizing Cream":               { asinUS:"B00TTD9BRC", tier:"budget",  suitableFor:["dry","sensitive","eczema","dry-aging","combination-dry"], avoidFor:["oily"],  keyIngredient:"ceramides,hyaluronic acid" },
+  "CeraVe Daily Moisturizing Lotion":        { asinUS:"B07RK4HST7", tier:"budget",  suitableFor:["normal","combination","dry","sensitive"],              avoidFor:["oily-acne"], keyIngredient:"ceramides,hyaluronic acid" },
+  "CeraVe PM Facial Moisturizing Lotion":    { asinUS:"B00C9J1OME", tier:"budget",  suitableFor:["oily","combination","acne-prone","normal"],            avoidFor:["dry"],       keyIngredient:"niacinamide,hyaluronic acid" },
+  "Neutrogena Hydro Boost Water Gel":        { asinUS:"B00NR1YQHM", tier:"budget",  suitableFor:["oily","combination","normal","dehydrated"],            avoidFor:[],            keyIngredient:"hyaluronic acid" },
+  "La Roche-Posay Toleriane Double Repair":  { asinUS:"B01MQIEK0T", tier:"mid",     suitableFor:["sensitive","dry","combination","rosacea"],             avoidFor:[],            keyIngredient:"ceramides,niacinamide,prebiotic" },
+  "Kiehl's Ultra Facial Moisturizer":        { asinUS:"B001BYP2EI", tier:"premium", suitableFor:["all","dry","combination","sensitive"],                 avoidFor:[],            keyIngredient:"squalane,glacial glycoprotein" },
+
+  // SERUMS — NIACINAMIDE
+  "The Ordinary Niacinamide 10% + Zinc 1%":  { asinUS:"B0C9F1CL8N", tier:"budget",  suitableFor:["oily","combination","acne-prone","hyperpigmentation","all"], avoidFor:[], keyIngredient:"niacinamide,zinc" },
+  "Paula's Choice 10% Niacinamide Booster":  { asinUS:"B01COUOCG6", tier:"premium", suitableFor:["all","oily","combination","hyperpigmentation"],        avoidFor:[],            keyIngredient:"niacinamide,vitamin C" },
+
+  // SERUMS — RETINOL
+  "The Ordinary Granactive Retinoid 2% Emulsion": { asinUS:"B0741LLYNM", tier:"budget", suitableFor:["normal","combination","aging","hyperpigmentation"], avoidFor:["sensitive","pregnant"], keyIngredient:"retinoid" },
+  "CeraVe Skin Renewing Retinol Serum":      { asinUS:"B07SRQDDJL", tier:"budget",  suitableFor:["normal","combination","aging"],                        avoidFor:["sensitive"], keyIngredient:"retinol,ceramides" },
+  "Paula's Choice 1% Retinol Treatment":     { asinUS:"B076HHJMDC", tier:"premium", suitableFor:["normal","combination","oily","aging"],                 avoidFor:["sensitive"], keyIngredient:"retinol 1%" },
+
+  // SERUMS — VITAMIN C
+  "TruSkin Vitamin C Serum":                 { asinUS:"B01M0LEQMS", tier:"budget",  suitableFor:["all","hyperpigmentation","dull","aging"],              avoidFor:[],            keyIngredient:"vitamin C,hyaluronic acid" },
+  "Paula's Choice C15 Super Booster":        { asinUS:"B009ZZYXAQ", tier:"premium", suitableFor:["all","aging","hyperpigmentation"],                     avoidFor:[],            keyIngredient:"vitamin C 15%,vitamin E,ferulic acid" },
+
+  // SERUMS — HYALURONIC ACID
+  "The Ordinary Hyaluronic Acid 2% + B5":    { asinUS:"B01N1LL62W", tier:"budget",  suitableFor:["all","dry","dehydrated","aging"],                      avoidFor:[],            keyIngredient:"hyaluronic acid,vitamin B5" },
+
+  // EXFOLIANTS
+  "Paula's Choice 2% BHA Liquid Exfoliant":  { asinUS:"B00949CTQQ", tier:"mid",     suitableFor:["oily","acne-prone","combination","blackheads"],         avoidFor:["dry","sensitive-beginners"], keyIngredient:"salicylic acid 2%" },
+  "The Ordinary AHA 30% + BHA 2% Peeling Solution": { asinUS:"B07C6LQ18M", tier:"budget", suitableFor:["normal","oily","hyperpigmentation","experienced"], avoidFor:["sensitive","dry","beginners"], keyIngredient:"AHA,BHA" },
+  "Differin Adapalene Gel 0.1%":             { asinUS:"B07LP1J9TB", tier:"budget",  suitableFor:["acne-prone","oily","combination"],                     avoidFor:["dry","sensitive-beginners"], keyIngredient:"adapalene 0.1%" },
+
+  // SPF
+  "EltaMD UV Clear SPF 46":                  { asinUS:"B002MSN3QQ", tier:"premium", suitableFor:["acne-prone","oily","sensitive","rosacea"],              avoidFor:[],            keyIngredient:"zinc oxide,niacinamide" },
+  "La Roche-Posay Anthelios SPF 60":         { asinUS:"B07SFPPQ6Y", tier:"mid",     suitableFor:["all","oily","acne-prone","sensitive"],                  avoidFor:[],            keyIngredient:"mexoryl,tinosorb" },
+  "Neutrogena Ultra Sheer SPF 55":           { asinUS:"B007T7MFNG", tier:"budget",  suitableFor:["all","oily","combination","normal"],                   avoidFor:[],            keyIngredient:"helioplex" },
+  "CeraVe Hydrating Sunscreen SPF 30":       { asinUS:"B08L96KT7K", tier:"budget",  suitableFor:["dry","normal","sensitive","combination-dry"],           avoidFor:[],            keyIngredient:"ceramides,zinc oxide" },
+
+  // ACNE / TREATMENT
+  "Thayers Witch Hazel Toner":               { asinUS:"B000052YUQ", tier:"budget",  suitableFor:["oily","acne-prone","combination","post-shave"],         avoidFor:[],            keyIngredient:"witch hazel,aloe vera" },
+
+  // ── SHAVE PROTOCOL PRODUCTS ──────────────────────────────────────────────
+  // RAZORS
+  "Merkur 34C Safety Razor":                 { asinUS:"B002A8JO1Q", tier:"mid",     suitableFor:["all","sensitive","normal","coarse","beginner-DE"],      avoidFor:[],            keyIngredient:"single blade DE" },
+  "King C. Gillette Safety Razor":           { asinUS:"B08QXK35ZZ", tier:"budget",  suitableFor:["all","beginner","normal"],                             avoidFor:[],            keyIngredient:"single blade" },
+  "Merkur Futur Adjustable Razor":           { asinUS:"B00375BUQ8", tier:"premium", suitableFor:["experienced","coarse","normal"],                        avoidFor:["beginners"], keyIngredient:"adjustable single blade" },
+  "Gillette SkinGuard Razor":                { asinUS:"B07H5KXLST", tier:"budget",  suitableFor:["sensitive","razor-bumps","PFB"],                        avoidFor:[],            keyIngredient:"skin guard technology" },
+
+  // BLADES
+  "Astra Superior Platinum Blades 100":      { asinUS:"B001QY8QXM", tier:"budget",  suitableFor:["all","normal","combination-beard"],                    avoidFor:[],            keyIngredient:"platinum coated steel" },
+  "Feather Double Edge Blades 50":           { asinUS:"B004TZBYQ8", tier:"mid",     suitableFor:["experienced","fine","medium-beard"],                   avoidFor:["beginners","sensitive"], keyIngredient:"high carbon steel" },
+  "Derby Extra Blades 100":                  { asinUS:"B002NN8RIS", tier:"budget",  suitableFor:["sensitive","beginners","fine-beard"],                  avoidFor:[],            keyIngredient:"platinum coated" },
+
+  // SHAVING CREAMS / GELS
+  "Cremo Original Shave Cream":              { asinUS:"B00ATIYOWQ", tier:"budget",  suitableFor:["all","sensitive","normal","combination"],               avoidFor:[],            keyIngredient:"glycerin,extracts" },
+  "Jack Black Beard Lube Conditioning Shave": { asinUS:"B000EWFJ4A", tier:"mid",   suitableFor:["all","dry","sensitive","coarse"],                       avoidFor:[],            keyIngredient:"squalane,macadamia" },
+  "Taylor of Old Bond Street Shaving Cream": { asinUS:"B00BVDQVZQ", tier:"premium", suitableFor:["all","dry","normal"],                                  avoidFor:[],            keyIngredient:"glycerin,almond oil" },
+
+  // POST SHAVE
+  "Thayers Witch Hazel Post-Shave":          { asinUS:"B000052YUQ", tier:"budget",  suitableFor:["all","razor-bumps","sensitive","oily-post-shave"],      avoidFor:[],            keyIngredient:"witch hazel,aloe" },
+  "Every Man Jack Fragrance-Free Post Shave": { asinUS:"B00H91PBPE", tier:"budget", suitableFor:["sensitive","razor-bumps","all"],                        avoidFor:[],            keyIngredient:"aloe,vitamin E" },
+  "Proraso After Shave Lotion Sensitive":    { asinUS:"B001E0NTHI", tier:"budget",  suitableFor:["sensitive","razor-bumps","normal"],                     avoidFor:[],            keyIngredient:"green tea,oat" },
+  "Lab Series Pro LS All-in-One Face Treatment": { asinUS:"B00CHLKFNS", tier:"premium", suitableFor:["all","post-shave","combination"],                  avoidFor:[],            keyIngredient:"multi-action treatment" },
+
+  // PRE SHAVE
+  "Every Man Jack Pre-Shave Face Scrub":     { asinUS:"B001KKXBOM", tier:"budget",  suitableFor:["all","razor-bumps","coarse-beard"],                    avoidFor:[],            keyIngredient:"bamboo exfoliant" },
+  "Pacific Shaving Company Caffeinated Shaving Cream": { asinUS:"B004M7V3HO", tier:"budget", suitableFor:["all","normal","combination"],                 avoidFor:["sensitive"], keyIngredient:"caffeine,plant extracts" },
+};
+
+// Smart product lookup — finds ASIN for exact or partial product name match
+const findProductASIN = (searchTerm) => {
+  if(!searchTerm) return null;
+  const term = searchTerm.toLowerCase();
+  // Exact match first
+  for(const [name, data] of Object.entries(PRODUCT_DB)){
+    if(name.toLowerCase() === term) return data.asinUS;
+  }
+  // Partial match — product name contains the search term
+  for(const [name, data] of Object.entries(PRODUCT_DB)){
+    if(name.toLowerCase().includes(term) || term.includes(name.toLowerCase().split(" ").slice(0,3).join(" ").toLowerCase())){
+      return data.asinUS;
+    }
+  }
+  return null;
+};
+
 const getAffLink = (search, country) => {
   if(!search) return "https://www.amazon.com";
   const tagUS = CONFIG.business.affiliateTag; // skinr07-20 (amazon.com)
   const tagCA = "Skinr-20";                   // amazon.ca
+
+  // Try to find exact product ASIN for direct product page link
+  const asinUS = findProductASIN(search);
+
   if(country==="CA"){
+    // Canada: always amazon.ca — use search (CA ASINs vary)
     return `https://www.amazon.ca/s?k=${encodeURIComponent(search)}&tag=${tagCA}`;
   }
+
+  if(asinUS){
+    // US: direct product page — 3x better conversion than search
+    return `https://www.amazon.com/dp/${asinUS}?tag=${tagUS}`;
+  }
+
+  // Fallback: search results
   return `https://www.amazon.com/s?k=${encodeURIComponent(search)}&tag=${tagUS}&linkCode=ur2`;
 };
 
