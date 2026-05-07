@@ -2696,6 +2696,18 @@ export default function SkinrApp() {
   const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState("");
   const [coachLoad, setCoachLoad]=useState(false);
+
+  // Daily chat limit — 3 messages per day, resets at midnight
+  const DAILY_CHAT_LIMIT = 3;
+  const getChatUsage = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("skinr2:chatUsage")||"{}");
+      const today = new Date().toDateString();
+      if(stored.date !== today) return { date: today, count: 0 };
+      return stored;
+    } catch(_){ return { date: new Date().toDateString(), count: 0 }; }
+  };
+  const [chatUsage, setChatUsage] = useState(getChatUsage);
   const [checkins, setCheckins] = useState([]);
   const [checkinMood, setCheckinMood]=useState(null);
   const [ciLoad, setCiLoad]     = useState(false);
@@ -3196,6 +3208,13 @@ export default function SkinrApp() {
   // -- COACH --
   const sendMsg = async () => {
     const text = inputVal.trim(); if(!text||coachLoad) return;
+    // Check daily limit — 3 messages per day
+    const usage = getChatUsage();
+    if(usage.count >= DAILY_CHAT_LIMIT) return;
+    // Increment counter
+    const newUsage = { date: usage.date, count: usage.count + 1 };
+    localStorage.setItem("skinr2:chatUsage", JSON.stringify(newUsage));
+    setChatUsage(newUsage);
     setInputVal(""); const upd=[...messages,{role:"user",text}]; setMessages(upd); setCoachLoad(true);
     const ln=(LANGUAGES.find(l=>l.code===lang)?.label || "English");
     const sys=`You are a precise clinical skincare coach for men. Respond ONLY in ${ln}. Profile: ${JSON.stringify(profile||{})}. Be direct, specific, and clinical. Maximum 3 sentences. No generic advice.`;
@@ -3532,15 +3551,13 @@ Return this JSON:
   // Nav items -- only show sections relevant to the user's progress
   // Home and Guides always visible. Others appear after completing analysis.
   // NAV_ITEMS -- shown in desktop tab bar and mobile dropdown
-  // HOME is placed next to the logo separately in JSX
-  // GUIDES always visible -- moved next to home for new users
+  // Guides always first (visible to new users), community removed until user base exists
   const NAV_ITEMS = [
-    {id:"guides", l:t.nav.guides}, // Always visible -- first after home
+    {id:"guides", l:t.nav.guides},
     ...(has ? [{id:"results",   l:t.nav.analysis}] : []),
     ...(has ? [{id:"coach",     l:t.nav.coach}]    : []),
     ...(has ? [{id:"checkin",   l:t.nav.checkin}]  : []),
     ...(hasShave ? [{id:"shave",l:t.nav.shave}]    : []),
-    ...((has||hasShave) ? [{id:"community",l:t.nav.community}] : []),
   ];
 
   if(!ready) return (
@@ -4295,6 +4312,20 @@ Return this JSON:
           <div className="coach-status">{t.coachOnline}</div>
           <div className="coach-h">{t.coachTitle}</div>
           <div style={{fontFamily:"var(--fc)",fontSize:14,color:"var(--soft)",fontStyle:"italic"}}>{t.coachSub}</div>
+          {/* Daily limit counter */}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,padding:"6px 12px",background:"rgba(184,151,42,0.08)",border:"1px solid var(--border)",width:"fit-content"}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase"}}>
+              {lang==="fr"?"Messages aujourd'hui":lang==="es"?"Mensajes hoy":"Messages today"}
+            </div>
+            <div style={{display:"flex",gap:4}}>
+              {[0,1,2].map(i=>(
+                <div key={i} style={{width:8,height:8,borderRadius:"50%",background:i<chatUsage.count?"var(--gold)":"var(--muted)"}}/>
+              ))}
+            </div>
+            <div style={{fontFamily:"var(--fm)",fontSize:8,color:chatUsage.count>=DAILY_CHAT_LIMIT?"var(--gold)":"var(--soft)"}}>
+              {chatUsage.count}/{DAILY_CHAT_LIMIT}
+            </div>
+          </div>
         </div>
         <div className="sug-row">{t.suggestions.map(s=><button key={s} className="sug-btn" onClick={()=>setInputVal(s)}>{s}</button>)}</div>
         <div className="chat-win" ref={chatRef}>
@@ -4307,12 +4338,30 @@ Return this JSON:
           ))}
           {coachLoad&&<div className="msg ai"><div className="msg-role">{t.coachLabel}</div><div className="msg-bubble typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div>}
         </div>
-        <div className="chat-row">
-          <textarea className="chat-in" rows={2} placeholder={t.inputPlaceholder} value={inputVal}
-            onChange={e=>setInputVal(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}}}/>
-          <button className="chat-send" onClick={sendMsg} disabled={!inputVal.trim()||coachLoad}>-></button>
-        </div>
+        {chatUsage.count >= DAILY_CHAT_LIMIT ? (
+          <div style={{padding:"16px",border:"1px solid var(--goldb)",background:"rgba(184,151,42,0.06)",textAlign:"center"}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:6}}>
+              {lang==="fr"?"Limite Journalière Atteinte":lang==="es"?"Límite Diario Alcanzado":"Daily Limit Reached"}
+            </div>
+            <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",lineHeight:1.65,marginBottom:12}}>
+              {lang==="fr"
+                ?"Tes 3 messages gratuits sont utilisés. Reviens demain ou débloque le rapport de biologie pour des recommandations cliniques complètes."
+                :lang==="es"
+                ?"Tus 3 mensajes gratuitos están usados. Vuelve mañana o desbloquea el informe de biología para recomendaciones clínicas completas."
+                :"Your 3 free daily messages are used. Come back tomorrow — or unlock your Biology Report for your complete clinical protocol delivered to your inbox."}
+            </div>
+            <button className="btn btn-p" style={{width:"100%",fontSize:12}} onClick={()=>openPayment("biology")}>
+              {lang==="fr"?"Débloquer le Rapport":lang==="es"?"Desbloquear el Informe":"Unlock Biology Report"} — ${CONFIG.business.biologyReportPrice}
+            </button>
+          </div>
+        ) : (
+          <div className="chat-row">
+            <textarea className="chat-in" rows={2} placeholder={t.inputPlaceholder} value={inputVal}
+              onChange={e=>setInputVal(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}}}/>
+            <button className="chat-send" onClick={sendMsg} disabled={!inputVal.trim()||coachLoad}>-></button>
+          </div>
+        )}
       </div>}
 
       {/* -- CHECKIN -- */}
