@@ -2194,12 +2194,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 
 /* EMAIL MODAL */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;
-  display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeUp .3s ease;}
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px);
+  padding-top:max(env(safe-area-inset-top,0px), 16px);
+  overflow-y:auto;animation:fadeUp .3s ease;}
 .modal{background:var(--card);border:1px solid var(--border);max-width:460px;
-  width:100%;position:relative;overflow:hidden;}
+  width:100%;position:relative;overflow:hidden;
+  margin:auto 0;flex-shrink:0;}
 .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold));}
-.modal-inner{padding:32px;}
+.modal-inner{padding:24px;}
+@media(min-height:700px){.modal-inner{padding:32px;}}
 .modal-h{font-family:var(--fh);font-size:24px;font-weight:900;font-style:italic;margin-bottom:6px;}
 .modal-s{font-family:var(--fc);font-size:14px;color:var(--soft);font-style:italic;margin-bottom:22px;line-height:1.7;}
 .email-in{width:100%;background:var(--s);border:1px solid var(--border);
