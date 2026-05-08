@@ -1155,13 +1155,37 @@ exports.handler = async (event) => {
 
   // Payment succeeded -- process delivery
   const intent  = parsedEvent.data.object;
-  const { product, email, skinType, lang = "en" } = intent.metadata;
+  const { product, skinType, lang = "en" } = intent.metadata;
   const amount  = (intent.amount / 100).toFixed(2);
   const label   = getLabel(product, lang);
   const safeName = label.replace(/[^a-zA-Z0-9\-]/g, "-").replace(/-+/g, "-");
   const filename = `SKINR-${safeName}.pdf`;
 
-  console.log(`SKINR sale: ${intent.id} | ${product} | $${amount} | lang=${lang} | ${email || "no-email"}`);
+  // Email resolution — priority order:
+  // 1. intent.metadata.email (set by stripe.js for card payments where user typed email)
+  // 2. intent.receipt_email  (Stripe auto-sets when receipt_email passed at creation)
+  // 3. Retrieve charges from Stripe API → billing_details.email (Apple Pay / Google Pay)
+  const metaEmail    = intent.metadata?.email;
+  const receiptEmail = intent.receipt_email;
+  let   chargeEmail  = null;
+
+  // For Apple Pay/Google Pay the email lives in charge billing_details
+  // Fetch expanded payment intent from Stripe to get it
+  if (!metaEmail && !receiptEmail && process.env.STRIPE_SECRET_KEY) {
+    try {
+      const resp = await fetch(
+        `https://api.stripe.com/v1/payment_intents/${intent.id}?expand[]=charges`,
+        { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` } }
+      );
+      const expanded = await resp.json();
+      chargeEmail = expanded.charges?.data?.[0]?.billing_details?.email || null;
+    } catch(_) {}
+  }
+
+  const email = metaEmail || receiptEmail || chargeEmail || null;
+
+  const emailSource = metaEmail ? "metadata" : receiptEmail ? "receipt" : chargeEmail ? "charge" : "none";
+  console.log(`SKINR sale: ${intent.id} | ${product} | $${amount} | lang=${lang} | ${email || "no-email"} (${emailSource})`);
 
   // Deliver to customer if we have their email and Gmail credentials
   if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
