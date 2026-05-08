@@ -1190,28 +1190,63 @@ exports.handler = async (event) => {
   // Deliver to customer if we have their email and Gmail credentials
   if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
     try {
-      // 1. Generate content (Claude for reports, static for guides)
+      // Combo products = two separate PDFs in one email
+      const COMBOS = {
+        "skin-combo":   ["biology",       "routine"],
+        "shave-combo":  ["shave-biology", "shave-card"],
+        "guides-combo": ["skincare-guide","shaving-guide"],
+      };
+      const isCombo = !!COMBOS[product];
+
+      // 1. Generate content
       console.log(`Generating content: ${product} in ${lang}...`);
       const content = await generateContent(product, skinType, lang);
 
-      // 2. Build branded PDF
+      // 2. Build PDF(s)
       console.log("Building PDF...");
-      const pdf = await buildPDF(product, content, skinType, lang);
+      let attachments = [];
+      if (isCombo && Array.isArray(content)) {
+        // Build two separate PDFs for combo
+        const [p1, p2] = COMBOS[product];
+        const [c1, c2] = content;
+        const pdf1 = await buildPDF(p1, c1, skinType, lang);
+        const pdf2 = await buildPDF(p2, c2, skinType, lang);
+        const name1 = `SKINR-${getLabel(p1,lang).replace(/[^a-zA-Z0-9\-]/g,"-").replace(/-+/g,"-")}.pdf`;
+        const name2 = `SKINR-${getLabel(p2,lang).replace(/[^a-zA-Z0-9\-]/g,"-").replace(/-+/g,"-")}.pdf`;
+        attachments = [
+          { filename: name1, content: pdf1, contentType: "application/pdf" },
+          { filename: name2, content: pdf2, contentType: "application/pdf" },
+        ];
+      } else {
+        const pdf = await buildPDF(product, content, skinType, lang);
+        attachments = [{ filename, content: pdf, contentType: "application/pdf" }];
+      }
 
-      // 3. Build email subject in customer language
+      // 3. Build email subject
       const subject = lang === "fr"
         ? `Votre ${label} SKINR`
         : lang === "es"
         ? `Tu ${label} SKINR`
         : `Your SKINR ${label}`;
 
-      // 4. Send to customer
+      // 4. Send to customer with correct attachments
       const html = buildEmailHtml(label, skinType, lang, product);
-      await sendMail(email, subject, html, pdf, filename);
-      console.log(`Delivered to ${email}`);
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
+      });
+      await transporter.sendMail({
+        from:        `SKINR <${process.env.GMAIL_USER}>`,
+        replyTo:     `SKINR <hello@tryskinr.com>`,
+        to:          email,
+        subject,
+        html,
+        attachments,
+      });
+      console.log(`Delivered to ${email} (${attachments.length} attachment${attachments.length>1?"s":""})`);
 
-          // Add to Loops for automated Day 3 and Day 14 sequences
-          addToLoops(email, product, skinType, lang).catch(()=>{});
+      // 5. Add to Loops
+      addToLoops(email, product, skinType, lang).catch(()=>{});
 
       // 5. Owner notification (plain, no attachment)
       const owner = process.env.GMAIL_USER;
@@ -1261,7 +1296,7 @@ const addToLoops = async (email, product, skinType, lang) => {
   if (!apiKey || !email) return;
 
   try {
-    // Step 1 -- Create or update contact in Loops
+    // Step 1 -- Create contact, if duplicate update instead
     const contactRes = await fetch("https://app.loops.so/api/v1/contacts/create", {
       method: "POST",
       headers: {
@@ -1279,10 +1314,16 @@ const addToLoops = async (email, product, skinType, lang) => {
       }),
     });
 
-    if (!contactRes.ok) {
-      const err = await contactRes.text();
-      console.error("Loops contact error:", err);
-      return;
+    const contactData = await contactRes.json();
+    // If contact already exists, update it instead of erroring
+    if (!contactData.success && contactData.message?.includes("already")) {
+      await fetch("https://app.loops.so/api/v1/contacts/update", {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, skinType: skinType || "", product: getLabel(product, lang), lang }),
+      });
+    } else if (!contactData.success) {
+      console.error("Loops contact error:", JSON.stringify(contactData));
     }
 
     // Step 2 -- Fire event that triggers the journey for this product
