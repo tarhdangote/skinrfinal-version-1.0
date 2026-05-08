@@ -2724,6 +2724,8 @@ export default function SkinrApp() {
   // email
   const [showEmail, setShowEmail]=useState(false);
   const [emailVal, setEmailVal] = useState("");
+  const [payEmail, setPayEmail] = useState(""); // dedicated email for payment modal — mandatory
+  const [payStep, setPayStep]   = useState("email"); // "email" | "payment"
   const [emailDone, setEmailDone]=useState(false);
   const [showPrivacy, setShowPrivacy]=useState(false);
   const [showTerms, setShowTerms]=useState(false);
@@ -2872,17 +2874,26 @@ export default function SkinrApp() {
   // Open payment modal -- fetch clientSecret from our Netlify function
   const openPayment = async (product) => {
     setPayModal(product);
+    setPayEmail(emailSaved || ""); // prefill if already captured
     setPayError("");
     setPaySuccess(false);
+    setPayStep("email"); // always start at email step
+    setPayLoading(false);
+  };
+
+  // Called when user confirms their email in step 1 of payment modal
+  const confirmEmail = async () => {
+    if(!payEmail.includes("@")) return;
+    setEmailSaved(payEmail); // save for future sessions
     setPayLoading(true);
-    track("begin_checkout", {product, currency:"USD"});
+    setPayError("");
     try {
       const res = await fetch("/.netlify/functions/stripe", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          product,
-          email: emailSaved || "",
+          product: payModal,
+          email: payEmail,
           skinType: profile?.skinType || savedShave?.skinType || "",
           lang: lang || "en",
         }),
@@ -2890,13 +2901,12 @@ export default function SkinrApp() {
       const data = await res.json();
       if(!res.ok || data.error) throw new Error(data.error || "Payment setup failed");
       setClientSecret(data.clientSecret);
+      setPayStep("payment");
     } catch(e) {
       setPayError(e.message);
     }
     setPayLoading(false);
   };
-
-  // Payment Request Button state -- handles Apple Pay + Google Pay
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [prButtonAvailable, setPrButtonAvailable] = useState(false);
 
@@ -3005,7 +3015,7 @@ export default function SkinrApp() {
       const result = await stripeObj.confirmCardPayment(clientSecret, {
         payment_method:{
           card: cardElement,
-          billing_details:{ email: emailSaved || undefined },
+          billing_details:{ email: payEmail || emailSaved || undefined },
         },
       });
       if(result.error) {
@@ -5320,25 +5330,39 @@ Return this JSON:
                   return null;
                 })()}
 
-                {/* Email field for report delivery */}
-                <div style={{marginBottom:14}}>
-                  <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--soft)",textTransform:"uppercase",marginBottom:6}}>
-                    {lang==="fr"?"Courriel pour recevoir le rapport":lang==="es"?"Email para recibir el informe":"Email to receive your report"}
+                {/* Email field — MANDATORY for PDF delivery */}
+                {payStep==="email"?(
+                  <div>
+                    <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:12}}>
+                      {lang==="fr"?"Étape 1 — Ton email":lang==="es"?"Paso 1 — Tu email":"Step 1 — Your email"}
+                    </div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6,marginBottom:14}}>
+                      {lang==="fr"?"Ton rapport PDF sera envoyé immédiatement après le paiement.":lang==="es"?"Tu informe PDF se enviará inmediatamente después del pago.":"Your PDF report will be sent to this email immediately after payment."}
+                    </div>
+                    <input
+                      type="email"
+                      autoFocus
+                      style={{width:"100%",background:"var(--bg)",
+                        border:`1px solid ${payEmail.includes("@")?"var(--gold)":"var(--border)"}`,
+                        padding:"12px 14px",fontFamily:"var(--fc)",fontSize:15,color:"var(--white)",
+                        outline:"none",fontStyle:"italic",boxSizing:"border-box",marginBottom:8}}
+                      placeholder={lang==="fr"?"ton@email.com":lang==="es"?"tu@email.com":"your@email.com"}
+                      value={payEmail}
+                      onChange={e=>setPayEmail(e.target.value.trim())}
+                      onKeyDown={e=>{if(e.key==="Enter"&&payEmail.includes("@")) confirmEmail();}}
+                      autoComplete="email"
+                    />
+                    {payError&&<div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--red)",fontStyle:"italic",marginBottom:8}}>{payError}</div>}
+                    <button className="btn btn-p" style={{width:"100%",marginBottom:0}}
+                      onClick={confirmEmail}
+                      disabled={!payEmail.includes("@")||payLoading}>
+                      {payLoading
+                        ?(lang==="fr"?"Configuration...":lang==="es"?"Configurando...":"Setting up...")
+                        :(lang==="fr"?"Continuer au paiement →":lang==="es"?"Continuar al pago →":"Continue to payment →")}
+                    </button>
                   </div>
-                  <input
-                    type="email"
-                    style={{width:"100%",background:"var(--bg)",border:"1px solid var(--border)",
-                      padding:"10px 14px",fontFamily:"var(--fc)",fontSize:14,color:"var(--white)",
-                      outline:"none",fontStyle:"italic"}}
-                    placeholder={emailSaved || t.emailPlaceholder}
-                    defaultValue={emailSaved || ""}
-                    onChange={e=>{if(e.target.value) setEmailSaved(e.target.value);}}
-                  />
-                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",marginTop:4}}>
-                    {lang==="fr"?"Ton rapport sera envoyé à cette adresse après paiement.":lang==="es"?"Tu informe será enviado a este correo tras el pago.":"Your report will be emailed here after payment."}
-                  </div>
-                </div>
-
+                ):(
+                  <>
                 {/* Card form */}
                 {payLoading&&!clientSecret?(
                   <div style={{textAlign:"center",padding:"20px 0",fontFamily:"var(--fc)",fontSize:13,color:"var(--soft)",fontStyle:"italic"}}>
@@ -5346,10 +5370,15 @@ Return this JSON:
                   </div>
                 ):(
                   <>
-                    {/* Apple Pay / Google Pay -- shows automatically if available */}
+                    {/* Apple Pay / Google Pay -- only active when email is provided */}
                     {prButtonAvailable&&(
                       <div style={{marginBottom:16}}>
-                        <div id="skinr-pr-button" style={{minHeight:48}}/>
+                        {!payEmail.includes("@")&&(
+                          <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--gold)",fontStyle:"italic",textAlign:"center",padding:"8px 0",marginBottom:8}}>
+                            {lang==="fr"?"↑ Entre ton email pour continuer":lang==="es"?"↑ Ingresa tu email para continuar":"↑ Enter your email above to continue"}
+                          </div>
+                        )}
+                        <div id="skinr-pr-button" style={{minHeight:48,opacity:payEmail.includes("@")?1:0.4,pointerEvents:payEmail.includes("@")?"auto":"none"}}/>
                         <div style={{display:"flex",alignItems:"center",gap:10,margin:"12px 0"}}>
                           <div style={{flex:1,height:1,background:"var(--border)"}}/>
                           <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",whiteSpace:"nowrap"}}>
@@ -5374,7 +5403,12 @@ Return this JSON:
                       )}
                     </div>
                     <button className="btn btn-p" style={{width:"100%",marginBottom:10}}
-                      onClick={confirmPayment} disabled={payLoading||!clientSecret||!cardElement}>
+                      onClick={()=>{
+                        if(!payEmail.includes("@")){setPayError(lang==="fr"?"Entre ton email pour recevoir le rapport.":lang==="es"?"Ingresa tu email para recibir el informe.":"Enter your email to receive your report."); return;}
+                        setEmailSaved(payEmail);
+                        confirmPayment();
+                      }}
+                      disabled={payLoading||!clientSecret||!cardElement||!payEmail.includes("@")}>
                       {payLoading
                         ? (lang==="fr"?"Traitement...":lang==="es"?"Procesando...":"Processing...")
                         : (()=>{
@@ -5397,10 +5431,17 @@ Return this JSON:
                           : "Secured by Stripe. Card data is processed by Stripe and never touches our servers."}
                       </span>
                     </div>
+                    <button onClick={()=>{setPayStep("email");setClientSecret("");setCardElement(null);}}
+                      style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"var(--fc)",
+                        fontSize:11,cursor:"pointer",textDecoration:"underline",marginTop:8,display:"block",width:"100%",textAlign:"center"}}>
+                      {lang==="fr"?"← Changer l'email":lang==="es"?"← Cambiar email":"← Change email"}
+                    </button>
                   </>
                 )}
-              </>
-            )}
+                </>
+              )}
+            </>
+          )}
           </div>
         </div>
       </div>
