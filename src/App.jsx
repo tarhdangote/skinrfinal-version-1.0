@@ -3993,8 +3993,8 @@ Return this JSON:
             </div>
           )}
 
-          {/* ── SKIN REPORTS PANEL — adapts: Unlock → Generate → Done ── */}
-          {profile&&(!biologyUnlocked||!routineUnlocked||(biologyUnlocked&&!bioReport)||(routineUnlocked&&!cardReport))&&(
+          {/* ── SKIN REPORTS PANEL — permanent block 2, always visible ── */}
+          {profile&&(
             <div style={{border:"1px solid var(--gold)",marginTop:16,marginBottom:4,position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
               <div style={{padding:"14px 18px 10px",background:"rgba(184,151,42,0.06)"}}>
@@ -4008,11 +4008,13 @@ Return this JSON:
                 <div style={{background:"var(--card)",padding:"14px 16px"}}>
                   <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>{t.biologyTitle}</div>
                   {biologyUnlocked?(
-                    bioReport?(
-                      <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--green)",fontStyle:"italic"}}>✓ {lang==="fr"?"Rapport généré":lang==="es"?"Informe generado":"Report generated"}</div>
-                    ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>{bioLoad?t.generatingLabel:t.generateReport}</button>
-                    )
+                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"rgba(184,151,42,0.1)",border:"1px solid var(--goldb)"}}>
+                      <span style={{color:"var(--gold)",fontSize:16}}>✓</span>
+                      <div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase"}}>{lang==="fr"?"Rapport envoyé":lang==="es"?"Informe enviado":"Report sent"}</div>
+                        <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{lang==="fr"?"Vérifie ton email":lang==="es"?"Revisa tu email":"Check your email"}</div>
+                      </div>
+                    </div>
                   ):(
                     <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("biology")}>
                       {t.unlockBtn} -- ${CONFIG.business.biologyReportPrice}
@@ -4022,11 +4024,13 @@ Return this JSON:
                 <div style={{background:"var(--card)",padding:"14px 16px"}}>
                   <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:8}}>{t.routineCardTitle}</div>
                   {routineUnlocked?(
-                    cardReport?(
-                      <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--green)",fontStyle:"italic"}}>✓ {lang==="fr"?"Carte générée":lang==="es"?"Tarjeta generada":"Card generated"}</div>
-                    ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>{cardLoad?t.generatingLabel:t.generateCard}</button>
-                    )
+                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"rgba(184,151,42,0.1)",border:"1px solid var(--goldb)"}}>
+                      <span style={{color:"var(--gold)",fontSize:16}}>✓</span>
+                      <div>
+                        <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase"}}>{lang==="fr"?"Carte envoyée":lang==="es"?"Tarjeta enviada":"Card sent"}</div>
+                        <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{lang==="fr"?"Vérifie ton email":lang==="es"?"Revisa tu email":"Check your email"}</div>
+                      </div>
+                    </div>
                   ):(
                     <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("routine")}>
                       {t.unlockBtn} -- ${CONFIG.business.routineCardPrice}
@@ -4046,6 +4050,16 @@ Return this JSON:
               )}
             </div>
           )}
+
+          {/* Product Recommendations Title */}
+          <div style={{marginTop:24,marginBottom:4}}>
+            <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+              {lang==="fr"?"Vos Recommandations Produits Personnalisées":lang==="es"?"Tus Recomendaciones de Productos Personalizadas":"Your Personalised Product Recommendations"}
+            </div>
+            <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6}}>
+              {lang==="fr"?"Chaque produit ci-dessous a été sélectionné en fonction de ton type de peau spécifique, tes préoccupations et ton budget. Clique sur le lien Amazon pour acheter exactement le bon produit.":lang==="es"?"Cada producto a continuación fue seleccionado según tu tipo de piel específico, preocupaciones y presupuesto. Haz clic en el enlace de Amazon para comprar exactamente el producto correcto.":"Every product below was selected for your specific skin type, concerns, and budget. Each link takes you directly to the exact product on Amazon."}
+            </div>
+          </div>
 
           {/* Morning */}
           <div className="period-hdr"><span className="sec-mark">*</span> {t.morning}</div>
@@ -4170,7 +4184,9 @@ Return this JSON:
                         )}
                       </div>
                     ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateBioReport} disabled={bioLoad}>{bioLoad?t.generatingLabel:t.generateReport}</button>
+                      <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--gold)",fontStyle:"italic",borderTop:"1px solid var(--border)",paddingTop:10,marginTop:10}}>
+                        ✓ {lang==="fr"?"Rapport envoyé — vérifie ton email":lang==="es"?"Informe enviado — revisa tu email":"Report sent — check your email"}
+                      </div>
                     )
                   ):(
                     <button className="btn btn-p" style={{width:"100%",fontSize:11}}
@@ -4236,7 +4252,9 @@ Return this JSON:
                         )}
                       </div>
                     ):(
-                      <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateRoutineCard} disabled={cardLoad}>{cardLoad?t.generatingLabel:t.generateCard}</button>
+                      <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--gold)",fontStyle:"italic",borderTop:"1px solid var(--border)",paddingTop:10,marginTop:10}}>
+                        ✓ {lang==="fr"?"Carte envoyée — vérifie ton email":lang==="es"?"Tarjeta enviada — revisa tu email":"Card sent — check your email"}
+                      </div>
                     )
                   ):(
                     <button className="btn btn-p" style={{width:"100%",fontSize:11}}
@@ -4493,8 +4511,8 @@ Return this JSON:
               </div>
             )}
 
-            {/* -- SHAVE REPORTS PANEL — adapts: Unlock → Generate → Done -- */}
-            {(!shaveBioUnlocked||!shaveCardUnlocked||(shaveBioUnlocked&&!shaveBioReport)||(shaveCardUnlocked&&!shaveCardReportData))&&(
+            {/* -- SHAVE REPORTS PANEL — permanent block 2, always visible -- */}
+            {(
               <div style={{border:"1px solid var(--gold)",marginBottom:16,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
                 <div style={{padding:"14px 18px 10px",background:"rgba(184,151,42,0.06)"}}>
@@ -4513,13 +4531,13 @@ Return this JSON:
                       {lang==="fr"?"Biologie du Rasage":lang==="es"?"Biología del Afeitado":"Shave Biology"}
                     </div>
                     {shaveBioUnlocked?(
-                      shaveBioReport?(
-                        <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--green)",fontStyle:"italic"}}>✓ {lang==="fr"?"Rapport généré":lang==="es"?"Informe generado":"Report generated"}</div>
-                      ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveBioReport} disabled={shaveBioLoad}>
-                          {shaveBioLoad?t.generatingLabel:t.generateReport}
-                        </button>
-                      )
+                      <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"rgba(184,151,42,0.1)",border:"1px solid var(--goldb)"}}>
+                        <span style={{color:"var(--gold)",fontSize:16}}>✓</span>
+                        <div>
+                          <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase"}}>{lang==="fr"?"Rapport envoyé":lang==="es"?"Informe enviado":"Report sent"}</div>
+                          <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{lang==="fr"?"Vérifie ton email":lang==="es"?"Revisa tu email":"Check your email"}</div>
+                        </div>
+                      </div>
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-biology")}>
                         {lang==="fr"?`Déverrouiller -- $${CONFIG.business.shaveBiologyPrice}`:lang==="es"?`Desbloquear -- $${CONFIG.business.shaveBiologyPrice}`:`Unlock -- $${CONFIG.business.shaveBiologyPrice}`}
@@ -4531,13 +4549,13 @@ Return this JSON:
                       {lang==="fr"?"Carte de Protocole":lang==="es"?"Tarjeta de Protocolo":"Protocol Card"}
                     </div>
                     {shaveCardUnlocked?(
-                      shaveCardReportData?(
-                        <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--green)",fontStyle:"italic"}}>✓ {lang==="fr"?"Carte générée":lang==="es"?"Tarjeta generada":"Card generated"}</div>
-                      ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveCard} disabled={shaveCardLoad2}>
-                          {shaveCardLoad2?t.generatingLabel:t.generateCard}
-                        </button>
-                      )
+                      <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"rgba(184,151,42,0.1)",border:"1px solid var(--goldb)"}}>
+                        <span style={{color:"var(--gold)",fontSize:16}}>✓</span>
+                        <div>
+                          <div style={{fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase"}}>{lang==="fr"?"Carte envoyée":lang==="es"?"Tarjeta enviada":"Card sent"}</div>
+                          <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{lang==="fr"?"Vérifie ton email":lang==="es"?"Revisa tu email":"Check your email"}</div>
+                        </div>
+                      </div>
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-card")}>
                         {lang==="fr"?`Déverrouiller -- $${CONFIG.business.shaveCardPrice}`:lang==="es"?`Desbloquear -- $${CONFIG.business.shaveCardPrice}`:`Unlock -- $${CONFIG.business.shaveCardPrice}`}
@@ -4557,6 +4575,16 @@ Return this JSON:
                 )}
               </div>
             )}
+
+            {/* Shave Product Recommendations Title */}
+            <div style={{marginTop:20,marginBottom:4}}>
+              <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+                {lang==="fr"?"Vos Recommandations Produits Personnalisées":lang==="es"?"Tus Recomendaciones de Productos Personalizadas":"Your Personalised Product Recommendations"}
+              </div>
+              <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",fontStyle:"italic",lineHeight:1.6}}>
+                {lang==="fr"?"Chaque produit ci-dessous a été sélectionné pour ton type de barbe et de peau spécifiques. Clique sur le lien Amazon pour acheter exactement le bon produit.":lang==="es"?"Cada producto fue seleccionado para tu tipo específico de barba y piel. Haz clic en el enlace de Amazon para comprar exactamente el producto correcto.":"Every product below was selected for your specific beard type, skin condition, and budget. Each link takes you directly to the exact product on Amazon."}
+              </div>
+            </div>
 
             {/* -- BLADE & RAZOR RECOMMENDATION -- */}
             {shaveResult.bladeRecommendation&&(()=>{
@@ -4766,9 +4794,9 @@ Return this JSON:
                       shaveBioReport?(
                         <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--cream)",fontStyle:"normal",lineHeight:1.85,maxHeight:300,overflowY:"auto"}}>{shaveBioReport}</div>
                       ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveBioReport} disabled={shaveBioLoad}>
-                          {shaveBioLoad?t.generatingLabel:t.generateReport}
-                        </button>
+                        <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--gold)",fontStyle:"italic"}}>
+                          ✓ {lang==="fr"?"Rapport envoyé — vérifie ton email":lang==="es"?"Informe enviado — revisa tu email":"Report sent — check your email"}
+                        </div>
                       )
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-biology")}>
@@ -4791,9 +4819,9 @@ Return this JSON:
                           {shaveCardReportData.criticalRule&&<div style={{borderTop:"1px solid var(--border)",marginTop:10,paddingTop:10,color:"var(--gold)",fontStyle:"italic",fontSize:12}}>{shaveCardReportData.criticalRule}</div>}
                         </div>
                       ):(
-                        <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={generateShaveCard} disabled={shaveCardLoad2}>
-                          {shaveCardLoad2?t.generatingLabel:t.generateCard}
-                        </button>
+                        <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--gold)",fontStyle:"italic"}}>
+                          ✓ {lang==="fr"?"Carte envoyée — vérifie ton email":lang==="es"?"Tarjeta enviada — revisa tu email":"Card sent — check your email"}
+                        </div>
                       )
                     ):(
                       <button className="btn btn-p" style={{width:"100%",fontSize:11}} onClick={()=>openPayment("shave-card")}>
