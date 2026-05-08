@@ -193,250 +193,415 @@ const callClaude = (prompt, lang, maxTokens = 1800) => new Promise((resolve, rej
 // ════════════════════════════════════════════════════════════════════════════
 
 const getGuideContent = (product, lang) => {
-  const ui = t(lang);
   const ln = lang === "fr" ? "fr" : lang === "es" ? "es" : "en";
 
-  const SKINCARE_TOC = {
-    en: `THE NO-BS MEN'S SKINCARE GUIDE
-A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine.
+  // ── FULL SKINCARE GUIDE CONTENT ──────────────────────────────────────────────
+  const SKINCARE_EN = `THE NO-BS MEN'S SKINCARE GUIDE
+A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine
+SKINR -- tryskinr.com -- Free. Clinical. Built for Men.
 
-TABLE OF CONTENTS:
+===========================================================================
+SECTION 1 -- WHY MOST MEN'S SKIN ROUTINES FAIL
+===========================================================================
 
-SECTION 1 - WHY MOST MEN'S SKIN ROUTINES FAIL
-Understanding why the industry fails you and what actually works.
+Most men who struggle with their skin are not using the wrong products. They are using the right products in the wrong order, at the wrong time, in the wrong amounts, or in combinations that actively cancel each other out.
 
-SECTION 2 - THE BIOLOGY YOU NEED TO KNOW
-The Skin Barrier, Sebum and Oil Production, Cellular Turnover, The pH Factor.
+The skincare industry is built on selling products, not educating buyers. A moisturiser that claims to do everything usually does nothing particularly well. An ingredient list that sounds clinical often contains one active ingredient at a concentration too low to do anything measurable.
 
-SECTION 3 - SKIN TYPES: CLINICAL DEFINITIONS
-Dry, Oily, Combination, Sensitive, Acne-Prone -- each defined clinically with specific protocols.
+This guide exists to cut through that. It covers the biology of your skin, the science of what actually works, how to build a routine that functions correctly, and how to read a product label so you never get sold something useless again.
 
-SECTION 4 - THE INGREDIENT GUIDE: WHAT ACTUALLY WORKS
-Niacinamide -- effective concentrations and conflicts.
-Retinol -- introduction protocol, conflicts, expected results.
-Salicylic Acid -- why it works inside follicles.
-Hyaluronic Acid -- the humidity limitation nobody tells you.
-Vitamin C -- why morning use under SPF multiplies protection.
-Ceramides -- the 3:1:1 ratio that repairs your barrier.
-AHAs (Glycolic and Lactic Acid) -- how to exfoliate without damage.
-Benzoyl Peroxide -- why 2.5% equals 10% with less irritation.
-SPF -- the only truly non-negotiable step.
+Everything in this guide is based on peer-reviewed dermatological research. No brand partnerships. No sponsored content.
 
-SECTION 5 - BUILDING YOUR ROUTINE
-Complete morning routine with exact application order.
-Complete evening routine step by step.
-The 12-week starter protocol for men beginning from nothing.
-Seasonal adjustments for winter and summer.
+===========================================================================
+SECTION 2 -- THE BIOLOGY YOU ACTUALLY NEED TO KNOW
+===========================================================================
 
-SECTION 6 - HOW TO READ A PRODUCT LABEL
-INCI names, red flags, and marketing language that means nothing.
+THE SKIN BARRIER
+Your skin is not a passive covering. It is an active organ with a primary job: keep things out. The outermost layer -- the stratum corneum -- is made of flattened dead skin cells held together by a lipid matrix of ceramides, cholesterol, and fatty acids.
 
-SECTION 7 - THE MOST COMMON MISTAKES MEN MAKE
-Eight specific mistakes explained with the biological reason each causes problems.
+When this barrier is intact, it keeps moisture in and irritants out. When it is damaged -- by over-washing, harsh surfactants, UV exposure, or the wrong skincare ingredients -- moisture escapes and irritants enter. Every skin problem you have is either caused by a damaged barrier or made worse by one.
+
+SEBUM -- YOUR SKIN'S NATURAL OIL
+Sebaceous glands produce sebum -- an oily substance that naturally lubricates your skin and has mild antimicrobial properties. Excess sebum + dead skin cells = blocked follicle = comedone. If bacteria colonise that blocked follicle = inflammatory acne. Sebum production is primarily driven by androgens.
 
-SECTION 8 - HYPERPIGMENTATION AND DARK SPOTS
-Post-inflammatory hyperpigmentation, treatment hierarchy, realistic timelines.
+CELLULAR TURNOVER
+Your skin replaces itself approximately every 28 days. When turnover slows, dead cells accumulate, creating dull, uneven texture. When turnover is accelerated by retinoids, you get the initial purging period -- this is the system working, not a bad reaction.
 
-SECTION 9 - WHEN TO SEE A DERMATOLOGIST
-Clinical warning signs that require professional evaluation.`,
+THE pH FACTOR
+Healthy skin has a slightly acidic pH of 4.5 to 5.5. Many soap bars have a pH of 9 to 11. Using them on your face temporarily destroys the acid mantle and triggers reactive oil production. Proper cleansers are pH-balanced between 4.5 and 6.5.
+
+===========================================================================
+SECTION 3 -- SKIN TYPES: CLINICAL DEFINITIONS
+===========================================================================
 
-    fr: `LE GUIDE DE SOINS SANS DÉTOURS POUR HOMMES
-La référence clinique pour chaque type de peau, chaque ingrédient, et chaque routine.
+DRY SKIN
+Clinically defined as impaired barrier function leading to increased transepidermal water loss. Characteristics: tight sensation after washing, visible flaking, fine lines appearing more prominent. Needs: occlusive and humectant moisturisers, gentle non-foaming cleansers, ceramide-based products. Avoid: alcohol-based toners, foaming cleansers with SLS.
 
-TABLE DES MATIÈRES:
+OILY SKIN
+Overactive sebaceous glands producing more sebum than needed. Characteristics: visible shine within 1-2 hours of washing, enlarged pores, frequent blackheads and breakouts. Needs: non-comedogenic lightweight moisturisers, niacinamide, salicylic acid, SPF for oily skin. Avoid: heavy occlusive creams, coconut oil, over-washing.
 
-SECTION 1 - POURQUOI LA PLUPART DES ROUTINES ÉCHOUENT
-Comprendre pourquoi l'industrie te fait défaut et ce qui fonctionne vraiment.
+COMBINATION SKIN
+The most common skin type in adult men. Oily in the T-zone, normal to dry on the cheeks. Characteristics: shine on nose and forehead, occasional breakouts in T-zone, cheeks comfortable or slightly dry. Needs: lightweight balanced moisturiser, targeted treatments, gel or lotion SPF.
 
-SECTION 2 - LA BIOLOGIE QUE TU DOIS CONNAÎTRE
-La barrière cutanée, la production de sébum, le renouvellement cellulaire, le facteur pH.
+SENSITIVE SKIN
+A skin condition characterised by heightened reactivity. Characteristics: redness, stinging after applying products, frequent reactions to fragrances. Needs: minimal ingredient lists, fragrance-free formulations, barrier-repairing ingredients. Avoid: fragrance, essential oils, high-concentration actives without gradual introduction.
+
+ACNE-PRONE SKIN
+Acne has four causes: excess sebum, hyperkeratinisation, Cutibacterium acnes bacteria, and inflammation. Grade I (comedones): salicylic acid, niacinamide. Grade II (papules, pustules): add benzoyl peroxide, consider retinol. Grade III-IV: see a dermatologist.
+
+===========================================================================
+SECTION 4 -- THE INGREDIENT GUIDE: WHAT ACTUALLY WORKS
+===========================================================================
+
+NIACINAMIDE (VITAMIN B3)
+What it does: Regulates sebum production, strengthens the skin barrier, reduces inflammation, minimises pore appearance, inhibits melanin transfer.
+Effective concentration: 2-10%. 5% is the sweet spot.
+Conflicts with: Vitamin C -- use at different times of day (overstated at typical concentrations).
+Best for: All skin types. Products: The Ordinary Niacinamide 10% + Zinc (budget), Paula's Choice 10% (mid-range).
+
+RETINOL / RETINOIDS
+What it does: Most evidence-backed anti-ageing ingredient. Accelerates cell turnover, stimulates collagen, clears follicles, reduces fine lines.
+Effective concentration: Start at 0.025%, increase over months.
+Introduction protocol: Two nights per week for first month, increase gradually. Purging in weeks 2-6 is normal.
+Conflicts with: Benzoyl peroxide (deactivates it), AHAs/BHAs same night, Vitamin C (use C morning, retinol night).
+Best for: All skin types over 25.
+
+SALICYLIC ACID (BHA)
+What it does: Oil-soluble BHA that penetrates into follicles and dissolves oil and dead skin. Anti-inflammatory.
+Effective concentration: 0.5-2%. Leave-on treatments more effective than rinse-off.
+Best for: Oily skin, acne-prone skin, blackheads and enlarged pores.
+
+HYALURONIC ACID
+What it does: Humectant that draws water to the skin surface. Holds up to 1,000 times its weight in water.
+Important limitation: In low-humidity environments it pulls moisture from deeper in your skin. Always apply to damp skin and seal with a moisturiser immediately.
+Best for: All skin types, particularly dehydrated skin.
+
+VITAMIN C (L-ASCORBIC ACID)
+What it does: Potent antioxidant, inhibits melanin synthesis, stimulates collagen. Best in the morning under SPF.
+Effective concentration: 10-20%. Store in a dark bottle, replace every 3 months.
+Best for: Sun damage, hyperpigmentation, dullness.
+
+CERAMIDES
+What they do: Make up approximately 50% of your skin barrier's lipid matrix. Products with ceramides, cholesterol, and fatty acids in a 3:1:1 ratio repair the barrier most effectively.
+Best for: Dry skin, sensitive skin, eczema, skin recovering from over-exfoliation.
+
+AHAS (GLYCOLIC AND LACTIC ACID)
+What they do: Chemical exfoliants that break bonds between dead skin cells. Glycolic acid: deepest penetration, most effective. Lactic acid: gentler, better for sensitive skin.
+Use at night only -- AHAs increase photosensitivity. Always wear SPF next morning.
+
+BENZOYL PEROXIDE
+What it does: Kills Cutibacterium acnes bacteria directly. 2.5% is as effective as 10% -- no reason to use higher concentrations.
+Conflicts with: Retinol (deactivates it).
+
+SUNSCREEN (SPF)
+Non-negotiable every morning. UV radiation is responsible for approximately 80% of visible skin ageing. Minimum SPF 30 daily. SPF 50 if outdoors. Chemical filters: lighter, invisible. Mineral filters: zinc oxide, titanium dioxide -- better for sensitive skin.
+
+===========================================================================
+SECTION 5 -- BUILDING YOUR ROUTINE
+===========================================================================
+
+COMPLETE MORNING ROUTINE (in application order):
+1. Cleanser -- gentle, pH-balanced, appropriate for skin type
+2. Toner (optional) -- BHA for oily/acne, hydrating essence for dry
+3. Vitamin C serum -- apply to dry skin, wait 2-3 minutes
+4. Niacinamide serum -- after Vitamin C has absorbed
+5. Moisturiser -- lightweight gel for oily, cream for dry
+6. SPF -- last step, every morning, no exceptions
+
+COMPLETE EVENING ROUTINE (in application order):
+1. Cleanser
+2. Toner (optional)
+3. Retinol -- apply to completely dry skin, two nights per week to start
+4. Moisturiser -- apply over retinol
+
+THE 12-WEEK STARTER PROTOCOL:
+Weeks 1-2: Cleanser + moisturiser + SPF only.
+Weeks 3-4: Add niacinamide serum (morning).
+Weeks 5-6: Add retinol (two nights per week, evening).
+Weeks 7-8: Add Vitamin C (morning).
+Weeks 9-10: Add BHA or AHA exfoliant (one night per week).
+Weeks 11-12: Assess and adjust.
+
+SEASONAL ADJUSTMENTS:
+Winter: Heavier moisturiser, add hydrating serum, reduce exfoliation frequency.
+Summer: Lighter moisturiser, increase SPF, consider mattifying SPF if oily.
+
+===========================================================================
+SECTION 6 -- HOW TO READ A PRODUCT LABEL
+===========================================================================
+
+Ingredients are listed in descending order of concentration.
 
-SECTION 3 - TYPES DE PEAU: DÉFINITIONS CLINIQUES
-Sèche, grasse, mixte, sensible, sujette à l'acné -- chacun défini cliniquement.
+Active ingredients and effective concentrations:
+Niacinamide: 2-10% | Retinol: 0.025-1% | Salicylic acid: 0.5-2% | Glycolic acid: 5-10% | Lactic acid: 5-12% | Vitamin C: 10-20% | Hyaluronic acid: 0.1-2%
 
-SECTION 4 - GUIDE DES INGRÉDIENTS: CE QUI FONCTIONNE VRAIMENT
-Niacinamide, Rétinol, Acide salicylique, Acide hyaluronique, Vitamine C,
-Céramides, AHAs, Peroxyde de benzoyle, FPS.
+Red flags:
+-- Fragrance / Parfum: the single most common cause of contact dermatitis.
+-- Denatured Alcohol in the first five ingredients.
+-- PEG compounds in sensitive skin products.
 
-SECTION 5 - CONSTRUIRE TA ROUTINE
-Routine du matin et du soir complètes. Protocole de démarrage sur 12 semaines.
+Marketing language that means nothing:
+"Dermatologist tested" -- means one dermatologist looked at it.
+"Hypoallergenic" -- not a regulated term.
+"Natural" -- not regulated. Poison ivy is natural.
+"Clinical strength" -- marketing copy, not a regulatory designation.
+"Pore-minimising" -- pores do not physically shrink.
 
-SECTION 6 - COMMENT LIRE UNE ÉTIQUETTE DE PRODUIT
-Noms INCI, signaux d'alarme et jargon marketing sans signification.
+===========================================================================
+SECTION 7 -- THE MOST COMMON MISTAKES MEN MAKE
+===========================================================================
 
-SECTION 7 - LES ERREURS LES PLUS COURANTES
-Huit erreurs spécifiques avec l'explication biologique de chacune.
+1. Washing the face with body soap. pH is wrong, surfactants too harsh. Result: barrier disruption.
+2. Over-washing. More than twice daily strips the barrier and increases oil production.
+3. Skipping moisturiser because skin is oily. Oily skin needs hydration -- sebum is not moisture.
+4. Using too much of everything. A pea-sized amount of retinol is the dose for the entire face.
+5. Expecting results in one week. Cell turnover takes 28 days. Give products 6-8 weeks minimum.
+6. Introducing too many products at once. One new product every four weeks.
+7. Applying retinol to wet skin. Always apply to completely dry skin.
+8. Not wearing SPF. Every anti-ageing product is partially undone by UV exposure without sunscreen.
 
-SECTION 8 - HYPERPIGMENTATION ET TACHES SOMBRES
-Hiérarchie de traitement et chronologie réaliste.
+===========================================================================
+SECTION 8 -- HYPERPIGMENTATION AND DARK SPOTS
+===========================================================================
 
-SECTION 9 - QUAND CONSULTER UN DERMATOLOGUE
-Signes cliniques nécessitant une évaluation professionnelle.`,
+Post-inflammatory hyperpigmentation (PIH) occurs when skin inflammation triggers melanin production. Very common in men with Fitzpatrick skin types IV-VI (darker skin tones).
 
-    es: `LA GUÍA DE CUIDADO DE PIEL SIN RODEOS PARA HOMBRES
-Una referencia clínica para cada tipo de piel, ingrediente y rutina.
+Treatment hierarchy:
+1. SPF every morning -- non-negotiable.
+2. Niacinamide 5%: inhibits melanin transfer. Improvement over 8-12 weeks.
+3. Vitamin C 10-20%: inhibits melanin synthesis. Use in the morning.
+4. Alpha Arbutin 2%: inhibits tyrosinase. Strong evidence.
+5. Azelaic Acid 10-20%: effective for PIH and acne.
+6. Kojic Acid 1-2%: effective but can cause irritation.
 
-TABLA DE CONTENIDOS:
+Timeline: Realistic improvement takes 3-6 months of consistent treatment.
 
-SECCIÓN 1 - POR QUÉ FALLAN LA MAYORÍA DE LAS RUTINAS
-Entendiendo por qué la industria falla y qué funciona realmente.
+===========================================================================
+SECTION 9 -- WHEN TO SEE A DERMATOLOGIST
+===========================================================================
 
-SECCIÓN 2 - LA BIOLOGÍA QUE NECESITAS SABER
-La barrera cutánea, producción de sebo, renovación celular, el factor pH.
+-- Acne not responding to 3 months of consistent treatment, particularly nodular or cystic.
+-- Any mole or lesion that changes in size, shape, or colour (ABCDE rule).
+-- Rosacea not controlled by gentle products.
+-- Persistent eczema or psoriasis.
+-- Sudden severe acne in adulthood with no previous history.
+-- Spreading skin infections not resolving with over-the-counter treatment.
 
-SECCIÓN 3 - TIPOS DE PIEL: DEFINICIONES CLÍNICAS
-Seca, grasa, mixta, sensible, propensa al acné -- cada una definida clínicamente.
+SKINR provides general clinical guidance. It is not a substitute for professional medical evaluation.
 
-SECCIÓN 4 - GUÍA DE INGREDIENTES: LO QUE REALMENTE FUNCIONA
-Niacinamida, Retinol, Ácido salicílico, Ácido hialurónico, Vitamina C,
-Ceramidas, AHAs, Peróxido de benzoilo, FPS.
+---------------------------------------------------------------------------
+SKINR -- tryskinr.com -- Free. Clinical. Built for Men.
+Your complete guide is permanently saved in the SKINR app under the Guides tab.
+---------------------------------------------------------------------------`;
 
-SECCIÓN 5 - CONSTRUYENDO TU RUTINA
-Rutinas completas de mañana y noche. Protocolo de inicio de 12 semanas.
+  // ── FULL SHAVING GUIDE CONTENT ───────────────────────────────────────────────
+  const SHAVING_EN = `THE MEN'S SHAVING BIBLE
+Blade Science, Skin Biology, and Clinical Technique for a Shave That Protects Your Skin
+SKINR -- tryskinr.com -- Free. Clinical. Built for Men.
 
-SECCIÓN 6 - CÓMO LEER UNA ETIQUETA DE PRODUCTO
-Nombres INCI, señales de alerta y jerga de marketing sin significado.
+===========================================================================
+SECTION 1 -- WHY YOUR SHAVE IS FAILING
+===========================================================================
 
-SECCIÓN 7 - LOS ERRORES MÁS COMUNES
-Ocho errores específicos con la razón biológica de cada uno.
+Every man who shaves regularly is performing a surgical procedure on his face twice a week or more. Done correctly, it leaves the skin intact and undamaged. Done incorrectly -- which describes the majority of men who shave -- it leaves behind microtrauma, barrier disruption, ingrown hairs, inflammation, and over time, permanent scarring.
 
-SECCIÓN 8 - HIPERPIGMENTACIÓN Y MANCHAS OSCURAS
-Jerarquía de tratamiento y plazos realistas.
+The shaving industry spent decades telling men that more blades meant a better shave. This is marketing, not biology. The lift-and-cut mechanism of multi-blade cartridge razors is the primary mechanical cause of razor bumps and ingrown hairs -- particularly in men with coarse or curly hair.
 
-SECCIÓN 9 - CUÁNDO VER A UN DERMATÓLOGO
-Señales clínicas que requieren evaluación profesional.`,
-  };
+This guide covers the dermatological science of what happens to skin during shaving, why certain razors cause damage, and the exact protocol that prevents and treats the most common shaving problems.
 
-  const SHAVING_TOC = {
-    en: `THE MEN'S SHAVING BIBLE
-Blade Science, Skin Biology, and Clinical Technique for a Shave That Protects Your Skin.
+Everything in this guide is based on clinical research published in peer-reviewed dermatology journals. No commercial partnerships.
 
-TABLE OF CONTENTS:
+===========================================================================
+SECTION 2 -- WHAT SHAVING DOES TO YOUR SKIN
+===========================================================================
 
-SECTION 1 - WHY YOUR SHAVE IS FAILING
-The marketing lie about more blades and what actually causes shaving damage.
+THE MECHANICS OF THE CUT
+A razor blade compresses and then cuts through the hair shaft. Multi-blade cartridges use lift-and-cut: the first blade lifts the hair above the skin surface, subsequent blades cut it below the skin line. This means the cut hair retracts beneath the skin surface immediately after cutting.
 
-SECTION 2 - WHAT SHAVING DOES TO YOUR SKIN
-The Mechanics of the Cut -- what happens at the cellular level.
-Pseudofolliculitis Barbae -- affects 45-83% of Black men who shave. Full clinical biology.
-The Acid Mantle -- why shaving disrupts your pH and why alcohol aftershave makes it worse.
-Folliculitis vs Razor Bumps -- the clinical difference and different treatments.
+For men with straight hair, this is generally not a problem. For men with curly or coarse hair, the curl causes the hair to curl back toward the skin as it grows. A hair cut below the skin surface has a significantly higher probability of growing sideways and becoming trapped -- the biological mechanism behind pseudofolliculitis barbae (razor bumps).
 
-SECTION 3 - RAZOR SCIENCE: EVERY TYPE EXPLAINED
-Multi-Blade Cartridge -- lift-and-cut mechanics and who should avoid them.
-Safety DE Razor -- blade gap science from mild (Merkur 34C) to aggressive (Muhle R41).
-Electric Foil (Braun) vs Rotary (Philips) -- who each works for.
-Straight Razor -- skill ceiling and why not for PFB sufferers.
-OneBlade and Leaf -- the transitional tools.
+PSEUDOFOLLICULITIS BARBAE (PFB) -- THE FACTS
+PFB is not a skin disease. It is a mechanical problem caused by the interaction between specific hair morphology and shaving technique.
 
-SECTION 4 - CLINICAL SHAVING TECHNIQUE: PHASE BY PHASE
-Pre-Shave -- why 60-90 seconds of warm water reduces cutting force by 70%.
-The Shave -- grain direction, the 30-degree angle, why pressure is the most common mistake.
-Post-Shave -- cold water vasoconstriction, pH restoration, barrier repair protocol.
+Prevalence: PFB affects approximately 45-83% of Black men who shave regularly, making it the most common shaving-related condition in this demographic. It also affects a significant proportion of men with any type of coarse or curly facial hair, regardless of ethnicity.
 
-SECTION 5 - TECHNIQUE BY BEARD TYPE
-Fine Straight, Medium, Coarse Straight, Coarse Curly, Patchy -- specific protocol for each.
+The biology: Curly facial hair has asymmetric cortex distribution, creating the curl. After shaving, this asymmetry causes the cut end to curve back into the dermis rather than emerging through the follicle opening, causing a foreign body inflammatory reaction.
 
-SECTION 6 - TREATING ACTIVE RAZOR BUMPS
-Four-phase clinical protocol. Realistic timeline: month 3-6 for full resolution.
+Two mechanisms:
+Transfollicular penetration: The cut hair tip pierces back through the follicle wall. Creates a deep inflammatory papule.
+Extrafollicular penetration: The hair grows out but curves back and penetrates the skin surface. Creates a raised, itchy bump.
 
-SECTION 7 - PRODUCTS THAT WORK: INGREDIENT-LED RECOMMENDATIONS
-Pre-shave, shaving creams, post-shave treatment, blade recommendations by beard type.
+Treatment: Single blade (not multi-blade lift-and-cut), shaving with the grain, chemical exfoliation with salicylic acid 2% before and after shaving.
 
-SECTION 8 - ELECTRIC SHAVER OPTIMISATION
-Foil vs rotary technique, wet shaving with electric, maintenance schedule.
+THE ACID MANTLE AND SHAVING
+The skin's natural pH is 4.5-5.5. Shaving disrupts this through the physical abrasion of the blade, the alkalinity of most shaving products, and the alcohol in most aftershaves.
 
-SECTION 9 - WHEN TO SEE A DERMATOLOGIST
-PFB unresponsive to protocol, keloid scarring, bacterial folliculitis, hidradenitis.`,
+When disrupted: antimicrobial protection reduces, barrier repair is impaired, the skin becomes more permeable to irritants. Post-shave products that are alcohol-based make this worse -- the stinging of alcohol on freshly shaved skin is your pain receptors responding to ethanol penetrating a compromised barrier.
 
-    fr: `LA BIBLE DU RASAGE POUR HOMMES
-Science des lames, biologie cutanée et technique clinique.
+Restoring pH with witch hazel, aloe vera gel, or a ceramide balm is the first step in post-shave recovery.
 
-TABLE DES MATIÈRES:
+FOLLICULITIS VS RAZOR BUMPS
+Pseudofolliculitis barbae (razor bumps): Mechanical. Firm papules, often with visible hair inside. Treatment: change shaving method, chemical exfoliation.
+Bacterial folliculitis: Infectious. Softer, more pustular papules that can spread. Treatment: antibiotics.
 
-SECTION 1 - POURQUOI TON RASAGE ÉCHOUE
-Le mensonge marketing sur les lames multiples et ce qui cause vraiment les dommages.
+If you are unsure which you have, see a dermatologist.
 
-SECTION 2 - CE QUE LE RASAGE FAIT À TA PEAU
-La mécanique de la coupe au niveau cellulaire.
-Pseudofolliculite de la barbe -- touche 45-83% des hommes noirs qui se rasent.
-Le manteau acide -- pourquoi le rasage perturbe ton pH.
-Folliculite vs boutons de rasoir -- la différence clinique.
+===========================================================================
+SECTION 3 -- RAZOR SCIENCE: EVERY TYPE EXPLAINED
+===========================================================================
 
-SECTION 3 - SCIENCE DES RASOIRS: CHAQUE TYPE EXPLIQUÉ
-Cartouche multi-lames, Rasoir de sûreté DE, Électrique à grille vs rotatif, Rasoir droit.
+MULTI-BLADE CARTRIDGE RAZORS (2-5 BLADES)
+Mechanism: Lift-and-cut. First blade lifts hair, subsequent blades cut it below skin level.
+Who it works for: Men with straight, medium hair without razor bumps.
+Who should avoid them: Men with coarse or curly hair, men with PFB. This razor type is the primary mechanical cause of PFB.
 
-SECTION 4 - TECHNIQUE CLINIQUE DE RASAGE: PHASE PAR PHASE
-Pré-rasage, Le rasage, Récupération post-rasage.
+SAFETY / DOUBLE-EDGE (DE) RAZORS
+Mechanism: Single blade, no lift-and-cut. No hair retraction below the skin surface. Requires maintaining approximately 30-degree angle.
+Blade gap determines aggressiveness: Mild (Merkur 34C) for sensitive/fine hair. Moderate for most men. Aggressive (Muhle R41) for coarse, dense beard only after mastering mild.
+Who should use them: Any man with razor bumps, ingrown hairs, or significant irritation with cartridges.
 
-SECTION 5 - TECHNIQUE SELON LE TYPE DE BARBE
-Fine droite, Moyenne, Épaisse droite, Épaisse bouclée, Inégale.
+ELECTRIC SHAVERS
+Foil shavers (Braun): Oscillating blades behind a metal foil. Cannot cut below skin level -- significantly safer for PFB. Straight, overlapping strokes.
+Rotary shavers (Philips): Better for longer, uneven beard growth. Circular motions.
+Wet electric: Most modern foil shavers can be used with shaving cream in the shower -- appropriate for sensitive skin or mild PFB.
 
-SECTION 6 - TRAITER LES BOUTONS DE RASOIR ACTIFS
-Protocole clinique en quatre phases. Chronologie réaliste.
+STRAIGHT RAZOR
+Highest skill ceiling. Not appropriate for men with PFB -- the angle and pressure required makes it easy to cut below the skin surface consistently.
 
-SECTION 7 - PRODUITS QUI FONCTIONNENT
-Recommandations par ingrédient pour chaque étape.
+===========================================================================
+SECTION 4 -- CLINICAL SHAVING TECHNIQUE: PHASE BY PHASE
+===========================================================================
 
-SECTION 8 - OPTIMISATION DU RASOIR ÉLECTRIQUE
-Technique grille vs rotatif, rasage humide électrique, entretien.
+PRE-SHAVE
+Warm water for 60-90 seconds minimum: Hair is made of keratin. Dry keratin is hard and resistant to cutting. Hydrated keratin is significantly softer. 60-90 seconds of warm water reduces the force required to cut hair by approximately 70%. This means less mechanical trauma to the follicle with every stroke.
 
-SECTION 9 - QUAND CONSULTER UN DERMATOLOGUE
-PFB résistant, cicatrices chéloïdes, folliculite bactérienne.`,
+Pre-shave scrub (for PFB): Exfoliating scrub 2-3 minutes before shaving lifts trapped hairs and removes dead cells. Apply in circular motions against the grain. Rinse with warm water before applying shaving cream.
 
-    es: `LA BIBLIA DEL AFEITADO PARA HOMBRES
-Ciencia de hojas, biología cutánea y técnica clínica.
+Pre-shave oil (optional): A thin layer of oil between skin and shaving cream adds a lubrication layer, particularly useful for very dry skin or coarse beard.
 
-TABLA DE CONTENIDOS:
+SHAVING CREAM APPLICATION
+Apply in circular motions to lift hairs away from skin and coat every hair shaft. The purpose is lubrication, not foam volume. Allow cream to sit 2-3 minutes before beginning.
 
-SECCIÓN 1 - POR QUÉ TU AFEITADO FALLA
-La mentira del marketing sobre más hojas y qué causa realmente el daño.
+THE SHAVE
+Angle (safety razor): Approximately 30 degrees between blade and skin.
+Grain direction: WTG (with the grain) = safest. XTG (across the grain) = closer, acceptable for most. ATG (against the grain) = closest, highest risk. Not recommended for men with PFB or sensitive skin.
+Pressure: Zero. The weight of the razor handle provides sufficient force. Pressing harder is the most common technique error.
+Number of passes: One thorough WTG pass is preferable to three hurried passes for men with PFB.
 
-SECCIÓN 2 - LO QUE EL AFEITADO HACE A TU PIEL
-La mecánica del corte a nivel celular.
-Pseudofoliculitis barbae -- afecta al 45-83% de los hombres negros que se afeitan.
-El manto ácido -- por qué el afeitado altera tu pH.
-Foliculitis vs granos de afeitar -- la diferencia clínica.
+POST-SHAVE RECOVERY PROTOCOL
+Step 1 -- Cold water rinse (30 seconds): Causes vasoconstriction, reduces inflammation, closes pores temporarily.
+Step 2 -- pH restoration: Witch hazel (alcohol-free) or aloe vera toner on a cotton pad across the shaved area.
+Step 3 -- Treatment: For PFB: salicylic acid 2% (Stridex pads) applied to follicle openings. Wait 2 minutes. For active bumps: Tend Skin or Bump Patrol applied directly.
+Step 4 -- Moisturiser: Ceramide-based moisturiser or lightweight post-shave balm to complete barrier repair.
 
-SECCIÓN 3 - CIENCIA DE MAQUINILLAS: CADA TIPO EXPLICADO
-Cartucho multi-hoja, Maquinilla DE de seguridad, Eléctrica de lámina vs rotatoria, Navaja.
+===========================================================================
+SECTION 5 -- TECHNIQUE BY BEARD TYPE
+===========================================================================
 
-SECCIÓN 4 - TÉCNICA CLÍNICA DE AFEITADO: FASE POR FASE
-Pre-afeitado, El afeitado, Recuperación post-afeitado.
+FINE, STRAIGHT HAIR
+Recommended: Multi-blade cartridge or mild safety razor. Blades: Feather Hi-Stainless. Technique: WTG followed by XTG or ATG acceptable. 2-3 passes manageable.
 
-SECCIÓN 5 - TÉCNICA SEGÚN EL TIPO DE BARBA
-Fina recta, Media, Gruesa recta, Gruesa rizada, Irregular.
+MEDIUM HAIR
+Recommended: Mild to moderate safety razor or 3-blade cartridge (replaced frequently). Blades: Astra Superior Platinum or Gillette Silver Blue. Technique: WTG + XTG.
 
-SECCIÓN 6 - TRATAR LOS GRANOS DE AFEITAR ACTIVOS
-Protocolo clínico de cuatro fases. Cronología realista.
+COARSE, STRAIGHT HAIR
+Recommended: Moderate safety razor. Blades: Feather Hi-Stainless or Polsilver Super Iridium. Technique: Single WTG pass. Replace blades every 2-3 shaves.
 
-SECCIÓN 7 - PRODUCTOS QUE FUNCIONAN
-Recomendaciones por ingrediente para cada paso.
+COARSE, CURLY HAIR (highest PFB risk)
+Recommended: Mild single-blade safety razor (Merkur 34C, Henson AL13, Bevel). Never a multi-blade cartridge.
+Blades: Derby Extra or Shark Super Stainless -- milder edge reduces risk of cutting below skin.
+Technique: WTG only. Single pass. No XTG or ATG. Shave every other day minimum.
+Additional protocol: Salicylic acid 2% before and after every shave. Pre-shave scrub every shave.
 
-SECCIÓN 8 - OPTIMIZACIÓN DE LA AFEITADORA ELÉCTRICA
-Técnica lámina vs rotatoria, afeitado húmedo eléctrico, mantenimiento.
+PATCHY OR UNEVEN GROWTH
+Map the growth pattern -- grain changes direction in patches and on the neck. Adjust stroke direction by zone.
 
-SECCIÓN 9 - CUÁNDO VER A UN DERMATÓLOGO
-PFB resistente, cicatrices queloides, foliculitis bacteriana.`,
-  };
+===========================================================================
+SECTION 6 -- TREATING ACTIVE RAZOR BUMPS
+===========================================================================
 
-  const skinContent = `${SKINCARE_TOC[ln] || SKINCARE_TOC.en}
+Phase 1 -- Stop the mechanical cause (Week 1-2):
+Switch from multi-blade cartridge to single-blade safety razor or electric foil shaver immediately. This is the most important intervention. No other treatment will work if the mechanical cause continues.
+Reduce shaving frequency to every other day minimum.
 
-─────────────────────────────────────────────────────────────
-${ui.tocAccess}
-${ui.tocLine}
-─────────────────────────────────────────────────────────────`;
+Phase 2 -- Chemical treatment (Week 1 onwards):
+Apply salicylic acid 2% (Stridex Maximum Strength pads) after shaving and on non-shave days. Salicylic acid penetrates the follicle and dissolves the dead cell accumulation blocking hairs.
+For active, inflamed bumps: Bump Patrol Aftershave Treatment or Tend Skin Solution applied to affected areas.
 
-  const shavingContent = `${SHAVING_TOC[ln] || SHAVING_TOC.en}
+Phase 3 -- Hyperpigmentation treatment (Month 2-6):
+Niacinamide 5% morning and night. Alpha Arbutin 2% morning. Vitamin C 15% serum morning under SPF.
+PFB Vanish + Chromabright treats both active bumps and existing dark spots simultaneously.
 
-─────────────────────────────────────────────────────────────
-${ui.tocAccess}
-${ui.tocLine}
-─────────────────────────────────────────────────────────────`;
+Phase 4 -- Maintenance (ongoing):
+Continue single-blade technique. Continue chemical exfoliation. Continue SPF every morning.
 
-  if (product === "guides-combo") return { skincare: skinContent, shaving: shavingContent };
+Timeline: Active bumps typically resolve within 4-6 weeks of consistent single-blade technique. Hyperpigmentation from healed bumps takes 3-6 months to fully fade.
+
+===========================================================================
+SECTION 7 -- PRODUCTS THAT WORK: INGREDIENT-LED RECOMMENDATIONS
+===========================================================================
+
+PRE-SHAVE
+Budget: Proraso Pre-Shave Cream (white/sensitive) -- oat and green tea, for sensitive skin and PFB -- $12. Bump Patrol Pre-Shave Oil -- specific formula for PFB prevention -- $11.
+Mid-range: Proraso Pre-Shave Cream (green) -- eucalyptus and menthol for normal to thick beard -- $14.
+Premium: Art of Shaving Pre-Shave Oil -- squalane-based, excellent for coarse hair -- $25.
+
+SHAVING CREAM
+Budget: Cremo Original Shave Cream -- concentrated, outstanding lubrication -- $9. Proraso White Sensitive -- for sensitive skin and PFB -- $12.
+Mid-range: Taylor of Old Bond Street Sandalwood -- exceptional lubrication -- $18.
+
+POST-SHAVE TREATMENT
+Budget: Thayers Alcohol-Free Witch Hazel -- restores pH -- $12. CeraVe Moisturizing Cream -- ceramide-based barrier repair -- $18. The Ordinary Niacinamide 10% -- sebum regulation -- $7.
+For PFB (essential): Stridex Maximum Strength Pads (salicylic acid 2%) -- applied immediately post-shave -- $10. Tend Skin Solution -- highly effective for PFB -- $16. Bump Patrol Aftershave Treatment -- fragrance-free, designed for PFB -- $13. PFB Vanish + Chromabright -- treats bumps and PIH simultaneously -- $28.
+
+BLADE RECOMMENDATIONS BY BEARD TYPE
+Fine hair: Feather Hi-Stainless -- $25 per 100
+Medium hair: Astra Superior Platinum or Gillette Silver Blue -- $12-15 per 100
+Coarse, dense hair: Feather or Polsilver Super Iridium -- $20-25 per 100
+Sensitive skin / PFB: Derby Extra or Shark Super Stainless -- $10-12 per 100
+
+Replace DE blades every 3-5 shaves. At $0.15 per blade this costs approximately $11 per year.
+
+===========================================================================
+SECTION 8 -- ELECTRIC SHAVER OPTIMISATION
+===========================================================================
+
+Electric shavers should glide on the skin surface -- never press into it.
+Foil shavers: Straight, overlapping strokes. Shave against the grain -- appropriate because the foil guard prevents direct blade-skin contact. Stretch skin with non-dominant hand.
+Rotary shavers: Circular motions. Overlap passes for even coverage.
+Wet electric: Use with shaving cream in the shower. Appropriate for sensitive skin or mild PFB.
+Maintenance: Clean after every use. Replace foils and blades every 12-18 months.
+
+===========================================================================
+SECTION 9 -- WHEN TO SEE A DERMATOLOGIST
+===========================================================================
+
+-- Moderate to severe PFB not responding to 6-8 weeks of this protocol.
+-- Keloid scarring from chronic PFB.
+-- Bacterial folliculitis spreading, recurring, or not responding to topical treatment.
+-- Any follicular condition with fever, rapidly spreading redness, or systemic symptoms.
+-- Suspected hidradenitis suppurativa: recurring painful abscesses in beard area, armpits, or groin.
+-- Persistent hyperpigmentation from PFB not improving after 6 months of consistent treatment.
+
+SKINR provides general clinical guidance. Anything that concerns you or does not respond to the protocols in this guide should be evaluated by a board-certified dermatologist.
+
+---------------------------------------------------------------------------
+SKINR -- tryskinr.com -- Free. Clinical. Built for Men.
+Your complete guide is permanently saved in the SKINR app under the Guides tab.
+---------------------------------------------------------------------------`;
+
+  // French and Spanish versions use English content with translated header
+  const SKINCARE_FR = SKINCARE_EN.replace("THE NO-BS MEN'S SKINCARE GUIDE", "LE GUIDE DE SOINS SANS DÉTOURS POUR HOMMES").replace("A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine", "La référence clinique pour chaque type de peau, chaque ingrédient, et chaque routine");
+  const SKINCARE_ES = SKINCARE_EN.replace("THE NO-BS MEN'S SKINCARE GUIDE", "LA GUÍA DE CUIDADO DE PIEL SIN RODEOS PARA HOMBRES").replace("A Clinical Reference for Every Skin Type, Every Ingredient, and Every Routine", "Una referencia clínica para cada tipo de piel, ingrediente y rutina");
+  const SHAVING_FR  = SHAVING_EN.replace("THE MEN'S SHAVING BIBLE", "LA BIBLE DU RASAGE POUR HOMMES").replace("Blade Science, Skin Biology, and Clinical Technique for a Shave That Protects Your Skin", "Science des lames, biologie cutanée et technique clinique");
+  const SHAVING_ES  = SHAVING_EN.replace("THE MEN'S SHAVING BIBLE", "LA BIBLIA DEL AFEITADO PARA HOMBRES").replace("Blade Science, Skin Biology, and Clinical Technique for a Shave That Protects Your Skin", "Ciencia de hojas, biología cutánea y técnica clínica");
+
+  const skinContent   = ln === "fr" ? SKINCARE_FR : ln === "es" ? SKINCARE_ES : SKINCARE_EN;
+  const shavingContent = ln === "fr" ? SHAVING_FR  : ln === "es" ? SHAVING_ES  : SHAVING_EN;
+
+  if (product === "guides-combo")   return { skincare: skinContent, shaving: shavingContent };
   if (product === "skincare-guide") return { main: skinContent };
-  if (product === "shaving-guide") return { main: shavingContent };
+  if (product === "shaving-guide")  return { main: shavingContent };
   return { main: "" };
 };
 
@@ -1190,14 +1355,6 @@ exports.handler = async (event) => {
   // Deliver to customer if we have their email and Gmail credentials
   if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
     try {
-      // Combo products = two separate PDFs in one email
-      const COMBOS = {
-        "skin-combo":   ["biology",       "routine"],
-        "shave-combo":  ["shave-biology", "shave-card"],
-        "guides-combo": ["skincare-guide","shaving-guide"],
-      };
-      const isCombo = !!COMBOS[product];
-
       // 1. Generate content
       console.log(`Generating content: ${product} in ${lang}...`);
       const content = await generateContent(product, skinType, lang);
@@ -1205,19 +1362,30 @@ exports.handler = async (event) => {
       // 2. Build PDF(s)
       console.log("Building PDF...");
       let attachments = [];
-      if (isCombo && Array.isArray(content)) {
-        // Build two separate PDFs for combo
-        const [p1, p2] = COMBOS[product];
-        const [c1, c2] = content;
-        const pdf1 = await buildPDF(p1, c1, skinType, lang);
-        const pdf2 = await buildPDF(p2, c2, skinType, lang);
-        const name1 = `SKINR-${getLabel(p1,lang).replace(/[^a-zA-Z0-9\-]/g,"-").replace(/-+/g,"-")}.pdf`;
-        const name2 = `SKINR-${getLabel(p2,lang).replace(/[^a-zA-Z0-9\-]/g,"-").replace(/-+/g,"-")}.pdf`;
+
+      if (product === "skin-combo" && content.biology !== undefined) {
+        const pdf1 = await buildPDF("biology",  content.biology,  skinType, lang);
+        const pdf2 = await buildPDF("routine",  content.routine,  skinType, lang);
         attachments = [
-          { filename: name1, content: pdf1, contentType: "application/pdf" },
-          { filename: name2, content: pdf2, contentType: "application/pdf" },
+          { filename: `SKINR-Skin-Biology-Report.pdf`,      content: pdf1, contentType: "application/pdf" },
+          { filename: `SKINR-Personalised-Routine-Card.pdf`, content: pdf2, contentType: "application/pdf" },
+        ];
+      } else if (product === "shave-combo" && content.shaveBiology !== undefined) {
+        const pdf1 = await buildPDF("shave-biology", content.shaveBiology, skinType, lang);
+        const pdf2 = await buildPDF("shave-card",    content.shaveCard,    skinType, lang);
+        attachments = [
+          { filename: `SKINR-Shave-Biology-Report.pdf`,  content: pdf1, contentType: "application/pdf" },
+          { filename: `SKINR-Shave-Protocol-Card.pdf`,   content: pdf2, contentType: "application/pdf" },
+        ];
+      } else if (product === "guides-combo") {
+        const pdf1 = await buildPDF("skincare-guide", content.skincare, skinType, lang);
+        const pdf2 = await buildPDF("shaving-guide",  content.shaving,  skinType, lang);
+        attachments = [
+          { filename: `SKINR-Skincare-Guide.pdf`, content: pdf1, contentType: "application/pdf" },
+          { filename: `SKINR-Shaving-Guide.pdf`,  content: pdf2, contentType: "application/pdf" },
         ];
       } else {
+        // Single product — one PDF
         const pdf = await buildPDF(product, content, skinType, lang);
         attachments = [{ filename, content: pdf, contentType: "application/pdf" }];
       }
