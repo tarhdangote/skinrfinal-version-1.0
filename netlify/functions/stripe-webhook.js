@@ -977,6 +977,21 @@ const buildEmailHtml = (label, skinType, lang, product) => {
       </div>
     </div>
 
+    <!-- PDF attachment callout — prominent, cannot be missed -->
+    <div style="background:#1a1500;border:2px solid #B8972A;padding:16px 20px;margin:0 0 24px;text-align:center;">
+      <div style="font-size:16px;margin-bottom:6px;">📎</div>
+      <div style="font-size:11px;font-weight:700;color:#F2EEE6;letter-spacing:1px;margin-bottom:4px;">
+        ${lang === "fr" ? "VOTRE RAPPORT EST EN PIÈCE JOINTE" : lang === "es" ? "TU INFORME ESTÁ ADJUNTO" : "YOUR REPORT IS ATTACHED BELOW"}
+      </div>
+      <div style="font-size:11px;color:#B8AEA6;line-height:1.6;">
+        ${lang === "fr"
+          ? "Faites défiler jusqu'en bas de cet e-mail pour trouver le fichier PDF joint."
+          : lang === "es"
+          ? "Desplázate hasta la parte inferior de este correo para encontrar el archivo PDF adjunto."
+          : "Scroll to the bottom of this email to find your PDF file. On mobile, tap the attachment icon at the bottom of the email."}
+      </div>
+    </div>
+
     <!-- Week 1 Actionable Tips -->
     ${!isGuide ? `
     <div style="border-top:1px solid #1E1A14;padding-top:24px;margin-top:28px;">
