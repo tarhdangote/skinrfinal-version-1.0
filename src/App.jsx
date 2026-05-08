@@ -2966,7 +2966,14 @@ export default function SkinrApp() {
         if(ev.payerEmail) setEmailSaved(ev.payerEmail);
         LS.set("skinr2:purchasedProduct", payModal);
         setPaySuccess(true);
-        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); setPaymentRequest(null); setPrButtonAvailable(false); }, 3500);
+        const isShave = p==="shave-biology"||p==="shave-card"||p==="shave-combo";
+        const isSkin  = p==="biology"||p==="routine"||p==="skin-combo";
+        setTimeout(()=>{
+          setPayModal(null); setPaySuccess(false); setCardElement(null);
+          setClientSecret(""); setPaymentRequest(null); setPrButtonAvailable(false);
+          if(isShave) go("shave");
+          else if(isSkin) go("results");
+        }, 3500);
       }
     });
 
@@ -3025,13 +3032,13 @@ export default function SkinrApp() {
           items: [{item_id: p, item_name: p}],
         });
         setPaySuccess(true);
-        // Send purchase confirmation email
-        const purchasedEmail = emailSaved || "";
-        if(purchasedEmail) {
-          try {
-          } catch(_) {}
-        }
-        setTimeout(()=>{ setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret(""); }, 3500);
+        const isShaveProd = p==="shave-biology"||p==="shave-card"||p==="shave-combo";
+        const isSkinProd  = p==="biology"||p==="routine"||p==="skin-combo";
+        setTimeout(()=>{
+          setPayModal(null); setPaySuccess(false); setCardElement(null); setClientSecret("");
+          if(isShaveProd) go("shave");
+          else if(isSkinProd) go("results");
+        }, 3500);
       }
     } catch(e) {
       setPayError(e.message);
