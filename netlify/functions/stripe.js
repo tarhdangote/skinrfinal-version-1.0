@@ -59,7 +59,7 @@ exports.handler = async (event) => {
     if (product === "analysis-email") {
       const stepKeys = ["m0","m1","m2","m3","m4","m5","e0","e1","e2","e3","e4",
                         "ps0","ps1","ps2","ps3","d0","d1","d2","d3","po0","po1","po2","po3","po4",
-                        "avoid","proTip","headline","clinicalFinding","criticalRule","expectedImprovement"];
+                        "avoid","proTip","headline","clinicalFinding","criticalRule","expectedImprovement","userCountry"];
       stepKeys.forEach(k => {
         if (body[k]) params.append(`metadata[${k}]`, String(body[k]).substring(0, 499));
       });
