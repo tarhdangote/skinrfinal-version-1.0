@@ -2073,6 +2073,20 @@ html,body{height:100%;background:var(--bg);}
 
 /* HERO */
 .hero{padding:52px 0 44px;border-bottom:1px solid var(--border);}
+.trust-bar{display:flex;gap:20px;margin-top:20px;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:7px;font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--soft);text-transform:uppercase;}
+.trust-item::before{content:'✓';color:var(--gold);font-size:11px;}
+.sticky-cta{display:none;}
+@media(max-width:640px){
+  .sticky-cta{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:90;
+    background:var(--bg);border-top:1px solid var(--goldb);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));gap:10px;}
+  .sticky-cta-btn{flex:1;padding:14px 8px;font-family:var(--fm);font-size:10px;
+    letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;border:none;}
+  .sticky-cta-btn.primary{background:var(--gold);color:#050505;}
+  .sticky-cta-btn.secondary{background:var(--s);color:var(--gold);border:1px solid var(--goldb);}
+  .home-sticky-pad{padding-bottom:80px;}
+}
 .hero-badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--fc);font-size:13px;letter-spacing:4px;color:var(--soft);text-transform:uppercase;margin-bottom:24px;font-style:italic;}
 .hero-badge::before{content:'*';color:var(--gold);font-size:8px;}
 .hero-h{font-family:var(--fh);font-size:clamp(34px,6vw,60px);font-weight:900;line-height:.95;letter-spacing:-1px;font-style:italic;}
@@ -3702,49 +3716,24 @@ Return this JSON:
       <div id="main-content" style={{width:"100%",display:"contents"}}>
 
       {/* -- HOME -- */}
-      {view==="home"&&<div className="wrap fade-in">
+      {view==="home"&&<div className="wrap fade-in home-sticky-pad">
         <div className="hero">
           <div className="hero-badge">{t.badge}</div>
           <div className="hero-h">{t.heroTitle}</div>
           <div className="hero-h2">{t.heroTitle2}</div>
           <div className="hero-rule"/>
+          {/* Hero body — 2 lines max on mobile, no expand needed */}
           <p className="hero-body" style={{
-            display:"-webkit-box",WebkitLineClamp:heroExpanded?undefined:3,
-            WebkitBoxOrient:"vertical",overflow:heroExpanded?"visible":"hidden"
+            display:"-webkit-box",WebkitLineClamp:2,
+            WebkitBoxOrient:"vertical",overflow:"hidden"
           }}>{t.heroBody}</p>
-          <button onClick={()=>setHeroExpanded(p=>!p)} style={{
-            background:"none",border:"none",color:"var(--gold)",
-            fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
-            textTransform:"uppercase",cursor:"pointer",padding:"8px 0 0",
-            display:"flex",alignItems:"center",gap:6
-          }}>
-            {heroExpanded
-              ? (lang==="fr"?"Lire Moins ↑":lang==="es"?"Leer Menos ↑":"Read Less ↑")
-              : (lang==="fr"?"Lire Plus ↓":lang==="es"?"Leer Más ↓":"Read More ↓")}
-          </button>
 
-          {/* Independence statement */}
-          <div style={{
-            display:"flex",alignItems:"flex-start",gap:14,
-            border:"1px solid var(--border)",borderLeft:"3px solid var(--gold)",
-            padding:"14px 18px",marginTop:28,background:"rgba(184,151,42,0.04)"
-          }}>
-            <div style={{color:"var(--gold)",fontSize:14,flexShrink:0,marginTop:1}}>*</div>
-            <div>
-              <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
-                color:"var(--gold)",textTransform:"uppercase",marginBottom:5}}>
-                {lang==="fr"?"Indépendance Totale":lang==="es"?"Independencia Total":"Fully Independent"}
-              </div>
-              <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",
-                lineHeight:1.75,fontStyle:"normal"}}>
-                {lang==="fr"
-                  ? "Aucune marque ne paie pour apparaître dans SKINR. Nos recommandations sont basées uniquement sur les preuves cliniques et ton profil cutané exact. Si un produit à 12 $ surpasse un produit à 80 $ pour ta biologie, c'est ce qu'on recommande."
-                  : lang==="es"
-                  ? "Ninguna marca paga para aparecer en SKINR. Nuestras recomendaciones se basan únicamente en evidencia clínica y tu perfil de piel exacto. Si un producto de $12 supera a uno de $80 para tu biología, eso es lo que recomendamos."
-                  : "No brand pays to appear in SKINR. Our recommendations are driven entirely by clinical evidence and your exact skin profile. If a $12 drugstore product outperforms an $80 premium one for your biology, that is what we recommend. Always."
-                }
-              </div>
-            </div>
+          {/* Trust bar — 3 icons, one line, above the fold */}
+          <div className="trust-bar">
+            <div className="trust-item">{lang==="fr"?"Gratuit":lang==="es"?"Gratis":"Free"}</div>
+            <div className="trust-item">{lang==="fr"?"Clinique":lang==="es"?"Clínico":"Clinical"}</div>
+            <div className="trust-item">{lang==="fr"?"Indépendant":lang==="es"?"Independiente":"Independent"}</div>
+            <div className="trust-item">{lang==="fr"?"60 Secondes":lang==="es"?"60 Segundos":"60 Seconds"}</div>
           </div>
         </div>
 
@@ -3779,6 +3768,40 @@ Return this JSON:
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Independence statement — moved below path cards */}
+        <div style={{
+          display:"flex",alignItems:"flex-start",gap:14,
+          border:"1px solid var(--border)",borderLeft:"3px solid var(--gold)",
+          padding:"14px 18px",marginTop:24,marginBottom:8,background:"rgba(184,151,42,0.04)"
+        }}>
+          <div style={{color:"var(--gold)",fontSize:14,flexShrink:0,marginTop:1}}>*</div>
+          <div>
+            <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,
+              color:"var(--gold)",textTransform:"uppercase",marginBottom:5}}>
+              {lang==="fr"?"Indépendance Totale":lang==="es"?"Independencia Total":"Fully Independent"}
+            </div>
+            <div style={{fontFamily:"var(--fc)",fontSize:15,color:"var(--cream)",
+              lineHeight:1.75,fontStyle:"normal"}}>
+              {lang==="fr"
+                ? "Aucune marque ne paie pour apparaître dans SKINR. Nos recommandations sont basées uniquement sur les preuves cliniques et ton profil cutané exact. Si un produit à 12 $ surpasse un produit à 80 $ pour ta biologie, c'est ce qu'on recommande."
+                : lang==="es"
+                ? "Ninguna marca paga para aparecer en SKINR. Nuestras recomendaciones se basan únicamente en evidencia clínica y tu perfil de piel exacto. Si un producto de $12 supera a uno de $80 para tu biología, eso es lo que recomendamos."
+                : "No brand pays to appear in SKINR. Our recommendations are driven entirely by clinical evidence and your exact skin profile. If a $12 drugstore product outperforms an $80 premium one for your biology, that is what we recommend. Always."
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Sticky bottom CTA — mobile only, home view only */}
+        <div className="sticky-cta">
+          <button className="sticky-cta-btn secondary" onClick={startShaveQuiz}>
+            {lang==="fr"?"Rasage":lang==="es"?"Afeitado":"Fix My Shave"}
+          </button>
+          <button className="sticky-cta-btn primary" onClick={startSkinQuiz}>
+            {lang==="fr"?"Analyser Ma Peau":lang==="es"?"Analizar Mi Piel":"Analyse My Skin"}
+          </button>
         </div>
 
         {/* Returning user */}
