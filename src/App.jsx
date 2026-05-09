@@ -2928,6 +2928,7 @@ export default function SkinrApp() {
           analysisMetadata.criticalRule      = (shaveResult.criticalRule||"").substring(0,490);
           analysisMetadata.expectedImprovement = (shaveResult.expectedImprovement||"").substring(0,490);
         }
+        analysisMetadata.userCountry = userCountry || "US";
       }
 
       const res = await fetch("/.netlify/functions/stripe", {
@@ -2971,11 +2972,13 @@ export default function SkinrApp() {
       "biology":1500,"routine":1200,"skin-combo":2200,
       "shave-biology":1500,"shave-card":1200,"shave-combo":2200,
       "skincare-guide":900,"shaving-guide":900,"guides-combo":1500,
+      "analysis-email":100,
     };
     const LABELS = {
       "biology":"SKINR Skin Biology Report","routine":"SKINR Routine Card","skin-combo":"SKINR Skin Bundle",
       "shave-biology":"SKINR Shave Biology Report","shave-card":"SKINR Shave Protocol Card","shave-combo":"SKINR Shave Bundle",
       "skincare-guide":"SKINR Skincare Guide","shaving-guide":"SKINR Shaving Guide","guides-combo":"SKINR Both Guides",
+      "analysis-email":"SKINR Analysis & Personalised Recommendations",
     };
     const amount = AMOUNTS[payModal] || 1500;
     const label  = LABELS[payModal]  || "SKINR Report";
@@ -3946,6 +3949,16 @@ Return this JSON:
               <div style={{marginTop:3}}>Amazon affiliate links support this free service at no extra cost to you.</div>
               <div style={{marginTop:3}}>© {new Date().getFullYear()} SKINR. {t.copyright}</div>
               <div style={{marginTop:8,display:"flex",gap:16,justifyContent:"flex-end",flexWrap:"wrap"}}>
+                <a href="/blog/" target="_blank" rel="noopener"
+                  style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",
+                    textDecoration:"underline",textDecorationColor:"var(--border)"}}>
+                  Blog
+                </a>
+                <a href="/faq.html" target="_blank" rel="noopener"
+                  style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",fontStyle:"italic",
+                    textDecoration:"underline",textDecorationColor:"var(--border)"}}>
+                  FAQ
+                </a>
                 <button onClick={()=>setShowPrivacy(true)}
                   style={{background:"none",border:"none",fontFamily:"var(--fc)",fontSize:11,
                     color:"var(--muted)",fontStyle:"italic",cursor:"pointer",padding:0,
@@ -5424,10 +5437,11 @@ Return this JSON:
                       :payModal==="skincare-guide" ? t.skincareGuideTitle
                       :payModal==="shaving-guide"  ? t.shavingGuideTitle
                       :payModal==="guides-combo"   ? (lang==="fr"?"Les Deux Guides":lang==="es"?"Ambas Guías":"Both Guides")
+                      :payModal==="analysis-email" ? (lang==="fr"?"Ton Analyse & Recommandations Personnalisées":lang==="es"?"Tu Análisis y Recomendaciones Personalizadas":"Your Analysis & Personalised Recommendations")
                       : "SKINR Report"}
                     </div>
                     <div style={{fontFamily:"var(--fm)",fontSize:11,color:"var(--gold)",marginTop:4}}>
-                      ${payModal==="skin-combo"||payModal==="shave-combo"?22:payModal==="guides-combo"?15:payModal==="skincare-guide"||payModal==="shaving-guide"?9:payModal==="routine"||payModal==="shave-card"?12:15} USD
+                      ${payModal==="analysis-email"?1:payModal==="skin-combo"||payModal==="shave-combo"?22:payModal==="guides-combo"?15:payModal==="skincare-guide"||payModal==="shaving-guide"?9:payModal==="routine"||payModal==="shave-card"?12:15} USD
                       {lang==="fr"&&<span style={{color:"var(--soft)",marginLeft:6,fontSize:10}}>(~${Math.round((payModal==="skin-combo"||payModal==="shave-combo"?22:payModal==="guides-combo"?15:payModal==="skincare-guide"||payModal==="shaving-guide"?9:payModal==="routine"||payModal==="shave-card"?12:15)*1.36)} CAD)</span>}
                     </div>
                   </div>
@@ -5442,6 +5456,19 @@ Return this JSON:
                   const isGuide = payModal==="skincare-guide"||payModal==="shaving-guide"||payModal==="guides-combo";
                   const isSkinPersonalised = payModal==="biology"||payModal==="routine"||payModal==="skin-combo";
                   const isShavePersonalised = payModal==="shave-biology"||payModal==="shave-card"||payModal==="shave-combo";
+                  const isAnalysisEmail = payModal==="analysis-email";
+
+                  if(isAnalysisEmail) return (
+                    <div style={{border:"1px solid var(--goldb)",background:"var(--gold3)",
+                      padding:"10px 14px",marginBottom:16,fontFamily:"var(--fc)",
+                      fontSize:13,color:"var(--cream)",fontStyle:"italic",lineHeight:1.65}}>
+                      {lang==="fr"
+                        ?"Toutes tes recommandations de produits personnalisées + liens Amazon cliquables envoyés à ton email. Sauvegarde-les pour y accéder n'importe quand."
+                        :lang==="es"
+                        ?"Todas tus recomendaciones de productos personalizadas + enlaces Amazon clicables enviados a tu email. Guárdalas para acceder en cualquier momento."
+                        :"All your personalised product recommendations + clickable Amazon links sent to your email. Save them, shop from them anytime."}
+                    </div>
+                  );
 
                   // Guides -- no personalisation claim, just what they get
                   if(isGuide) return (
@@ -5588,11 +5615,12 @@ Return this JSON:
                       {payLoading
                         ? (lang==="fr"?"Traitement...":lang==="es"?"Procesando...":"Processing...")
                         : (()=>{
-                          const amt = payModal==="skin-combo"||payModal==="shave-combo"?22
+                          const amt = payModal==="analysis-email"?1
+                            :payModal==="skin-combo"||payModal==="shave-combo"?22
                             :payModal==="guides-combo"?15
                             :payModal==="skincare-guide"||payModal==="shaving-guide"?9
                             :payModal==="routine"||payModal==="shave-card"?12
-                            :15; // biology, shave-biology default $15
+                            :15;
                           return lang==="fr"?`Payer $${amt} USD`:lang==="es"?`Pagar $${amt} USD`:`Pay $${amt} USD`;
                         })()}
                     </button>
