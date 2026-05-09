@@ -929,6 +929,9 @@ const CONFIG = {
     skincareGuidePrice:        9,
     shavingGuidePrice:         9,
     guideComboPrice:           15,
+    // -- ANALYSIS EMAIL DELIVERY ($1 tripwire) ----------------------
+    stripeAnalysisEmailPriceId:"price_1TUzeWCi5YWsRAVAwe8xvjh4",
+    analysisEmailPrice:        1,
   },
   // Skincare brands by budget tier
   skinBrandsByTier: {
@@ -2761,6 +2764,12 @@ export default function SkinrApp() {
   const [routineUnlocked, setRoutineUnlocked]     = useState(false);
   const [shaveBioUnlocked, setShaveBioUnlocked]   = useState(false);
   const [shaveCardUnlocked, setShaveCardUnlocked] = useState(false);
+  // $1 analysis email delivery states
+  const [analysisEmailSent, setAnalysisEmailSent]   = useState(!!LS.get("skinr2:analysisEmailSent"));
+  const [shaveEmailSent, setShaveEmailSent]         = useState(!!LS.get("skinr2:shaveEmailSent"));
+  const [analysisEmailType, setAnalysisEmailType]   = useState("skin");
+  const [showAllSkinProducts, setShowAllSkinProducts]   = useState(false);
+  const [showAllShaveProducts, setShowAllShaveProducts] = useState(false);
   const [skincareGuideUnlocked, setSkincareGuideUnlocked] = useState(false);
   const [shavingGuideUnlocked, setShavingGuideUnlocked]   = useState(false);
   const [bioReport, setBioReport]           = useState(null);
@@ -2893,6 +2902,34 @@ export default function SkinrApp() {
     setPayLoading(true);
     setPayError("");
     try {
+      // Serialize analysis data for $1 email delivery
+      // Each step as compact JSON: {p:product, b:brand, a:amazonSearch, e:estimatedPrice, i:instruction}
+      const serializeStep = (s) => JSON.stringify({
+        p: (s.product||s.title||"").substring(0,80),
+        b: (s.brand||"").substring(0,40),
+        a: (s.amazonSearch||"").substring(0,120),
+        e: (s.estimatedPrice||"").substring(0,20),
+        i: (s.instruction||"").substring(0,150),
+      });
+
+      const analysisMetadata = {};
+      if (payModal === "analysis-email") {
+        if (analysisEmailType === "skin" && profile) {
+          (profile.morning||[]).slice(0,6).forEach((s,i) => { analysisMetadata[`m${i}`] = serializeStep(s); });
+          (profile.evening||[]).slice(0,5).forEach((s,i) => { analysisMetadata[`e${i}`] = serializeStep(s); });
+          analysisMetadata.avoid   = (profile.avoid||"").substring(0,490);
+          analysisMetadata.proTip  = (profile.proTip||"").substring(0,490);
+          analysisMetadata.headline= (profile.headline||"").substring(0,200);
+        } else if (analysisEmailType === "shave" && shaveResult) {
+          (shaveResult.preShave||[]).slice(0,4).forEach((s,i)  => { analysisMetadata[`ps${i}`] = serializeStep(s); });
+          (shaveResult.during||[]).slice(0,4).forEach((s,i)    => { analysisMetadata[`d${i}`]  = serializeStep(s); });
+          (shaveResult.postShave||[]).slice(0,5).forEach((s,i) => { analysisMetadata[`po${i}`] = serializeStep(s); });
+          analysisMetadata.clinicalFinding   = (shaveResult.clinicalFinding||"").substring(0,490);
+          analysisMetadata.criticalRule      = (shaveResult.criticalRule||"").substring(0,490);
+          analysisMetadata.expectedImprovement = (shaveResult.expectedImprovement||"").substring(0,490);
+        }
+      }
+
       const res = await fetch("/.netlify/functions/stripe", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -2901,6 +2938,16 @@ export default function SkinrApp() {
           email: payEmail,
           skinType: profile?.skinType || savedShave?.skinType || "",
           lang: lang || "en",
+          ...(payModal === "analysis-email" ? {
+            analysisType: analysisEmailType,
+            concern: analysisEmailType === "shave"
+              ? (savedShave?.answers?.problem || "")
+              : (profile?.answers?.concern || ""),
+            budget: analysisEmailType === "shave"
+              ? (savedShave?.answers?.budget || "budget")
+              : (profile?.answers?.budget || "budget"),
+            ...analysisMetadata,
+          } : {}),
         }),
       });
       const data = await res.json();
@@ -2978,6 +3025,7 @@ export default function SkinrApp() {
         if(p==="shave-card" || p==="shave-combo") { setShaveCardUnlocked(true);  LS.set("skinr2:shaveCardUnlocked",true); }
         if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
         if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
+        if(p==="analysis-email"){ if(analysisEmailType==="shave"){setShaveEmailSent(true);LS.set("skinr2:shaveEmailSent",true);}else{setAnalysisEmailSent(true);LS.set("skinr2:analysisEmailSent",true);} }
         if(ev.payerEmail) setEmailSaved(ev.payerEmail);
         LS.set("skinr2:purchasedProduct", payModal);
         setPaySuccess(true);
@@ -3035,6 +3083,7 @@ export default function SkinrApp() {
         if(p==="shave-card" || p==="shave-combo") { setShaveCardUnlocked(true);  LS.set("skinr2:shaveCardUnlocked",true); }
         if(p==="skincare-guide"||p==="guides-combo"){ setSkincareGuideUnlocked(true); LS.set("skinr2:skincareGuideUnlocked",true); }
         if(p==="shaving-guide" ||p==="guides-combo"){ setShavingGuideUnlocked(true);  LS.set("skinr2:shavingGuideUnlocked",true); }
+        if(p==="analysis-email"){ if(analysisEmailType==="shave"){setShaveEmailSent(true);LS.set("skinr2:shaveEmailSent",true);}else{setAnalysisEmailSent(true);LS.set("skinr2:analysisEmailSent",true);} }
         LS.set("skinr2:purchasedProduct", p);
         track("purchase", {
           transaction_id: result.paymentIntent.id,
@@ -4008,6 +4057,35 @@ Return this JSON:
             </div>
           )}
 
+
+          {/* ── $1 SAVE & EMAIL ANALYSIS BLOCK ───────────────────────────────────── */}
+          {!analysisEmailSent?(
+            <div style={{border:"1px solid var(--border)",marginBottom:12,padding:"14px 16px",background:"var(--card)",position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+                    {lang==="fr"?"Sauvegarder Mon Analyse":lang==="es"?"Guardar Mi Análisis":"Save My Analysis"}
+                  </div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",lineHeight:1.55}}>
+                    {lang==="fr"?"Toutes tes recommandations + liens Amazon envoyés à ton email.":lang==="es"?"Todas tus recomendaciones + enlaces Amazon enviados a tu email.":"All your recommendations + Amazon links sent to your email."}
+                  </div>
+                </div>
+                <button className="btn btn-p" style={{flexShrink:0,fontSize:11,whiteSpace:"nowrap"}}
+                  onClick={()=>{ setAnalysisEmailType("skin"); openPayment("analysis-email"); }}>
+                  {lang==="fr"?`Email — $${CONFIG.business.analysisEmailPrice}`:lang==="es"?`Email — $${CONFIG.business.analysisEmailPrice}`:`Email My Analysis — $${CONFIG.business.analysisEmailPrice}`}
+                </button>
+              </div>
+            </div>
+          ):(
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",border:"1px solid var(--goldb)",background:"rgba(184,151,42,0.06)",marginBottom:12}}>
+              <span style={{color:"var(--gold)",fontSize:15}}>✓</span>
+              <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)"}}>
+                {lang==="fr"?"Recommandations envoyées — vérifie ton email.":lang==="es"?"Recomendaciones enviadas — revisa tu email.":"Recommendations sent — check your email."}
+              </div>
+            </div>
+          )}
+
           {/* ── SKIN REPORTS PANEL — permanent block 2, always visible ── */}
           {profile&&(
             <div style={{border:"1px solid var(--gold)",marginTop:16,marginBottom:4,position:"relative",overflow:"hidden"}}>
@@ -4066,8 +4144,9 @@ Return this JSON:
             </div>
           )}
 
+
           {/* Product Recommendations Title */}
-          <div style={{marginTop:24,marginBottom:4}}>
+          <div style={{marginTop:8,marginBottom:4}}>
             <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:4,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
               {lang==="fr"?"Vos Recommandations Produits Personnalisées":lang==="es"?"Tus Recomendaciones de Productos Personalizadas":"Your Personalised Product Recommendations"}
             </div>
@@ -4076,6 +4155,36 @@ Return this JSON:
             </div>
           </div>
 
+          {/* ── TOP 3 PRODUCTS — visible on Screen 2, before routine steps ── */}
+          {profile.morning?.filter(s=>s.amazonSearch).slice(0,3).map((step,i)=>(
+            <div key={`top${i}`} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              gap:12,padding:"10px 14px",border:"1px solid var(--border)",background:"var(--card)",marginBottom:6}}>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",marginBottom:2}}>
+                  {step.keyIngredient||step.category}
+                </div>
+                <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--white)",fontWeight:600,marginBottom:2}}>{step.product}</div>
+                <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{step.brand}</div>
+              </div>
+              <a href={getAffLink(step.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer"
+                style={{flexShrink:0,fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--bg)",
+                  background:"var(--gold)",textDecoration:"none",padding:"7px 14px",fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}}>
+                {lang==="fr"?"Amazon →":lang==="es"?"Amazon →":"Amazon →"}
+              </a>
+            </div>
+          ))}
+
+          {/* See all recommendations toggle */}
+          <button onClick={()=>setShowAllSkinProducts(p=>!p)}
+            style={{width:"100%",background:"none",border:"1px solid var(--border)",color:"var(--gold)",
+              fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,textTransform:"uppercase",
+              cursor:"pointer",padding:"10px 0",marginBottom:16,marginTop:4}}>
+            {showAllSkinProducts
+              ? (lang==="fr"?"▲ Masquer le protocole complet":lang==="es"?"▲ Ocultar protocolo completo":"▲ Hide Full Protocol")
+              : (lang==="fr"?"▼ Voir le protocole + toutes les recommandations":lang==="es"?"▼ Ver protocolo + todas las recomendaciones":"▼ See Full Protocol + All Recommendations")}
+          </button>
+
+          {showAllSkinProducts&&<>
           {/* Morning */}
           <div className="period-hdr"><span className="sec-mark">*</span> {t.morning}</div>
           {profile.morning?.map((step,i)=>{
@@ -4174,6 +4283,7 @@ Return this JSON:
             <div className="ins-box tip"><div className="ins-lbl">{t.expertInsight}</div><div className="ins-text">{profile.proTip}</div></div>
             {profile.timeToResults&&<div className="ins-box tip"><div className="ins-lbl">{t.expectedTimeline}</div><div className="ins-text">{profile.timeToResults}</div></div>}
           </div>
+          </>}{/* end showAllSkinProducts */}
 
           {/* Optional reports panel -- full view if unlocked, minimal CTA if not */}
           {profile&&(biologyUnlocked||routineUnlocked)&&(
@@ -4601,6 +4711,66 @@ Return this JSON:
               </div>
             </div>
 
+            {/* ── $1 SAVE & EMAIL SHAVE ANALYSIS ────────────────────────────────── */}
+            {!shaveEmailSent?(
+              <div style={{border:"1px solid var(--border)",marginBottom:12,padding:"14px 16px",background:"var(--card)",position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--gold),var(--gold2),transparent)"}}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,color:"var(--gold)",textTransform:"uppercase",marginBottom:4}}>
+                      {lang==="fr"?"Sauvegarder Mon Analyse":lang==="es"?"Guardar Mi Análisis":"Save My Analysis"}
+                    </div>
+                    <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)",lineHeight:1.55}}>
+                      {lang==="fr"?"Toutes tes recommandations rasage + liens Amazon envoyés à ton email.":lang==="es"?"Todas tus recomendaciones de afeitado + enlaces Amazon enviados a tu email.":"All your shave recommendations + Amazon links sent to your email."}
+                    </div>
+                  </div>
+                  <button className="btn btn-p" style={{flexShrink:0,fontSize:11,whiteSpace:"nowrap"}}
+                    onClick={()=>{ setAnalysisEmailType("shave"); openPayment("analysis-email"); }}>
+                    {lang==="fr"?`Email — $${CONFIG.business.analysisEmailPrice}`:lang==="es"?`Email — $${CONFIG.business.analysisEmailPrice}`:`Email My Analysis — $${CONFIG.business.analysisEmailPrice}`}
+                  </button>
+                </div>
+              </div>
+            ):(
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",border:"1px solid var(--goldb)",background:"rgba(184,151,42,0.06)",marginBottom:12}}>
+                <span style={{color:"var(--gold)",fontSize:15}}>✓</span>
+                <div style={{fontFamily:"var(--fc)",fontSize:12,color:"var(--soft)"}}>
+                  {lang==="fr"?"Recommandations envoyées — vérifie ton email.":lang==="es"?"Recomendaciones enviadas — revisa tu email.":"Recommendations sent — check your email."}
+                </div>
+              </div>
+            )}
+
+            {/* ── TOP 3 SHAVE PRODUCTS — visible Screen 2 ────────────────────── */}
+            {shaveResult.preShave?.filter(s=>s.amazonSearch).slice(0,2).concat(
+              (shaveResult.during||[]).filter(s=>s.amazonSearch).slice(0,1)
+            ).map((step,i)=>(
+              <div key={`stop${i}`} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                gap:12,padding:"10px 14px",border:"1px solid var(--border)",background:"var(--card)",marginBottom:6}}>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"var(--fm)",fontSize:9,letterSpacing:2,color:"var(--gold)",textTransform:"uppercase",marginBottom:2}}>
+                    {step.keyIngredient||step.category||"Shave Product"}
+                  </div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:13,color:"var(--white)",fontWeight:600,marginBottom:2}}>{step.product||step.title}</div>
+                  <div style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--soft)"}}>{step.brand||""}</div>
+                </div>
+                <a href={getAffLink(step.amazonSearch,userCountry)} target="_blank" rel="noopener noreferrer"
+                  style={{flexShrink:0,fontFamily:"var(--fm)",fontSize:8,letterSpacing:2,color:"var(--bg)",
+                    background:"var(--gold)",textDecoration:"none",padding:"7px 14px",fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}}>
+                  Amazon →
+                </a>
+              </div>
+            ))}
+
+            {/* See all shave recommendations toggle */}
+            <button onClick={()=>setShowAllShaveProducts(p=>!p)}
+              style={{width:"100%",background:"none",border:"1px solid var(--border)",color:"var(--gold)",
+                fontFamily:"var(--fm)",fontSize:9,letterSpacing:3,textTransform:"uppercase",
+                cursor:"pointer",padding:"10px 0",marginBottom:16,marginTop:4}}>
+              {showAllShaveProducts
+                ? (lang==="fr"?"▲ Masquer le protocole complet":lang==="es"?"▲ Ocultar protocolo completo":"▲ Hide Full Protocol")
+                : (lang==="fr"?"▼ Voir le protocole + toutes les recommandations":lang==="es"?"▼ Ver protocolo + todas las recomendaciones":"▼ See Full Protocol + All Recommendations")}
+            </button>
+
+            {showAllShaveProducts&&<>
             {/* -- BLADE & RAZOR RECOMMENDATION -- */}
             {shaveResult.bladeRecommendation&&(()=>{
               const br = shaveResult.bladeRecommendation;
@@ -4782,6 +4952,7 @@ Return this JSON:
                 <div className="ins-text">{shaveResult.whenToSeeDoctor}</div>
               </div>
             )}
+            </>}{/* end showAllShaveProducts */}
 
             {/* -- SHAVE OPTIONAL REPORTS -- only shown after purchase -- */}
             {(shaveBioUnlocked||shaveCardUnlocked)&&(
