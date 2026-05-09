@@ -1360,8 +1360,11 @@ exports.handler = async (event) => {
       try {
         const m   = intent.metadata;
         const isShave = (m.analysisType === "shave");
+        const isCA    = (m.userCountry === "CA");
         const tagUS   = "skinr07-20";
-        const affBase = "https://www.amazon.com/s?k=";
+        const tagCA   = "Skinr-20";
+        const affBase = isCA ? "https://www.amazon.ca/s?k=" : "https://www.amazon.com/s?k=";
+        const affTag  = isCA ? tagCA : tagUS;
 
         // Helper: parse a step from compact JSON metadata
         const parseStep = (raw) => {
@@ -1371,8 +1374,8 @@ exports.handler = async (event) => {
 
         // Helper: build a clickable Amazon URL from the search term
         const amzLink = (search) => search
-          ? affBase + encodeURIComponent(search) + "&tag=" + tagUS
-          : "https://www.amazon.com?tag=" + tagUS;
+          ? affBase + encodeURIComponent(search) + "&tag=" + affTag
+          : (isCA ? "https://www.amazon.ca?tag=" + tagCA : "https://www.amazon.com?tag=" + tagUS);
 
         // Helper: render one step card row as HTML
         const stepHTML = (step, num) => {
