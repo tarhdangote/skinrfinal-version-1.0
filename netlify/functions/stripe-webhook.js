@@ -1352,7 +1352,237 @@ exports.handler = async (event) => {
   const emailSource = metaEmail ? "metadata" : receiptEmail ? "receipt" : chargeEmail ? "charge" : "none";
   console.log(`SKINR sale: ${intent.id} | ${product} | $${amount} | lang=${lang} | ${email || "no-email"} (${emailSource})`);
 
-  // Deliver to customer if we have their email and Gmail credentials
+  // ── ANALYSIS EMAIL DELIVERY ($1) ─────────────────────────────────────────────
+  // No PDF. Reconstructs the customer's actual analysis from Stripe metadata
+  // and sends as clickable HTML email — exactly what they saw on the results page.
+  if (product === "analysis-email") {
+    if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
+      try {
+        const m   = intent.metadata;
+        const isShave = (m.analysisType === "shave");
+        const tagUS   = "skinr07-20";
+        const affBase = "https://www.amazon.com/s?k=";
+
+        // Helper: parse a step from compact JSON metadata
+        const parseStep = (raw) => {
+          if (!raw) return null;
+          try { return JSON.parse(raw); } catch(_) { return null; }
+        };
+
+        // Helper: build a clickable Amazon URL from the search term
+        const amzLink = (search) => search
+          ? affBase + encodeURIComponent(search) + "&tag=" + tagUS
+          : "https://www.amazon.com?tag=" + tagUS;
+
+        // Helper: render one step card row as HTML
+        const stepHTML = (step, num) => {
+          if (!step || !step.p) return "";
+          const link = amzLink(step.a || step.p);
+          return `
+            <div style="padding:14px 0;border-bottom:1px solid #1E1A14;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div style="flex:1;">
+                  <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:3px;">Step ${num}</div>
+                  <div style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#F2EEE6;margin-bottom:3px;">${step.p}</div>
+                  ${step.b ? `<div style="font-family:Arial,sans-serif;font-size:11px;color:#B8AEA6;margin-bottom:5px;">${step.b}${step.e ? " &mdash; " + step.e : ""}</div>` : ""}
+                  ${step.i ? `<div style="font-family:Arial,sans-serif;font-size:11px;color:#B8AEA6;line-height:1.6;font-style:italic;">${step.i}</div>` : ""}
+                </div>
+                <a href="${link}" target="_blank" style="flex-shrink:0;font-family:Arial,sans-serif;font-size:8px;letter-spacing:2px;color:#050505;background:#B8972A;text-decoration:none;padding:8px 14px;font-weight:700;text-transform:uppercase;white-space:nowrap;display:inline-block;margin-top:4px;">Amazon &rarr;</a>
+              </div>
+            </div>`;
+        };
+
+        // Helper: render a period section header
+        const sectionHeader = (label) => `
+          <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:4px;color:#B8972A;text-transform:uppercase;margin:24px 0 4px;padding-bottom:8px;border-bottom:2px solid #1E1A14;">${label}</div>`;
+
+        // ── Build content based on skin vs shave ──────────────────────────────
+        let bodyHTML = "";
+        let summaryHTML = "";
+
+        if (isShave) {
+          // Shave analysis
+          const shaveType = skinType || "standard";
+
+          if (m.clinicalFinding) {
+            summaryHTML += `
+              <div style="background:#0D0D0D;border-left:3px solid #B8972A;padding:12px 16px;margin-bottom:10px;">
+                <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#B8972A;text-transform:uppercase;margin-bottom:4px;">Clinical Finding</div>
+                <div style="font-family:Arial,sans-serif;font-size:13px;color:#F2EEE6;line-height:1.7;">${m.clinicalFinding}</div>
+              </div>`;
+          }
+          if (m.criticalRule) {
+            summaryHTML += `
+              <div style="background:#0D0D0D;border-left:3px solid #D4AF50;padding:12px 16px;margin-bottom:10px;">
+                <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#D4AF50;text-transform:uppercase;margin-bottom:4px;">Critical Rule</div>
+                <div style="font-family:Arial,sans-serif;font-size:13px;color:#F2EEE6;line-height:1.7;">${m.criticalRule}</div>
+              </div>`;
+          }
+
+          // Pre-shave steps
+          const preSteps = ["ps0","ps1","ps2","ps3"].map(k=>parseStep(m[k])).filter(Boolean);
+          if (preSteps.length) {
+            bodyHTML += sectionHeader(lang==="fr"?"Pré-Rasage":lang==="es"?"Pre-Afeitado":"Pre-Shave");
+            preSteps.forEach((s,i) => { bodyHTML += stepHTML(s, i+1); });
+          }
+
+          // During shave steps
+          const duringSteps = ["d0","d1","d2","d3"].map(k=>parseStep(m[k])).filter(Boolean);
+          if (duringSteps.length) {
+            bodyHTML += sectionHeader(lang==="fr"?"Le Rasage":lang==="es"?"El Afeitado":"The Shave");
+            duringSteps.forEach((s,i) => { bodyHTML += stepHTML(s, i+1); });
+          }
+
+          // Post-shave steps
+          const postSteps = ["po0","po1","po2","po3","po4"].map(k=>parseStep(m[k])).filter(Boolean);
+          if (postSteps.length) {
+            bodyHTML += sectionHeader(lang==="fr"?"Post-Rasage":lang==="es"?"Post-Afeitado":"Post-Shave");
+            postSteps.forEach((s,i) => { bodyHTML += stepHTML(s, i+1); });
+          }
+
+          if (m.expectedImprovement) {
+            bodyHTML += `
+              <div style="background:#0D0D0D;border-left:3px solid #1E6B4A;padding:12px 16px;margin-top:20px;">
+                <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#3DBE7A;text-transform:uppercase;margin-bottom:4px;">${lang==="fr"?"Amélioration Attendue":lang==="es"?"Mejora Esperada":"Expected Improvement"}</div>
+                <div style="font-family:Arial,sans-serif;font-size:12px;color:#B8AEA6;line-height:1.7;font-style:italic;">${m.expectedImprovement}</div>
+              </div>`;
+          }
+
+        } else {
+          // Skin analysis
+          if (m.headline) {
+            summaryHTML = `<div style="font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:#F2EEE6;margin-bottom:8px;">${m.headline}</div>`;
+          }
+
+          // Morning routine
+          const morningSteps = ["m0","m1","m2","m3","m4","m5"].map(k=>parseStep(m[k])).filter(Boolean);
+          if (morningSteps.length) {
+            bodyHTML += sectionHeader(lang==="fr"?"Routine du Matin":lang==="es"?"Rutina de Mañana":"Morning Routine");
+            morningSteps.forEach((s,i) => { bodyHTML += stepHTML(s, i+1); });
+          }
+
+          // Evening routine
+          const eveningSteps = ["e0","e1","e2","e3","e4"].map(k=>parseStep(m[k])).filter(Boolean);
+          if (eveningSteps.length) {
+            bodyHTML += sectionHeader(lang==="fr"?"Routine du Soir":lang==="es"?"Rutina de Noche":"Evening Routine");
+            eveningSteps.forEach((s,i) => { bodyHTML += stepHTML(s, i+1); });
+          }
+
+          // Avoid + Pro Tip
+          if (m.avoid) {
+            bodyHTML += `
+              <div style="background:#0D0D0D;border-left:3px solid #8B3A3A;padding:12px 16px;margin-top:20px;">
+                <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#E07070;text-transform:uppercase;margin-bottom:4px;">${lang==="fr"?"À Éviter":lang==="es"?"Evitar":"Avoid"}</div>
+                <div style="font-family:Arial,sans-serif;font-size:12px;color:#B8AEA6;line-height:1.7;">${m.avoid}</div>
+              </div>`;
+          }
+          if (m.proTip) {
+            bodyHTML += `
+              <div style="background:#0D0D0D;border-left:3px solid #1E6B4A;padding:12px 16px;margin-top:10px;">
+                <div style="font-family:Arial,sans-serif;font-size:9px;letter-spacing:2px;color:#3DBE7A;text-transform:uppercase;margin-bottom:4px;">${lang==="fr"?"Conseil Expert":lang==="es"?"Consejo Experto":"Expert Insight"}</div>
+                <div style="font-family:Arial,sans-serif;font-size:12px;color:#B8AEA6;line-height:1.7;font-style:italic;">${m.proTip}</div>
+              </div>`;
+          }
+        }
+
+        // ── Upsell section ────────────────────────────────────────────────────
+        const upsellLabel = isShave
+          ? (lang==="fr"?"Rapport de Biologie du Rasage":lang==="es"?"Informe de Biología del Afeitado":"Shave Biology Report")
+          : (lang==="fr"?"Rapport de Biologie Cutanée":lang==="es"?"Informe de Biología Cutánea":"Skin Biology Report");
+        const upsellPrice = 15;
+        const analysisTypeLabel = isShave
+          ? (lang==="fr"?"Protocole de Rasage":lang==="es"?"Protocolo de Afeitado":"Shave Protocol")
+          : (lang==="fr"?"Analyse de Peau":lang==="es"?"Análisis de Piel":"Skin Analysis");
+
+        const subjectLine = lang==="fr"
+          ? `Votre ${analysisTypeLabel} SKINR — Sauvegardé`
+          : lang==="es"
+          ? `Tu ${analysisTypeLabel} SKINR — Guardado`
+          : `Your SKINR ${analysisTypeLabel} — Saved to Your Inbox`;
+
+        const emailHtml = `<!DOCTYPE html><html lang="${lang||"en"}">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${subjectLine}</title></head>
+<body style="margin:0;padding:0;background:#050505;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#050505;">
+<tr><td align="center" style="padding:32px 16px 40px;">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+  <!-- Gold top bar -->
+  <tr><td style="background:#B8972A;height:3px;"></td></tr>
+
+  <!-- Header -->
+  <tr><td style="background:#080808;padding:22px 32px;border-bottom:1px solid #1E1A14;text-align:center;">
+    <div style="font-size:18px;font-weight:700;color:#F2EEE6;letter-spacing:5px;">&#9670; SKINR</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#B8AEA6;text-transform:uppercase;margin-top:4px;">Free. Clinical. Built for Men.</div>
+  </td></tr>
+
+  <!-- Analysis label + headline -->
+  <tr><td style="padding:24px 32px 0;background:#050505;">
+    <div style="font-size:9px;letter-spacing:4px;color:#B8972A;text-transform:uppercase;margin-bottom:10px;">${analysisTypeLabel}</div>
+    ${summaryHTML}
+    <div style="font-size:13px;color:#B8AEA6;line-height:1.7;margin-bottom:6px;">
+      ${lang==="fr"?"Tes recommandations personnalisées sont sauvegardées ci-dessous. Clique sur un lien Amazon pour commander directement le bon produit.":lang==="es"?"Tus recomendaciones personalizadas están guardadas abajo. Haz clic en un enlace de Amazon para pedir el producto correcto directamente.":"Your personalised recommendations are saved below. Click any Amazon link to order the exact right product directly."}
+    </div>
+    <div style="border-top:1px solid #1E1A14;margin-top:8px;"></div>
+  </td></tr>
+
+  <!-- Steps content -->
+  <tr><td style="padding:0 32px 24px;background:#050505;">
+    ${bodyHTML || '<div style="font-family:Arial,sans-serif;font-size:13px;color:#B8AEA6;padding:20px 0;">Return to tryskinr.com to view your full analysis.</div>'}
+  </td></tr>
+
+  <!-- Upsell banner -->
+  <tr><td style="background:#0D0D0D;border:1px solid #B8972A;padding:18px 32px;text-align:center;">
+    <div style="font-size:9px;letter-spacing:3px;color:#B8972A;text-transform:uppercase;margin-bottom:8px;">
+      ${lang==="fr"?"Aller Plus Loin":lang==="es"?"Ir Más Profundo":"Go Deeper"}
+    </div>
+    <div style="font-size:12px;color:#B8AEA6;line-height:1.65;margin-bottom:14px;">
+      ${lang==="fr"?"Débloquez votre rapport complet — l'analyse clinique de votre biologie cutanée spécifique. Ce qui est listé ci-dessus, et pourquoi chaque ingrédient fonctionne pour vous.":lang==="es"?"Desbloquea tu informe completo — el análisis clínico de tu biología cutánea específica.":"Unlock your full report — the clinical analysis of your specific skin biology. Everything above, and the science behind why each ingredient works for you."}
+    </div>
+    <a href="https://tryskinr.com" style="display:inline-block;background:#B8972A;color:#050505;text-decoration:none;font-size:9px;letter-spacing:3px;font-weight:700;text-transform:uppercase;padding:12px 28px;">
+      ${lang==="fr"?`Débloquer — $${upsellPrice}`:lang==="es"?`Desbloquear — $${upsellPrice}`:`Unlock ${upsellLabel} — $${upsellPrice}`}
+    </a>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:14px 32px;background:#0D0D0D;border-top:1px solid #1E1A14;text-align:center;">
+    <div style="font-size:10px;color:#4E4844;">SKINR &mdash; tryskinr.com &mdash; hello@tryskinr.com</div>
+    <div style="font-size:9px;color:#3A3634;margin-top:4px;">You received this because you purchased the Analysis Email Delivery at tryskinr.com.</div>
+  </td></tr>
+
+  <!-- Gold bottom bar -->
+  <tr><td style="background:#B8972A;height:2px;"></td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
+        });
+        await transporter.sendMail({
+          from:    `SKINR <${process.env.GMAIL_USER}>`,
+          replyTo: `SKINR <hello@tryskinr.com>`,
+          to:      email,
+          subject: subjectLine,
+          html:    emailHtml,
+        });
+
+        const stepCount = Object.keys(m).filter(k => /^(m|e|ps|d|po)\d+$/.test(k)).length;
+        console.log(`Analysis email delivered to ${email} (${isShave?"shave":"skin"}, ${stepCount} steps)`);
+        addToLoops(email, product, skinType, lang).catch(()=>{});
+
+      } catch(err) {
+        console.error("Analysis email error:", err.message);
+      }
+    }
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ received: true }) };
+  }
+
+    // Deliver to customer if we have their email and Gmail credentials
   if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASS) {
     try {
       // 1. Generate content
