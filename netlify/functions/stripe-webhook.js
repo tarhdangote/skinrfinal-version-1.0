@@ -1597,22 +1597,22 @@ exports.handler = async (event) => {
       let attachments = [];
 
       if (product === "skin-combo" && content.biology !== undefined) {
-        const pdf1 = await buildPDF("biology",  content.biology,  skinType, lang);
-        const pdf2 = await buildPDF("routine",  content.routine,  skinType, lang);
+        const pdf1 = await buildPDF("biology",      { biology:      content.biology  }, skinType, lang);
+        const pdf2 = await buildPDF("routine",       { routine:      content.routine  }, skinType, lang);
         attachments = [
-          { filename: `SKINR-Skin-Biology-Report.pdf`,      content: pdf1, contentType: "application/pdf" },
+          { filename: `SKINR-Skin-Biology-Report.pdf`,       content: pdf1, contentType: "application/pdf" },
           { filename: `SKINR-Personalised-Routine-Card.pdf`, content: pdf2, contentType: "application/pdf" },
         ];
       } else if (product === "shave-combo" && content.shaveBiology !== undefined) {
-        const pdf1 = await buildPDF("shave-biology", content.shaveBiology, skinType, lang);
-        const pdf2 = await buildPDF("shave-card",    content.shaveCard,    skinType, lang);
+        const pdf1 = await buildPDF("shave-biology", { shaveBiology: content.shaveBiology }, skinType, lang);
+        const pdf2 = await buildPDF("shave-card",    { shaveCard:    content.shaveCard    }, skinType, lang);
         attachments = [
-          { filename: `SKINR-Shave-Biology-Report.pdf`,  content: pdf1, contentType: "application/pdf" },
-          { filename: `SKINR-Shave-Protocol-Card.pdf`,   content: pdf2, contentType: "application/pdf" },
+          { filename: `SKINR-Shave-Biology-Report.pdf`, content: pdf1, contentType: "application/pdf" },
+          { filename: `SKINR-Shave-Protocol-Card.pdf`,  content: pdf2, contentType: "application/pdf" },
         ];
       } else if (product === "guides-combo") {
-        const pdf1 = await buildPDF("skincare-guide", content.skincare, skinType, lang);
-        const pdf2 = await buildPDF("shaving-guide",  content.shaving,  skinType, lang);
+        const pdf1 = await buildPDF("skincare-guide", { skincare: content.skincare }, skinType, lang);
+        const pdf2 = await buildPDF("shaving-guide",  { shaving:  content.shaving  }, skinType, lang);
         attachments = [
           { filename: `SKINR-Skincare-Guide.pdf`, content: pdf1, contentType: "application/pdf" },
           { filename: `SKINR-Shaving-Guide.pdf`,  content: pdf2, contentType: "application/pdf" },
