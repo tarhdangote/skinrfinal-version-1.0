@@ -4,15 +4,16 @@
  */
 
 const PRODUCTS = {
-  "biology":        { priceId: "price_1TRbMlCi5YWsRAVAIq1CPgvG", amount: 1500, label: "SKINR Skin Biology Report" },
-  "routine":        { priceId: "price_1TRbOsCi5YWsRAVAH72I6TS1", amount: 1200, label: "SKINR Personalised Routine Card" },
-  "skin-combo":     { priceId: "price_1TRbQgCi5YWsRAVAFDHlX0LM", amount: 2200, label: "SKINR Skin Analysis Bundle" },
-  "shave-biology":  { priceId: "price_1TRf10Ci5YWsRAVARhNuKC4u", amount: 1500, label: "SKINR Shave Biology Report" },
-  "shave-card":     { priceId: "price_1TRf3hCi5YWsRAVA4oNz5i34", amount: 1200, label: "SKINR Shave Protocol Card" },
-  "shave-combo":    { priceId: "price_1TRf5hCi5YWsRAVAmZpTERl9", amount: 2200, label: "SKINR Shave Protocol Bundle" },
-  "skincare-guide": { priceId: "price_1TRfOLCi5YWsRAVAezkOgVmT", amount:  900, label: "SKINR Men's Skincare Guide" },
-  "shaving-guide":  { priceId: "price_1TRfPyCi5YWsRAVAwIFSPFyN", amount:  900, label: "SKINR Men's Shaving Guide" },
-  "guides-combo":   { priceId: "price_1TRfRMCi5YWsRAVA3sIcGC6I", amount: 1500, label: "SKINR Both Guides Bundle" },
+  "biology":          { priceId: "price_1TRbMlCi5YWsRAVAIq1CPgvG", amount: 1500, label: "SKINR Skin Biology Report" },
+  "routine":          { priceId: "price_1TRbOsCi5YWsRAVAH72I6TS1", amount: 1200, label: "SKINR Personalised Routine Card" },
+  "skin-combo":       { priceId: "price_1TRbQgCi5YWsRAVAFDHlX0LM", amount: 2200, label: "SKINR Skin Analysis Bundle" },
+  "shave-biology":    { priceId: "price_1TRf10Ci5YWsRAVARhNuKC4u", amount: 1500, label: "SKINR Shave Biology Report" },
+  "shave-card":       { priceId: "price_1TRf3hCi5YWsRAVA4oNz5i34", amount: 1200, label: "SKINR Shave Protocol Card" },
+  "shave-combo":      { priceId: "price_1TRf5hCi5YWsRAVAmZpTERl9", amount: 2200, label: "SKINR Shave Protocol Bundle" },
+  "skincare-guide":   { priceId: "price_1TRfOLCi5YWsRAVAezkOgVmT", amount:  900, label: "SKINR Men's Skincare Guide" },
+  "shaving-guide":    { priceId: "price_1TRfPyCi5YWsRAVAwIFSPFyN", amount:  900, label: "SKINR Men's Shaving Guide" },
+  "guides-combo":     { priceId: "price_1TRfRMCi5YWsRAVA3sIcGC6I", amount: 1500, label: "SKINR Both Guides Bundle" },
+  "analysis-email":   { priceId: "price_1TUzeWCi5YWsRAVAwe8xvjh4", amount:  100, label: "SKINR Analysis Email Delivery" },
 };
 
 const HEADERS = {
@@ -32,7 +33,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { product, email, skinType, lang } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const { product, email, skinType, lang, analysisType, concern, budget } = body;
     const productInfo = PRODUCTS[product];
     if (!productInfo) {
       return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: `Unknown product: ${product}` }) };
@@ -47,8 +49,22 @@ exports.handler = async (event) => {
       "metadata[email]": email || "",
       "metadata[skinType]": skinType || "",
       "metadata[lang]": lang || "en",
+      "metadata[analysisType]": analysisType || "skin",
+      "metadata[concern]": (concern || "").substring(0, 490),
+      "metadata[budget]": budget || "",
       description: productInfo.label,
     });
+
+    // Pass analysis step data for the $1 email delivery product
+    if (product === "analysis-email") {
+      const stepKeys = ["m0","m1","m2","m3","m4","m5","e0","e1","e2","e3","e4",
+                        "ps0","ps1","ps2","ps3","d0","d1","d2","d3","po0","po1","po2","po3","po4",
+                        "avoid","proTip","headline","clinicalFinding","criticalRule","expectedImprovement"];
+      stepKeys.forEach(k => {
+        if (body[k]) params.append(`metadata[${k}]`, String(body[k]).substring(0, 499));
+      });
+    }
+
     if (email) params.append("receipt_email", email);
 
     const response = await fetch("https://api.stripe.com/v1/payment_intents", {
