@@ -1085,7 +1085,7 @@ const BASE_T = {
   appName:"SKINR",
   badge:"Free. Clinical. Built for Men.",
   heroTitle:"Your Skin. Your Shave.", heroTitle2:"Finally, Understood.",
-  heroBody:"Most men have no idea what their skin actually needs. They grab whatever looks right, apply it in the wrong order, and wonder why nothing changes. SKINR ends that. Six honest questions. A clinical skin profile, a personalised morning and evening routine, and the exact products that work for your biology and your budget. No appointments. No guesswork. Sixty seconds.",
+  heroBody:"Most men have no idea what their skin actually needs. They grab whatever looks right, apply it in the wrong order, and wonder why nothing changes. SKINR ends that.",
   pathTitle:"Two Problems. One Platform.",
   pathSub:"Clinical shaving science and personalised skincare -- both free, both built for men.",
   skinCardTitle:"Skin Analysis",
@@ -1278,7 +1278,7 @@ const FR_T = {
   appName:"SKINR",
   badge:"Gratuit. Clinique. Fait pour les Hommes.",
   heroTitle:"Ta Peau. Ton Rasage.", heroTitle2:"Enfin Compris.",
-  heroBody:"La plupart des gars ont aucune idée de ce que leur peau a vraiment besoin. Ils prennent ce qui a l'air correct, l'appliquent dans le mauvais ordre, puis se demandent pourquoi rien change. SKINR règle ça. Six questions honnêtes. Un profil cutané clinique, une routine personnalisée matin et soir, et les produits exacts qui marchent pour ta biologie et ton budget. Sans rendez-vous. Sans devinettes. En soixante secondes.",
+  heroBody:"La plupart des gars ont aucune idée de ce que leur peau a vraiment besoin. Ils prennent ce qui a l'air correct, l'appliquent dans le mauvais ordre, puis se demandent pourquoi rien change. SKINR règle ça.",
   pathTitle:"Deux Problèmes. Une Plateforme.",
   pathSub:"Science clinique du rasage et soins personnalisés -- les deux gratuits, les deux faits pour les hommes.",
   skinCardTitle:"Analyse de Peau",
@@ -1458,7 +1458,7 @@ const ES_T = {
   appName:"SKINR",
   badge:"Gratis. Clínico. Hecho para Hombres.",
   heroTitle:"Tu Piel. Tu Afeitado.", heroTitle2:"Por Fin, Comprendidos.",
-  heroBody:"La mayoría de los hombres no tienen idea de lo que su piel realmente necesita. Agarran lo que parece correcto, lo aplican en el orden equivocado, y se preguntan por qué nada cambia. SKINR acaba con eso. Seis preguntas honestas. Un perfil clínico de piel, una rutina personalizada de mañana y noche, y los productos exactos que funcionan para tu biología y tu presupuesto. Sin citas. Sin adivinanzas. En sesenta segundos.",
+  heroBody:"La mayoría de los hombres no tienen idea de lo que su piel realmente necesita. Agarran lo que parece correcto, lo aplican en el orden equivocado, y se preguntan por qué nada cambia. SKINR acaba con eso.",
   pathTitle:"Dos Problemas. Una Plataforma.",
   pathSub:"Ciencia clínica del afeitado y cuidado personalizado -- ambos gratis, ambos hechos para hombres.",
   skinCardTitle:"Análisis de Piel",
@@ -3722,9 +3722,8 @@ Return this JSON:
           <div className="hero-h">{t.heroTitle}</div>
           <div className="hero-h2">{t.heroTitle2}</div>
           <div className="hero-rule"/>
-          {/* Hero body — 2 lines max on mobile, no expand needed */}
           <p className="hero-body" style={{
-            display:"-webkit-box",WebkitLineClamp:2,
+            display:"-webkit-box",WebkitLineClamp:3,
             WebkitBoxOrient:"vertical",overflow:"hidden"
           }}>{t.heroBody}</p>
 
