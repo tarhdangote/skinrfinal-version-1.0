@@ -5060,14 +5060,15 @@ Return this JSON:
                 <div className="ins-text">{shaveResult.whenToSeeDoctor}</div>
               </div>
             )}
-            {/* Industry-standard medical disclaimer — footer style, same as Hims/Curology */}
+            </>}{/* end showAllShaveProducts */}
+
+            {/* Medical disclaimer — always visible at bottom of results, same position as Hims/Curology */}
             <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)"}}>
               <p style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
                 lineHeight:1.7,fontStyle:"italic",textAlign:"center"}}>
                 {t.medDisclaimer}
               </p>
             </div>
-            </>}{/* end showAllShaveProducts */}
 
             {/* -- SHAVE OPTIONAL REPORTS -- only shown after purchase -- */}
             {(shaveBioUnlocked||shaveCardUnlocked)&&(
