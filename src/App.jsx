@@ -1154,7 +1154,25 @@ const BASE_T = {
   ],
   shaveTitle:"Shaving Protocol",
   shaveSub:"A clinical 7-question analysis -- blade type, beard characteristics, skin type, and active problems all analysed together. The most precise shaving tool ever built for men.",
-  shaveQ1:"What is your current primary shaving method?",
+  shaveDisclaimer:{
+    title:"Quick Note Before We Start",
+    body:"SKINR is built for men dealing with mechanical razor bumps — the kind caused by shaving technique and blade type. It works best when that's the root cause.",
+    warning:"We'd recommend seeing a doctor first if any of these sound familiar:",
+    signs:[
+      "Redness or warmth that keeps spreading beyond the bump area",
+      "Fever that came on alongside your skin symptoms",
+      "Bumps showing up in areas you don't shave",
+      "Nothing has helped at all after several months of trying",
+    ],
+    cta:"None of these apply — let's build my protocol",
+  },
+  shaveQ8:"How long have you been dealing with razor bumps or shaving irritation?",
+  shaveOpts8:[
+    {v:"new",      label:"Just started — under 3 months"},
+    {v:"ongoing",  label:"Ongoing — 3 months to 2 years"},
+    {v:"chronic",  label:"Chronic — over 2 years"},
+    {v:"severe",   label:"Had to reduce or stop shaving because of them"},
+  ],
   shaveOpts1:[{v:"cartridge",label:"Cartridge Razor (2–5 blades)"},{v:"safety",label:"Safety / Double-Edge Razor (single blade)"},{v:"electric_foil",label:"Electric Foil Shaver (Braun, Panasonic)"},{v:"electric_rotary",label:"Electric Rotary Shaver (Philips Norelco)"},{v:"straight",label:"Straight Razor"},{v:"oneblade",label:"OneBlade / Leaf Razor (single blade pivot)"},{v:"beard",label:"I maintain a beard -- no close shaving"}],
   shaveQ2:"How would you describe your beard hair?",
   shaveOpts2:[{v:"fine_straight",label:"Fine and straight -- grows soft, little resistance"},{v:"medium",label:"Medium -- average thickness and density"},{v:"coarse_straight",label:"Coarse and straight -- thick, heavy stubble"},{v:"coarse_curly",label:"Coarse and curly -- tight curls, waves, or coils"},{v:"patchy",label:"Patchy -- uneven density across the face"}],
@@ -1347,7 +1365,25 @@ const FR_T = {
   ],
   shaveTitle:"Protocole de Rasage",
   shaveSub:"Une analyse clinique en 7 questions -- type de lame, caractéristiques de la barbe, type de peau, et problèmes actifs analysés ensemble. L'outil de rasage le plus précis jamais construit pour les hommes.",
-  shaveQ1:"C'est quoi ta méthode de rasage principale en ce moment?",
+  shaveDisclaimer:{
+    title:"Une Note Rapide Avant de Commencer",
+    body:"SKINR est conçu pour les hommes qui ont des boutons de rasoir mécaniques — le genre causé par la technique de rasage et le type de lame. Il fonctionne mieux quand c'est vraiment ça la cause.",
+    warning:"On te recommande de consulter un médecin d'abord si l'un de ces points te ressemble:",
+    signs:[
+      "Rougeur ou chaleur qui continue à se propager autour des boutons",
+      "Fièvre apparue en même temps que tes symptômes cutanés",
+      "Boutons qui apparaissent dans des zones que tu ne rases pas",
+      "Rien n'a aidé du tout après plusieurs mois d'essais",
+    ],
+    cta:"Aucun de ces points — construire mon protocole",
+  },
+  shaveQ8:"Depuis combien de temps as-tu des boutons de rasoir ou des irritations?",
+  shaveOpts8:[
+    {v:"new",      label:"Tout juste commencé — moins de 3 mois"},
+    {v:"ongoing",  label:"En cours — 3 mois à 2 ans"},
+    {v:"chronic",  label:"Chronique — plus de 2 ans"},
+    {v:"severe",   label:"J'ai dû réduire ou arrêter de me raser à cause de ça"},
+  ],
   shaveOpts1:[{v:"cartridge",label:"Rasoir cartouche (2–5 lames)"},{v:"safety",label:"Rasoir de sûreté / double-tranchant (lame unique)"},{v:"electric_foil",label:"Rasoir électrique à grille (Braun, Panasonic)"},{v:"electric_rotary",label:"Rasoir électrique rotatif (Philips Norelco)"},{v:"straight",label:"Rasoir droit"},{v:"oneblade",label:"OneBlade / Leaf Razor (pivot lame unique)"},{v:"beard",label:"J'entretiens une barbe -- pas de rasage de près"}],
   shaveQ2:"Comment tu décrirais ta barbe?",
   shaveOpts2:[{v:"fine_straight",label:"Fine et droite -- pousse douce, peu de résistance"},{v:"medium",label:"Moyenne -- épaisseur et densité normales"},{v:"coarse_straight",label:"Épaisse et droite -- chaume lourd et dense"},{v:"coarse_curly",label:"Épaisse et bouclée -- boucles serrées, vagues ou coils"},{v:"patchy",label:"Inégale -- densité variable sur le visage"}],
@@ -1527,7 +1563,25 @@ const ES_T = {
   ],
   shaveTitle:"Protocolo de Afeitado",
   shaveSub:"Un análisis clínico de 7 preguntas -- tipo de hoja, características de la barba, tipo de piel y problemas activos analizados juntos. La herramienta de afeitado más precisa jamás construida para hombres.",
-  shaveQ1:"¿Cuál es tu método de afeitado principal actualmente?",
+  shaveDisclaimer:{
+    title:"Una Nota Rápida Antes de Empezar",
+    body:"SKINR está diseñado para hombres con granos de afeitar mecánicos — el tipo causado por la técnica de afeitado y el tipo de hoja. Funciona mejor cuando esa es realmente la causa.",
+    warning:"Te recomendamos ver a un médico primero si alguno de estos puntos te suena familiar:",
+    signs:[
+      "Enrojecimiento o calor que sigue extendiéndose más allá del área de los granos",
+      "Fiebre que apareció junto con tus síntomas de piel",
+      "Granos que aparecen en áreas que no afeitas",
+      "Nada ha ayudado en absoluto después de varios meses de intentarlo",
+    ],
+    cta:"Ninguno de estos aplica — construir mi protocolo",
+  },
+  shaveQ8:"¿Cuánto tiempo llevas lidiando con granos de afeitar o irritación?",
+  shaveOpts8:[
+    {v:"new",      label:"Recién comenzó — menos de 3 meses"},
+    {v:"ongoing",  label:"En curso — 3 meses a 2 años"},
+    {v:"chronic",  label:"Crónico — más de 2 años"},
+    {v:"severe",   label:"Tuve que reducir o dejar de afeitarme por esto"},
+  ],
   shaveOpts1:[{v:"cartridge",label:"Maquinilla de cartucho (2–5 hojas)"},{v:"safety",label:"Maquinilla de seguridad / doble filo (hoja única)"},{v:"electric_foil",label:"Afeitadora eléctrica de lámina (Braun, Panasonic)"},{v:"electric_rotary",label:"Afeitadora eléctrica rotatoria (Philips Norelco)"},{v:"straight",label:"Navaja de afeitar"},{v:"oneblade",label:"OneBlade / Leaf Razor (pivote hoja única)"},{v:"beard",label:"Mantengo barba -- sin afeitado al ras"}],
   shaveQ2:"¿Cómo describirías tu barba?",
   shaveOpts2:[{v:"fine_straight",label:"Fina y recta -- crece suave, poca resistencia"},{v:"medium",label:"Media -- grosor y densidad promedio"},{v:"coarse_straight",label:"Gruesa y recta -- barba densa y pesada"},{v:"coarse_curly",label:"Gruesa y rizada -- rizos apretados, ondas o coils"},{v:"patchy",label:"Irregular -- densidad variable en la cara"}],
@@ -1679,8 +1733,10 @@ const buildShavePrompt1 = (answers, skinProfile, lang) => {
   const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0, 3).join(", ") || "Cremo, Proraso, Nivea Men";
   const skin = skinProfile?.skinType || "combination";
   const bumps = answers.activeBumps || "none";
+  const severity = answers.duration || "new";
+  const isSevere = severity === "severe" || severity === "chronic";
   return `Shaving dermatologist. Language: ${ln}. CRITICAL: Return ONLY compact single-line JSON with NO whitespace, no newlines, no markdown, no code fences. Start with { end with }.
-Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin}. Brands:${brands}.
+Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},problem=${answers.problem||"redness"},bumps=${bumps},blade=${answers.currentBlade||"unknown"},freq=${answers.frequency||"daily"},budget=${tier},skin=${skin},duration=${severity}${isSevere?",SEVERE_CASE:recommend_electric_foil_or_stop_shaving_temporarily":""}.`+` Brands:${brands}.
 Fill this schema with real clinical values (keep strings under 15 words): {"clinicalFinding":"","severityAssessment":"","criticalRule":"","bladeRecommendation":{"recommendedType":"","specificModel":"","whyThisRazor":"","bladeGap":"","techniqueAdjustment":"","transitionNote":"","recommendedBlades":[{"name":"","estimatedPrice":"","why":"","rating":"","amazonSearch":""}]}}`;
 };
 
@@ -1690,15 +1746,20 @@ const buildShavePrompt2 = (answers, diagnosis, lang) => {
   const tier = answers.budget || "mid";
   const brands = CONFIG.shaveBrandsByTier[tier]?.slice(0, 3).join(", ") || "Cremo, Proraso, Nivea Men";
   const bumps = answers.activeBumps || "none";
+  const severity = answers.duration || "new";
+  const isSevere = severity === "severe" || severity === "chronic";
   const hasBumps = bumps !== "none";
+  const severeNote = isSevere
+    ? ',"severeNote":"Chronic PFB — recommend Braun foil electric shaver, azelaic acid 10% post-shave, adapalene 0.1% at night. Dermatologist referral after 3 months."'
+    : "";
+  const keyIngredient = isSevere ? "Azelaic Acid 10% or Adapalene 0.1%" : "Salicylic Acid 2%";
   const bumpExtra = hasBumps
-    ? `,"treatmentProducts":[{"name":"","brand":"","category":"bump-treatment","estimatedPrice":"","keyIngredient":"Salicylic Acid 2%","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","expectedTimeline":""}],"treatmentProtocol":""`
-    : ``;
+    ? `,"treatmentProducts":[{"name":"","brand":"","category":"bump-treatment","estimatedPrice":"","keyIngredient":"${keyIngredient}","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","expectedTimeline":""}],"treatmentProtocol":""${severeNote}`
+    : "";
   return `Shaving dermatologist. Language: ${ln}. CRITICAL: Return ONLY compact single-line JSON with NO whitespace, no newlines, no markdown, no code fences. Start with { end with }.
-Diagnosis:${diagnosis||"shaving irritation"}. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},bumps=${bumps},budget=${tier}. Brands:${brands}.
+Diagnosis:${diagnosis||"shaving irritation"}. Profile: method=${answers.method||"cartridge"},beard=${answers.beard||"medium"},bumps=${bumps},budget=${tier},duration=${severity}${isSevere?",SEVERE:prioritise_electric_foil_and_azelaic_acid":""}. Brands:${brands}.
 Fill this schema with real clinical values (keep strings under 15 words): {"preShave":[{"step":1,"title":"","instruction":"","duration":"","why":""},{"step":2,"title":"","instruction":"","duration":"","why":""},{"step":3,"title":"","instruction":"","duration":"","why":""}],"shaveProtocol":[{"step":1,"title":"","instruction":"","why":""},{"step":2,"title":"","instruction":"","why":""},{"step":3,"title":"","instruction":"","why":""}],"postShave":[{"step":1,"title":"","instruction":"","why":""},{"step":2,"title":"","instruction":"","why":""},{"step":3,"title":"","instruction":"","why":""}],"preventionProducts":[{"name":"","brand":"","category":"shave-cream","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"},{"name":"","brand":"","category":"post-shave-balm","estimatedPrice":"","keyIngredient":"","use":"","clinicalMechanism":"","knownRating":"","amazonSearch":"","priority":"essential"}]${bumpExtra},"weekOneProtocol":"","expectedImprovement":"","whenToSeeDoctor":"","skinBiologyTeaser":""}`;
 };
-
 const buildCheckinPrompt = (mood, profile, history, lang) => {
   const ln = (LANGUAGES.find(l=>l.code===lang)?.label || "English");
   return `Respond ONLY in ${ln}. You are a clinical skincare coach reviewing a check-in.
@@ -1942,6 +2003,14 @@ const PRODUCT_DB = {
   "PFB Vanish Roll-On":                                { asinUS:"B004SVBGW8", tier:"budget",  suitableFor:["razor-bumps","PFB","ingrown-hairs","all","coarse-curly"],                           avoidFor:[], keyIngredient:"glycolic acid,salicylic acid,lactic acid" },
   "Bolden Brightening Face Moisturizer SPF 30":        { asinUS:"B07FK86JBM", tier:"mid",     suitableFor:["melanin-rich","darker-skin-tones","African-American","no-white-cast","hyperpigmentation","all"], avoidFor:[], keyIngredient:"vitamin C,SPF 30,applies clear,no white cast,Black-owned brand" },
   "Gold Bond Rough Bumpy Daily Skin Therapy":          { asinUS:"B00MMKAM5E", tier:"budget",  suitableFor:["razor-bumps","rough-bumpy","keratosis-pilaris","African-American","coarse-curly","dry","all"], avoidFor:[], keyIngredient:"AHA,BHA,PHA triple exfoliant,7 moisturizers" },
+
+  // ── SEVERE / CHRONIC PFB — for men who had to reduce or stop shaving ─────────
+  "The Ordinary Azelaic Acid Suspension 10%":          { asinUS:"B07H7WBV3H", tier:"budget",  suitableFor:["razor-bumps","PFB","severe-PFB","chronic-PFB","rosacea","hyperpigmentation","sensitive","all"], avoidFor:[], keyIngredient:"azelaic acid 10% — anti-inflammatory + brightening, dual action for active PFB and PIH" },
+  "Paula's Choice 10% Azelaic Acid Booster":           { asinUS:"B00Y5ETQ00", tier:"premium", suitableFor:["razor-bumps","severe-PFB","chronic-PFB","rosacea","hyperpigmentation","sensitive"],             avoidFor:[], keyIngredient:"azelaic acid 10%,salicylic acid — clinical-grade for persistent PFB" },
+  "Differin Adapalene Gel 0.1% Shave Protocol":        { asinUS:"B07LP1J9TB", tier:"budget",  suitableFor:["razor-bumps","severe-PFB","chronic-PFB","acne-prone","coarse-curly"],                           avoidFor:["sensitive-beginners"], keyIngredient:"adapalene 0.1% retinoid — accelerates cell turnover preventing follicle blockage at surface" },
+  "Braun Series 7 Electric Foil Shaver":               { asinUS:"B09MYJQ9W3", tier:"premium", suitableFor:["severe-PFB","chronic-PFB","razor-bumps","sensitive","coarse-curly","African-American"],           avoidFor:[], keyIngredient:"foil shaver — cannot cut below skin surface, zero lift-and-cut, safest mechanical option for severe PFB" },
+  "Tweezerman Ingrown Hair Splintertweeze":             { asinUS:"B000FQWT0K", tier:"budget",  suitableFor:["razor-bumps","ingrown-hairs","severe-PFB","PFB","coarse-curly"],                                 avoidFor:[], keyIngredient:"pointed stainless steel — safely releases visibly trapped hairs without skin trauma" },
+  "CeraVe Benzoyl Peroxide Acne Control Cleanser":     { asinUS:"B0BWMXZMVD", tier:"budget",  suitableFor:["severe-PFB","chronic-PFB","acne-prone","coexisting-folliculitis"],                               avoidFor:["sensitive","dry"], keyIngredient:"benzoyl peroxide — kills bacteria colonising inflamed follicles in co-existing folliculitis barbae" },
 
 };
 
@@ -2822,6 +2891,8 @@ export default function SkinrApp() {
       .catch(()=>{}); // Silent fail -- defaults to amazon.com
   },[]);
   const skinQs = getSkinQs(t, lang);
+  const [shaveDisclaimerShown, setShaveDisclaimerShown] = useState(false);
+
   const shaveQs = [
     {id:"method",      q:t.shaveQ1, opts:t.shaveOpts1},
     {id:"beard",       q:t.shaveQ2, opts:t.shaveOpts2},
@@ -2830,6 +2901,7 @@ export default function SkinrApp() {
     {id:"currentBlade",q:t.shaveQ5, opts:t.shaveOpts5},
     {id:"frequency",   q:t.shaveQ6, opts:t.shaveOpts6},
     {id:"budget",      q:t.shaveQ7, opts:t.shaveOpts7},
+    {id:"duration",    q:t.shaveQ8, opts:t.shaveOpts8},
   ];
 
   // -- CORE NAVIGATION & LANGUAGE (defined before useEffects that call them) --
@@ -3182,6 +3254,7 @@ export default function SkinrApp() {
   const startShaveQuiz = () => {
     setShaveStep(0); setShaveAns({}); setShaveSel([]);
     setShaveResult(null); setShavePrev([]); setShaveError(false);
+    setShaveDisclaimerShown(false);
     go("shave");
   };
 
@@ -4565,7 +4638,7 @@ Return this JSON:
           {/* Quiz */}
           {!shaveResult&&!shaveLoad&&<>
             <div className="quiz-hdr" style={{marginBottom:24}}>
-              <button className="back-btn" onClick={shaveStep===0?()=>go("guides"):handleShaveBack}>{t.back}</button>
+              <button className="back-btn" onClick={shaveStep===0?()=>go("home"):handleShaveBack}>{t.back}</button>
               <div className="prog-track"><div className="prog-fill" style={{width:`${shaveProg}%`}}/></div>
               <span className="q-count">{shaveStep+1}{t.of}{shaveQs.length}</span>
             </div>
@@ -4987,6 +5060,13 @@ Return this JSON:
                 <div className="ins-text">{shaveResult.whenToSeeDoctor}</div>
               </div>
             )}
+            {/* Industry-standard medical disclaimer — footer style, same as Hims/Curology */}
+            <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)"}}>
+              <p style={{fontFamily:"var(--fc)",fontSize:11,color:"var(--muted)",
+                lineHeight:1.7,fontStyle:"italic",textAlign:"center"}}>
+                {t.medDisclaimer}
+              </p>
+            </div>
             </>}{/* end showAllShaveProducts */}
 
             {/* -- SHAVE OPTIONAL REPORTS -- only shown after purchase -- */}
